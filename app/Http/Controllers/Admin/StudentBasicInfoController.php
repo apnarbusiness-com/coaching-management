@@ -119,6 +119,10 @@ class StudentBasicInfoController extends Controller
         // return $request->all();
         // $studentBasicInfo = StudentBasicInfo::create($request->all());
 
+        $student = StudentBasicInfo::where('contact_number', $request->contact_number)->first();
+        if (isset($student)) {
+            return redirect()->back()->with('error', 'Contact Number already exists.');
+        }
 
 
         $studentBasicInfo = new StudentBasicInfo();
@@ -144,25 +148,26 @@ class StudentBasicInfoController extends Controller
 
 
         if (!isset($studentBasicInfo)) {
-            return redirect()->back()->with('error', 'Student Basic Info not created successfully.');
+            return redirect()->back()->with('error', 'Student Basic Info not created. Please try again.');
         }
 
         if ($request->need_login) {
-            // $user = User::where('email', $request->email)->first();
-            $user = null;
-            if (!isset($user)) {
-                $user = User::create([
-                    'name' => $request->first_name . ' ' . $request->last_name,
-                    'email' => $request->email,
-                    'user_name' => $request->user_name ?? null,
-                    'admission_id' => $studentBasicInfo->id_no ?? null,
-                    'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($studentBasicInfo->id_no),
-                ]);
 
-                $user->roles()->sync(\App\Models\Role::whereIn('title', ['Student', 'student'])->first()->id ?? []);
+            // $user = $studentBasicInfo->user ?? null;
+            // $user = null;
+            // if (!isset($user)) {
+            $user = User::create([
+                'name' => $request->first_name . ' ' . $request->last_name,
+                'email' => $request->email,
+                'user_name' => $request->user_name ?? null,
+                'admission_id' => $studentBasicInfo->id_no ?? null,
+                'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($studentBasicInfo->id_no),
+            ]);
+
+            $user->roles()->sync(\App\Models\Role::whereIn('title', ['Student', 'student'])->first()->id ?? []);
 
 
-            }
+            // }
             $studentBasicInfo->user_id = $user->id;
             $studentBasicInfo->save();
         }

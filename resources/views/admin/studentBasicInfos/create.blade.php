@@ -174,11 +174,18 @@
                             <div class="col-span-1" id="password-field">
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 "
                                     for="password">{{ trans('cruds.studentBasicInfo.fields.password') }}</label>
-                                <input
-                                    class=" {{ $errors->has('password') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
-                                    id="password" name="password"
-                                    placeholder="8 characters minimum and uppercase + lowercase letter" type="password"
-                                    value="{{ old('password', '') }}" />
+                                <div class="relative mt-1">
+                                    <input
+                                        class=" {{ $errors->has('password') ? 'is-invalid' : '' }} block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3 pr-12"
+                                        id="password" name="password"
+                                        placeholder="8 characters minimum and uppercase + lowercase letter" type="password"
+                                        value="{{ old('password', '') }}" />
+                                    <button type="button"
+                                        class="password-toggle-btn absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-primary focus:outline-none"
+                                        data-target="password" aria-label="Show password" aria-pressed="false">
+                                        <span class="material-symbols-outlined text-[20px]">visibility</span>
+                                    </button>
+                                </div>
                                 @if ($errors->has('password'))
                                     <div class="invalid-feedback">
                                         {{ $errors->first('password') }}
@@ -431,7 +438,7 @@
                                 for="joining_date">{{ trans('cruds.studentBasicInfo.fields.joining_date') }}</label>
                             <input
                                 class=" {{ $errors->has('joining_date') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
-                                id="joining_date" name="joining_date" type="date" value="{{ old('joining_date', '') }}"
+                                id="joining_date" name="joining_date" type="date" value="{{ old('joining_date', now()->format('Y-m-d')) }}"
                                 required />
 
                             @if ($errors->has('joining_date'))
@@ -649,6 +656,22 @@
                 } else {
                     $("#password-field").addClass("d-none").fadeOut();
                 }
+            });
+
+            // Password show/hide toggle
+            $('.password-toggle-btn').on('click', function () {
+                const targetId = $(this).data('target');
+                const input = document.getElementById(targetId);
+
+                if (!input) return;
+
+                const icon = $(this).find('.material-symbols-outlined');
+                const isPassword = input.type === 'password';
+
+                input.type = isPassword ? 'text' : 'password';
+                icon.text(isPassword ? 'visibility_off' : 'visibility');
+                $(this).attr('aria-label', isPassword ? 'Hide password' : 'Show password');
+                $(this).attr('aria-pressed', isPassword ? 'true' : 'false');
             });
 
             // Guardian Relation Toggle
