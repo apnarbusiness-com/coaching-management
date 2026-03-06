@@ -66,8 +66,14 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('student-basic-infos/destroy', 'StudentBasicInfoController@massDestroy')->name('student-basic-infos.massDestroy');
     Route::post('student-basic-infos/media', 'StudentBasicInfoController@storeMedia')->name('student-basic-infos.storeMedia');
     Route::post('student-basic-infos/ckmedia', 'StudentBasicInfoController@storeCKEditorImages')->name('student-basic-infos.storeCKEditorImages');
-    Route::post('student-basic-infos/parse-csv-import', 'StudentBasicInfoController@parseCsvImport')->name('student-basic-infos.parseCsvImport');
-    Route::post('student-basic-infos/process-csv-import', 'StudentBasicInfoController@processCsvImport')->name('student-basic-infos.processCsvImport');
+    Route::post('student-basic-infos/parse-csv-import', [StudentBasicInfoController::class, 'parseStudentImport'])->name('student-basic-infos.parseStudentImport');
+    Route::post('student-basic-infos/process-csv-import', [StudentBasicInfoController::class, 'processStudentImport'])->name('student-basic-infos.processStudentImport');
+    Route::post('student-basic-infos/import-raw', [StudentBasicInfoController::class, 'importRawToTable'])->name('student-basic-infos.importRawToTable');
+    Route::post('student-basic-infos/process-raw', [StudentBasicInfoController::class, 'processRawToStudents'])->name('student-basic-infos.processRawToStudents');
+    Route::get('student-basic-infos/raw-imports', [StudentBasicInfoController::class, 'rawImports'])->name('student-basic-infos.rawImports');
+    Route::delete('student-basic-infos/raw-imports/{studentImportRaw}', [StudentBasicInfoController::class, 'deleteRawImportRow'])->name('student-basic-infos.rawImports.delete');
+    Route::post('student-basic-infos/raw-imports/reset', [StudentBasicInfoController::class, 'resetRawImports'])->name('student-basic-infos.rawImports.reset');
+    Route::get('student-basic-infos/demo-csv', [StudentBasicInfoController::class, 'downloadDemoCsv'])->name('student-basic-infos.demoCsv');
     Route::get('student-basic-infos/print-id-card/{id}', [StudentBasicInfoController::class, 'printIdCard'])->name('student-basic-infos.printIdCard');
     Route::post('student-basic-infos/{studentBasicInfo}/sync-subjects', 'StudentBasicInfoController@syncSubjects')->name('student-basic-infos.syncSubjects');
     Route::resource('student-basic-infos', 'StudentBasicInfoController');

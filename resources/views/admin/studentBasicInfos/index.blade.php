@@ -6,17 +6,168 @@
                 <a class="btn btn-success" href="{{ route('admin.student-basic-infos.create') }}">
                     {{ trans('global.add') }} {{ trans('cruds.studentBasicInfo.title_singular') }}
                 </a>
-                <button class="btn btn-warning" data-toggle="modal" data-target="#csvImportModal">
-                    {{ trans('global.app_csvImport') }}
+                {{-- <button class="btn btn-warning" data-toggle="modal" data-target="#csvImportModal">
+                    Excel/CSV Import
+                </button> --}}
+                <button class="btn btn-dark" data-toggle="modal" data-target="#rawImportModal">
+                    Step-1: Raw Excel/CSV Import
                 </button>
-                @include('csvImport.modal', [
-                    'model' => 'StudentBasicInfo',
-                    'route' => 'admin.student-basic-infos.parseCsvImport',
-                ])
+                {{-- <button class="btn btn-secondary" data-toggle="modal" data-target="#rawProcessModal">
+                    Step-2 Process Raw
+                </button> --}}
+                <a class="btn btn-outline-secondary" href="{{ route('admin.student-basic-infos.rawImports') }}">
+                    Raw Rows View
+                </a>
+                {{-- <a class="btn btn-info" href="{{ route('admin.student-basic-infos.demoCsv') }}">
+                    Demo Excel/CSV
+                </a> --}}
+                <div class="modal fade" id="csvImportModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" id="myModalLabel">Student Excel/CSV Import</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                        aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted">This import creates login users automatically.</p>
+                                <form class="form-horizontal" method="POST"
+                                    action="{{ route('admin.student-basic-infos.parseStudentImport') }}"
+                                    enctype="multipart/form-data">
+                                    @csrf
+
+                                    <div class="form-group{{ $errors->has('csv_file') ? ' has-error' : '' }}">
+                                        <label for="csv_file"
+                                            class="col-md-4 control-label">@lang('global.app_csv_file_to_import')</label>
+
+                                        <div class="col-md-7">
+                                            <input id="csv_file" type="file" class="form-control-file" name="csv_file"
+                                                required>
+                                            <small class="form-text text-muted">Supported: .csv, .txt, .xls, .xlsx</small>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="duplicate_mode" class="col-md-4 control-label">Duplicate Action</label>
+                                        <div class="col-md-7">
+                                            <select name="duplicate_mode" id="duplicate_mode" class="form-control" required>
+                                                <option value="skip">Skip existing</option>
+                                                <option value="update">Update existing</option>
+                                                <option value="duplicate">Create duplicate</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="col-md-8 col-md-offset-4">
+                                            <button type="submit" class="btn btn-primary">
+                                                Parse Import File
+                                            </button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="rawImportModal" tabindex="-1" role="dialog" aria-labelledby="rawImportLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" id="rawImportLabel">Step-1 Raw Excel/CSV Import</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                        aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">
+                                    This uploads all non-empty rows directly to raw table (<code>student_import_raws</code>) without any student logic.
+                                </p>
+                                <form class="form-horizontal" method="POST"
+                                    action="{{ route('admin.student-basic-infos.importRawToTable') }}"
+                                    enctype="multipart/form-data">
+                                    @csrf
+                                    <div class="form-group{{ $errors->has('excel_file') ? ' has-error' : '' }}">
+                                        <label for="excel_file" class="col-md-4 control-label">Excel/CSV File</label>
+                                        <div class="col-md-7">
+                                            <input id="excel_file" type="file" class="form-control-file" name="excel_file"
+                                                required>
+                                            <small class="form-text text-muted">Supported: .xlsx, .xls, .csv, .txt</small>
+                                        </div>
+                                    </div>
+                                    <div class="form-group">
+                                        <div class="col-md-8 col-md-offset-4">
+                                            <button type="submit" class="btn btn-primary">Import To Raw Table</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="modal fade" id="rawProcessModal" tabindex="-1" role="dialog" aria-labelledby="rawProcessLabel">
+                    <div class="modal-dialog" role="document">
+                        <div class="modal-content">
+                            <div class="modal-header">
+                                <h4 class="modal-title" id="rawProcessLabel">Step-2 Process Raw To Student Tables</h4>
+                                <button type="button" class="close" data-dismiss="modal" aria-label="Close"><span
+                                        aria-hidden="true">&times;</span></button>
+                            </div>
+                            <div class="modal-body">
+                                <p class="text-muted mb-3">
+                                    This will read rows from <code>student_import_raws</code> and process them one-by-one into student/user/details tables.
+                                </p>
+                                <form class="form-horizontal" method="POST"
+                                    action="{{ route('admin.student-basic-infos.processRawToStudents') }}">
+                                    @csrf
+                                    <div class="form-group">
+                                        <label for="source_file" class="col-md-4 control-label">Source File</label>
+                                        <div class="col-md-7">
+                                            <select name="source_file" id="source_file" class="form-control" required>
+                                                <option value="">Select source file</option>
+                                                @foreach (($rawSourceFiles ?? collect()) as $sourceFile)
+                                                    <option value="{{ $sourceFile }}">{{ $sourceFile }}</option>
+                                                @endforeach
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <label for="step2_duplicate_mode" class="col-md-4 control-label">Duplicate Action</label>
+                                        <div class="col-md-7">
+                                            <select name="duplicate_mode" id="step2_duplicate_mode" class="form-control" required>
+                                                <option value="skip">Skip existing</option>
+                                                <option value="update">Update existing</option>
+                                                <option value="duplicate">Create duplicate</option>
+                                            </select>
+                                        </div>
+                                    </div>
+
+                                    <div class="form-group">
+                                        <div class="col-md-8 col-md-offset-4">
+                                            <button type="submit" class="btn btn-primary">Run Step-2 Processing</button>
+                                        </div>
+                                    </div>
+                                </form>
+                            </div>
+                        </div>
+                    </div>
+                </div>
             </div>
         </div>
     @endcan
     <div class="card">
+        @if (session('import_errors'))
+            <div class="alert alert-warning m-3">
+                <strong>Some rows failed during import:</strong>
+                <ul class="mb-0 mt-2">
+                    @foreach (session('import_errors') as $error)
+                        <li>{{ $error }}</li>
+                    @endforeach
+                </ul>
+            </div>
+        @endif
         <div class="card-header">
             {{ trans('cruds.studentBasicInfo.title_singular') }} {{ trans('global.list') }}
         </div>

@@ -28,6 +28,7 @@ class StudentDetailsInformation extends Model
         'guardian_name',
         'guardian_relation',
         'guardian_contact_number',
+        'guardian_email',
         'student_birth_no',
         'student_blood_group',
         'address',

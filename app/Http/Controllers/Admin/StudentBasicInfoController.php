@@ -3,7 +3,6 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Controllers\Traits\CsvImportTrait;
 use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyStudentBasicInfoRequest;
 use App\Http\Requests\StoreStudentBasicInfoRequest;
@@ -15,19 +14,31 @@ use App\Models\Section;
 use App\Models\Shift;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentDetailsInformation;
+use App\Models\StudentImportRaw;
 use App\Models\Subject;
 use App\Models\User;
+use App\Services\StudentImportService;
 use Carbon\Carbon;
 // use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
+use Illuminate\Support\Facades\File;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Str;
+use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
+use SpreadsheetReader;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
 
 class StudentBasicInfoController extends Controller
 {
-    use MediaUploadingTrait, CsvImportTrait;
+    use MediaUploadingTrait;
+
+    /**
+     * @var array<string, int|null>
+     */
+    protected array $academicBackgroundCache = [];
 
     public function index(Request $request)
     {
@@ -89,7 +100,89 @@ class StudentBasicInfoController extends Controller
             return $table->make(true);
         }
 
-        return view('admin.studentBasicInfos.index');
+        $rawSourceFiles = StudentImportRaw::query()
+            ->select('source_file')
+            ->distinct()
+            ->orderByDesc('source_file')
+            ->pluck('source_file');
+
+        return view('admin.studentBasicInfos.index', compact('rawSourceFiles'));
+    }
+
+    public function rawImports(Request $request)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $sourceFile = $request->input('source_file');
+
+        $rawSourceFiles = StudentImportRaw::query()
+            ->select('source_file')
+            ->distinct()
+            ->orderByDesc('source_file')
+            ->pluck('source_file');
+
+        $query = StudentImportRaw::query()
+        ->orderBy('id');
+        // ->orderByDesc('id');
+        if (!empty($sourceFile)) {
+            $query->where('source_file', $sourceFile);
+        }
+
+        $rawRows = $query->paginate(50)->withQueryString();
+        $summaryQuery = StudentImportRaw::query();
+        if (!empty($sourceFile)) {
+            $summaryQuery->where('source_file', $sourceFile);
+        }
+        $totalRows = (clone $summaryQuery)->count();
+        $processedRows = (clone $summaryQuery)->where('is_processed', true)->count();
+        $pendingRows = max(0, $totalRows - $processedRows);
+
+        return view('admin.studentBasicInfos.rawImports', compact(
+            'rawRows',
+            'rawSourceFiles',
+            'sourceFile',
+            'totalRows',
+            'processedRows',
+            'pendingRows'
+        ));
+    }
+
+    public function deleteRawImportRow(StudentImportRaw $studentImportRaw)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $sourceFile = $studentImportRaw->source_file;
+        $studentImportRaw->delete();
+
+        return redirect()->route('admin.student-basic-infos.rawImports', ['source_file' => $sourceFile])
+            ->with('message', 'Raw row deleted successfully.');
+    }
+
+    public function resetRawImports(Request $request)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'scope' => 'required|in:all,source',
+            'source_file' => 'nullable|string',
+        ]);
+
+        $query = StudentImportRaw::query();
+        $scope = $request->input('scope');
+        $sourceFile = $request->input('source_file');
+
+        if ($scope === 'source') {
+            if (empty($sourceFile)) {
+                return redirect()->route('admin.student-basic-infos.rawImports')
+                    ->with('error', 'Please select a source file for reset.');
+            }
+            $query->where('source_file', $sourceFile);
+        }
+
+        $deleted = $query->delete();
+
+        return redirect()->route('admin.student-basic-infos.rawImports')
+            ->with('message', "Raw reset complete. Deleted rows: {$deleted}.");
     }
 
     public function create()
@@ -379,5 +472,713 @@ class StudentBasicInfoController extends Controller
         $student = StudentBasicInfo::where('id', $studentId)->first();
 
         return view('admin.studentBasicInfos.id_card', compact('student'));
+    }
+
+    public function downloadDemoCsv()
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $headers = [
+            'roll',
+            'id_no',
+            'first_name',
+            'last_name',
+            'gender',
+            'contact_number',
+            'email',
+            'dob',
+            'status',
+            'joining_date',
+            'class_id',
+            'section_id',
+            'shift_id',
+            'academic_background_id',
+            'user_id',
+        ];
+
+        $sampleRow = [
+            '101',
+            'ST-2026-0001',
+            'Rahim',
+            'Khan',
+            'male',
+            '01700000000',
+            'rahim@example.com',
+            '2009-01-15',
+            '1',
+            now()->format('Y-m-d H:i:s'),
+            '1',
+            '1',
+            '1',
+            '1',
+            '',
+        ];
+
+        return response()->streamDownload(function () use ($headers, $sampleRow) {
+            $handle = fopen('php://output', 'w');
+
+            // UTF-8 BOM helps Excel open Bengali/UTF-8 text correctly.
+            fwrite($handle, "\xEF\xBB\xBF");
+            fputcsv($handle, $headers);
+            fputcsv($handle, $sampleRow);
+            fclose($handle);
+        }, 'student_basic_info_demo.csv', [
+            'Content-Type' => 'text/csv; charset=UTF-8',
+        ]);
+    }
+
+    public function importRawToTable(Request $request)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'excel_file' => 'required|mimes:csv,txt,xls,xlsx',
+        ]);
+
+        $file = $request->file('excel_file');
+        $sourceFile = $file->getClientOriginalName() ?: ('import_' . now()->format('Ymd_His'));
+        $spreadsheet = IOFactory::load($file->getRealPath());
+
+        $rowsToInsert = [];
+        foreach ($spreadsheet->getWorksheetIterator() as $sheet) {
+            $sheetName = $sheet->getTitle();
+            foreach ($sheet->getRowIterator() as $row) {
+                $rowIndex = $row->getRowIndex();
+                $cellIterator = $row->getCellIterator();
+                $cellIterator->setIterateOnlyExistingCells(false);
+
+                $values = [];
+                foreach ($cellIterator as $cell) {
+                    $values[] = trim((string) $cell->getFormattedValue());
+                }
+
+                $hasData = false;
+                foreach ($values as $value) {
+                    if ($value !== '') {
+                        $hasData = true;
+                        break;
+                    }
+                }
+
+                if (!$hasData) {
+                    continue;
+                }
+
+                if (!$this->isMeaningfulRawRow($values)) {
+                    continue;
+                }
+
+                $rowsToInsert[] = [
+                    'source_file' => $sourceFile,
+                    'sheet_name' => $sheetName,
+                    'row_index' => $rowIndex,
+                    'row_data' => json_encode($values, JSON_UNESCAPED_UNICODE),
+                    'is_processed' => false,
+                    'processed_at' => null,
+                    'processed_status' => null,
+                    'processed_note' => null,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        if (!empty($rowsToInsert)) {
+            foreach (array_chunk($rowsToInsert, 500) as $chunk) {
+                DB::table('student_import_raws')->insert($chunk);
+            }
+        }
+
+        return redirect()->route('admin.student-basic-infos.rawImports', ['source_file' => $sourceFile])
+            ->with('message', 'Raw import complete. Rows inserted: ' . count($rowsToInsert));
+    }
+
+    public function processRawToStudents(Request $request, StudentImportService $studentImportService)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'source_file' => 'required|string',
+            'duplicate_mode' => 'required|in:skip,update,duplicate',
+        ]);
+
+        $allRows = StudentImportRaw::query()
+            ->where('source_file', $request->input('source_file'))
+            ->orderBy('sheet_name')
+            ->orderBy('row_index')
+            ->get();
+
+        if ($allRows->isEmpty()) {
+            return redirect()->route('admin.student-basic-infos.index')->with('error', 'No raw rows found for selected source file.');
+        }
+
+        $rows = $allRows->map(fn(StudentImportRaw $raw) => (array) ($raw->row_data ?? []))->values()->all();
+        $headerIndex = $this->detectHeaderIndex($rows);
+        $headers = $rows[$headerIndex] ?? [];
+        $headerMap = $this->buildHeaderMap($headers);
+        if (!$this->hasRequiredImportHeaders($headerMap)) {
+            return redirect()->route('admin.student-basic-infos.index')
+                ->with('error', 'Could not detect required headers (ID, Name, Mobile) in raw table data.');
+        }
+
+        $headerRowIndex = $allRows[$headerIndex]->row_index ?? null;
+        if ($headerRowIndex === null) {
+            return redirect()->route('admin.student-basic-infos.index')
+                ->with('error', 'Header row not found in raw rows.');
+        }
+
+        $rawRows = StudentImportRaw::query()
+            ->where('source_file', $request->input('source_file'))
+            ->where('row_index', '>', $headerRowIndex)
+            ->where('is_processed', false)
+            ->orderBy('sheet_name')
+            ->orderBy('row_index')
+            ->get();
+
+        if ($rawRows->isEmpty()) {
+            return redirect()->route('admin.student-basic-infos.rawImports', ['source_file' => $request->input('source_file')])
+                ->with('message', 'No unprocessed rows found for this source file.');
+        }
+
+        $duplicateMode = $request->input('duplicate_mode', StudentImportService::MODE_SKIP);
+        $summary = [
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'duplicate_id' => 0,
+            'failed' => 0,
+            'errors' => [],
+        ];
+
+        foreach ($rawRows as $rawRow) {
+            $row = (array) ($rawRow->row_data ?? []);
+            if (!$this->hasAnyData($row)) {
+                continue;
+            }
+
+            try {
+                $normalized = $this->normalizeImportRow($row, $headerMap);
+                $normalized['academic_background_id'] = $this->resolveAcademicBackgroundId(
+                    (string) ($normalized['academic_background_name'] ?? '')
+                );
+                $result = $studentImportService->importRow($normalized, $duplicateMode);
+
+                if ($result['status'] === 'created') {
+                    $summary['created']++;
+                } elseif ($result['status'] === 'updated') {
+                    $summary['updated']++;
+                } elseif ($result['status'] === 'skipped') {
+                    $summary['skipped']++;
+                } elseif ($result['status'] === 'duplicate_id') {
+                    $summary['duplicate_id']++;
+                }
+
+                $rawRow->is_processed = true;
+                $rawRow->processed_at = now();
+                $rawRow->processed_status = $result['status'];
+                $rawRow->processed_note = $result['message'];
+                $rawRow->save();
+            } catch (\Throwable $exception) {
+                $summary['failed']++;
+                $summary['errors'][] = "Row {$rawRow->row_index}: {$exception->getMessage()}";
+
+                $rawRow->is_processed = true;
+                $rawRow->processed_at = now();
+                $rawRow->processed_status = 'failed';
+                $rawRow->processed_note = $exception->getMessage();
+                $rawRow->save();
+            }
+        }
+
+        $message = "Step-2 completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Duplicate ID: {$summary['duplicate_id']}, Failed: {$summary['failed']}.";
+        session()->flash('message', $message);
+        if (!empty($summary['errors'])) {
+            session()->flash('import_errors', array_slice($summary['errors'], 0, 25));
+        }
+
+        return redirect()->route('admin.student-basic-infos.rawImports', ['source_file' => $request->input('source_file')]);
+    }
+
+    public function parseStudentImport(Request $request)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'csv_file' => 'required|mimes:csv,txt,xls,xlsx',
+            'duplicate_mode' => 'nullable|in:skip,update,duplicate',
+        ]);
+
+        $file = $request->file('csv_file');
+        $ext = strtolower($file->getClientOriginalExtension() ?: '');
+        if (in_array($ext, ['xlsx', 'xls'], true) && !class_exists(\ZipArchive::class)) {
+            return redirect()->back()->with('error', 'Excel import requires PHP zip extension (ZipArchive). Please upload CSV file or enable php_zip.');
+        }
+
+        $path = $file->path();
+        $rows = $this->readImportRows($path, 30);
+
+        $headerIndex = $this->detectHeaderIndex($rows);
+        $headers = $rows[$headerIndex] ?? [];
+        $headerMap = $this->buildHeaderMap($headers);
+        if (!$this->hasRequiredImportHeaders($headerMap)) {
+            return redirect()->back()->with('error', 'Could not detect required headers (ID, Name, Mobile). Please check your file format.');
+        }
+
+        $lines = [];
+        for ($i = $headerIndex + 1; $i < min(count($rows), $headerIndex + 6); $i++) {
+            $lines[] = $rows[$i];
+        }
+
+        $extension = $file->getClientOriginalExtension() ?: 'csv';
+        $filename = Str::random(18) . '.' . strtolower($extension);
+        $file->storeAs('csv_import', $filename);
+
+        $duplicateMode = $request->input('duplicate_mode', StudentImportService::MODE_SKIP);
+        $redirect = url()->previous();
+
+        return view('admin.studentBasicInfos.parseImport', compact(
+            'headers',
+            'lines',
+            'filename',
+            'redirect',
+            'headerIndex',
+            'duplicateMode'
+        ));
+    }
+
+    public function processStudentImport(Request $request, StudentImportService $studentImportService)
+    {
+        abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'filename' => 'required|string',
+            'redirect' => 'required|string',
+            'headerIndex' => 'required|integer|min:0',
+            'duplicate_mode' => 'required|in:skip,update,duplicate',
+        ]);
+
+        $path = storage_path('app/csv_import/' . $request->input('filename'));
+        abort_unless(File::exists($path), Response::HTTP_NOT_FOUND, 'Import file not found.');
+        $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+        if (in_array($ext, ['xlsx', 'xls'], true) && !class_exists(\ZipArchive::class)) {
+            return redirect($request->input('redirect'))->with('error', 'Excel processing requires PHP zip extension (ZipArchive). Please use CSV.');
+        }
+
+        $rows = $this->readImportRows($path);
+
+        $headerIndex = (int) $request->input('headerIndex', 0);
+        $headers = $rows[$headerIndex] ?? [];
+        $headerMap = $this->buildHeaderMap($headers);
+        if (!$this->hasRequiredImportHeaders($headerMap)) {
+            File::delete($path);
+            return redirect($request->input('redirect'))->with('error', 'Could not detect required headers (ID, Name, Mobile). Import aborted.');
+        }
+
+        $duplicateMode = $request->input('duplicate_mode', StudentImportService::MODE_SKIP);
+
+        $summary = [
+            'created' => 0,
+            'updated' => 0,
+            'skipped' => 0,
+            'duplicate_id' => 0,
+            'failed' => 0,
+            'errors' => [],
+        ];
+
+        foreach ($rows as $index => $row) {
+            if ($index <= $headerIndex) {
+                continue;
+            }
+
+            if (!$this->hasAnyData($row)) {
+                continue;
+            }
+
+            $sourceRowNumber = $index + 1;
+
+            try {
+                $normalized = $this->normalizeImportRow($row, $headerMap);
+                $normalized['academic_background_id'] = $this->resolveAcademicBackgroundId(
+                    (string) ($normalized['academic_background_name'] ?? '')
+                );
+                $result = $studentImportService->importRow($normalized, $duplicateMode);
+
+                if ($result['status'] === 'created') {
+                    $summary['created']++;
+                } elseif ($result['status'] === 'updated') {
+                    $summary['updated']++;
+                } elseif ($result['status'] === 'skipped') {
+                    $summary['skipped']++;
+                } elseif ($result['status'] === 'duplicate_id') {
+                    $summary['duplicate_id']++;
+                    $summary['errors'][] = "Row {$sourceRowNumber}: Duplicate Admission ID";
+                }
+            } catch (\Throwable $exception) {
+                $summary['failed']++;
+                $summary['errors'][] = "Row {$sourceRowNumber}: {$exception->getMessage()}";
+            }
+        }
+
+        File::delete($path);
+
+        $message = "Import completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Duplicate ID: {$summary['duplicate_id']}, Failed: {$summary['failed']}.";
+        session()->flash('message', $message);
+
+        if (!empty($summary['errors'])) {
+            session()->flash('import_errors', array_slice($summary['errors'], 0, 25));
+        }
+
+        return redirect($request->input('redirect'));
+    }
+
+    /**
+     * @param array<int, mixed> $rows
+     */
+    protected function detectHeaderIndex(array $rows): int
+    {
+        foreach ($rows as $index => $row) {
+            if (!is_array($row)) {
+                continue;
+            }
+
+            $normalized = array_map([$this, 'normalizeHeader'], $row);
+            $hasId = in_array('id', $normalized, true);
+            $hasName = in_array('name', $normalized, true);
+            $hasMobile = in_array('mobile', $normalized, true);
+
+            if ($hasId && $hasName && $hasMobile) {
+                return $index;
+            }
+        }
+
+        return 0;
+    }
+
+    /**
+     * @param array<int, mixed> $headers
+     * @return array<string, int>
+     */
+    protected function buildHeaderMap(array $headers): array
+    {
+        $map = [];
+        foreach ($headers as $index => $header) {
+            $map[$this->normalizeHeader($header)] = $index;
+        }
+
+        return $map;
+    }
+
+    protected function normalizeHeader($header): string
+    {
+        $header = is_string($header) ? $header : (string) $header;
+        $header = strtolower(trim($header));
+        $header = str_replace(["\r\n", "\n", "\r"], ' ', $header);
+        $header = preg_replace('/[^a-z0-9]+/i', ' ', $header) ?? $header;
+        $header = preg_replace('/\s+/', ' ', $header) ?? $header;
+
+        return $header;
+    }
+
+    /**
+     * @param array<int, mixed> $row
+     * @param array<string, int> $headerMap
+     * @return array<string, mixed>
+     */
+    protected function normalizeImportRow(array $row, array $headerMap): array
+    {
+        $idNo = $this->valueByHeader($row, $headerMap, ['id']);
+        $name = $this->valueByHeader($row, $headerMap, ['name']);
+        $mobile = $this->valueByHeader($row, $headerMap, ['mobile']);
+        $guardianContact = $this->valueByHeader($row, $headerMap, ['guardian']);
+        $address = $this->valueByHeader($row, $headerMap, ['address']);
+        $bloodGroup = $this->valueByHeader($row, $headerMap, ['blood group']);
+        $groupName = $this->valueByHeader($row, $headerMap, ['group']);
+        $joiningDateRaw = $this->valueByHeader($row, $headerMap, ['joining date']);
+        $activeStatusRaw = $this->valueByHeader($row, $headerMap, ['active status']);
+        $email = $this->valueByHeader($row, $headerMap, ['email']);
+        $password = $this->valueByHeader($row, $headerMap, ['password']);
+
+        $roll = is_numeric($idNo) ? (int) $idNo : null;
+        $idNo = $idNo !== '' ? $idNo : null;
+        $firstName = $name !== '' ? $name : 'Unknown';
+
+        $activeStatus = strtolower($activeStatusRaw);
+        $status = in_array($activeStatus, ['yes', 'active', '1', 'true'], true) ? '1' : '0';
+
+        $joiningDate = null;
+        if ($joiningDateRaw !== '' && strtolower($joiningDateRaw) !== 'no date') {
+            try {
+                $joiningDate = Carbon::parse($joiningDateRaw)->format('Y-m-d H:i:s');
+            } catch (\Throwable $exception) {
+                $joiningDate = null;
+            }
+        }
+
+        return [
+            'roll' => $roll,
+            'id_no' => $idNo,
+            'first_name' => $firstName,
+            'last_name' => 'N/A',
+            'gender' => 'others',
+            'dob' => '2000-01-01',
+            'contact_number' => $mobile !== '' ? $mobile : ('MISSING-' . Str::random(8)),
+            'email' => $email !== '' ? $email : null,
+            'class_id' => null,
+            'section_id' => null,
+            'shift_id' => null,
+            'academic_background_id' => null,
+            'academic_background_name' => $groupName !== '' ? $groupName : null,
+            'joining_date' => $joiningDate,
+            'status' => $status,
+            'fathers_name' => null,
+            'mothers_name' => null,
+            'guardian_name' => null,
+            'guardian_relation' => 'Other',
+            'guardian_contact_number' => $guardianContact !== '' ? $guardianContact : ($mobile !== '' ? $mobile : 'N/A'),
+            'guardian_email' => null,
+            'address' => $address !== '' ? $address : null,
+            'student_blood_group' => $bloodGroup !== '' ? $bloodGroup : null,
+            'user_name' => null,
+            'password' => $password !== '' ? $password : null,
+        ];
+    }
+
+    /**
+     * @param array<int, mixed> $row
+     * @param array<string, int> $headerMap
+     * @param array<int, string> $candidates
+     */
+    protected function valueByHeader(array $row, array $headerMap, array $candidates): string
+    {
+        foreach ($candidates as $candidate) {
+            $key = $this->normalizeHeader($candidate);
+            if (!array_key_exists($key, $headerMap)) {
+                continue;
+            }
+
+            $value = $row[$headerMap[$key]] ?? null;
+            $value = is_string($value) ? trim($value) : (string) $value;
+
+            return trim($value);
+        }
+
+        return '';
+    }
+
+    /**
+     * @param array<int, mixed> $row
+     */
+    protected function hasAnyData(array $row): bool
+    {
+        foreach ($row as $value) {
+            if ($value !== null && trim((string) $value) !== '') {
+                return true;
+            }
+        }
+
+        return false;
+    }
+
+    /**
+     * @param array<int, string> $values
+     */
+    protected function isMeaningfulRawRow(array $values): bool
+    {
+        $nonEmptyIndexes = [];
+        foreach ($values as $index => $value) {
+            if (trim((string) $value) !== '') {
+                $nonEmptyIndexes[] = $index;
+            }
+        }
+
+        if (count($nonEmptyIndexes) === 0) {
+            return false;
+        }
+
+        // Skip rows like ["477","","",""...] which are trailing/garbage rows.
+        if (count($nonEmptyIndexes) === 1 && $nonEmptyIndexes[0] === 0) {
+            $first = trim((string) ($values[0] ?? ''));
+            if ($first !== '' && is_numeric($first)) {
+                return false;
+            }
+        }
+
+        return true;
+    }
+
+    protected function resolveAcademicBackgroundId(string $groupName): ?int
+    {
+        $name = trim($groupName);
+        if ($name === '' || $name === '-' || strcasecmp($name, 'no') === 0) {
+            return null;
+        }
+
+        $cacheKey = strtolower($name);
+        if (array_key_exists($cacheKey, $this->academicBackgroundCache)) {
+            return $this->academicBackgroundCache[$cacheKey];
+        }
+
+        $record = AcademicBackground::firstOrCreate(['name' => $name]);
+        $this->academicBackgroundCache[$cacheKey] = $record->id;
+
+        return $record->id;
+    }
+
+    /**
+     * @param array<string, int> $headerMap
+     */
+    protected function hasRequiredImportHeaders(array $headerMap): bool
+    {
+        return array_key_exists('id', $headerMap)
+            && array_key_exists('name', $headerMap)
+            && array_key_exists('mobile', $headerMap);
+    }
+
+    /**
+     * @return array<int, array<int, string>>
+     */
+    protected function readImportRows(string $path, ?int $limit = null): array
+    {
+        $extension = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
+
+        if ($extension === 'xlsx' && class_exists(\ZipArchive::class)) {
+            return $this->readXlsxRows($path, $limit);
+        }
+
+        return $this->readRowsWithSpreadsheetReader($path, $limit);
+    }
+
+    /**
+     * @return array<int, array<int, string>>
+     */
+    protected function readRowsWithSpreadsheetReader(string $path, ?int $limit = null): array
+    {
+        // On some PHP versions SpreadsheetReader_XLSX emits a warning:
+        // "continue targeting switch is equivalent to break".
+        // Ignore only that known warning so import can proceed.
+        $previousHandler = set_error_handler(function ($severity, $message, $file) {
+            $isKnownContinueWarning = str_contains((string) $message, '"continue" targeting switch is equivalent to "break"')
+                && str_contains((string) $file, 'SpreadsheetReader_XLSX.php');
+
+            if ($isKnownContinueWarning) {
+                return true;
+            }
+
+            return false;
+        });
+
+        try {
+            $reader = new SpreadsheetReader($path);
+        } finally {
+            restore_error_handler();
+        }
+
+        $rows = [];
+        foreach ($reader as $row) {
+            $rows[] = array_map(fn($value) => trim((string) $value), is_array($row) ? $row : []);
+            if ($limit !== null && count($rows) >= $limit) {
+                break;
+            }
+        }
+
+        return $rows;
+    }
+
+    /**
+     * Lightweight XLSX reader to avoid SpreadsheetReader_XLSX PHP warning.
+     *
+     * @return array<int, array<int, string>>
+     */
+    protected function readXlsxRows(string $path, ?int $limit = null): array
+    {
+        $zip = new \ZipArchive();
+        if ($zip->open($path) !== true) {
+            return [];
+        }
+
+        $sharedStrings = [];
+        $sharedXml = $zip->getFromName('xl/sharedStrings.xml');
+        if ($sharedXml !== false) {
+            $sharedSxe = @simplexml_load_string($sharedXml);
+            if ($sharedSxe) {
+                foreach ($sharedSxe->xpath('//*[local-name()="si"]') ?: [] as $si) {
+                    $text = '';
+                    foreach ($si->xpath('.//*[local-name()="t"]') ?: [] as $t) {
+                        $text .= (string) $t;
+                    }
+                    $sharedStrings[] = $text;
+                }
+            }
+        }
+
+        $sheetXml = $zip->getFromName('xl/worksheets/sheet1.xml');
+        $zip->close();
+        if ($sheetXml === false) {
+            return [];
+        }
+
+        $sheet = @simplexml_load_string($sheetXml);
+        if (!$sheet) {
+            return [];
+        }
+
+        $rows = [];
+        foreach ($sheet->xpath('//*[local-name()="sheetData"]/*[local-name()="row"]') ?: [] as $rowNode) {
+            $row = [];
+            foreach ($rowNode->xpath('./*[local-name()="c"]') ?: [] as $cell) {
+                $ref = (string) ($cell['r'] ?? '');
+                $cellType = (string) ($cell['t'] ?? '');
+                $value = '';
+                $valueNode = $cell->xpath('./*[local-name()="v"]');
+                $raw = isset($valueNode[0]) ? (string) $valueNode[0] : '';
+
+                if ($cellType === 's') {
+                    $index = (int) $raw;
+                    $value = $sharedStrings[$index] ?? '';
+                } elseif ($cellType === 'inlineStr') {
+                    $inlineTextNodes = $cell->xpath('./*[local-name()="is"]//*[local-name()="t"]');
+                    if (!empty($inlineTextNodes)) {
+                        foreach ($inlineTextNodes as $inlineNode) {
+                            $value .= (string) $inlineNode;
+                        }
+                    }
+                } else {
+                    $value = $raw;
+                }
+
+                $col = preg_replace('/\d+/', '', $ref) ?: '';
+                $colIndex = $col !== '' ? $this->columnLettersToIndex($col) : count($row);
+                $row[$colIndex] = trim($value);
+            }
+
+            if (!empty($row)) {
+                ksort($row);
+                $max = max(array_keys($row));
+                $normalized = [];
+                for ($i = 0; $i <= $max; $i++) {
+                    $normalized[] = $row[$i] ?? '';
+                }
+                $rows[] = $normalized;
+            } else {
+                $rows[] = [];
+            }
+
+            if ($limit !== null && count($rows) >= $limit) {
+                break;
+            }
+        }
+
+        return $rows;
+    }
+
+    protected function columnLettersToIndex(string $letters): int
+    {
+        $letters = strtoupper($letters);
+        $index = 0;
+        for ($i = 0; $i < strlen($letters); $i++) {
+            $index = $index * 26 + (ord($letters[$i]) - ord('A') + 1);
+        }
+
+        return max(0, $index - 1);
     }
 }
