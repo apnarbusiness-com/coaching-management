@@ -29,7 +29,7 @@
             <!-- Welcome Section -->
             <div>
                 <h1 class="text-3xl font-bold tracking-tight text-slate-900 dark:text-slate-50">
-                    Welcome back, {{ auth()->user()->student->first_name ?? 'Student' }}
+                    Welcome back, <span class="text-primary"> {{ auth()->user()->student->first_name ?? 'Student' }}</span>
                     👋</h1>
                 <p class="text-slate-500 mt-1">Here is a quick look at your academic progress and schedule.</p>
             </div>
@@ -177,7 +177,8 @@
                     <div class="bg-slate-900 text-white rounded-xl p-6 relative overflow-hidden">
                         <div class="relative z-10">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Dues</p>
-                            <h3 class="text-3xl font-bold">$1,240.50</h3>
+                            {{-- <h3 class="text-3xl font-bold">$1,240.50</h3> --}}
+                            <h3 class="text-3xl font-bold">$0.00</h3>
                             <p class="text-slate-400 text-xs mt-4">Next payment due: Oct 15, 2023</p>
                             <button
                                 class="mt-6 w-full py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">Pay
