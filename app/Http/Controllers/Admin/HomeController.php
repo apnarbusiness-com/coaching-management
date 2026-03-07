@@ -9,7 +9,8 @@ use Illuminate\Http\Request;
 
 class HomeController
 {
-    public function index()
+
+    public function loadAdminDashboard()
     {
         $totalEarnings = Earning::sum('amount');
         $totalExpenses = Expense::sum('amount');
@@ -115,9 +116,28 @@ class HomeController
 
         // return $last6MonthsEarnings;
 
-
         return view('home', compact('transactionData', 'lastSixMonthsData'));
     }
+
+    public function loadStudentDashboard()
+    {
+        return view('student.home');
+    }
+
+    public function index()
+    {
+        $isStudent = auth()->check()
+            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['student'])->exists();
+
+        // $homeView = $isStudent ? 'student.home' : 'home';
+        if ($isStudent) {
+            return $this->loadStudentDashboard();
+        } else {
+            return $this->loadAdminDashboard();
+        }
+    }
+
+
 
     public function getMonthLyRevenueBreakdown(Request $request, $months = 6)
     {
