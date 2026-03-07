@@ -125,12 +125,12 @@
 
                             {{-- last_name --}}
                             <div class="col-span-1">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required"
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
                                     for="last_name">{{ trans('cruds.studentBasicInfo.fields.last_name') }}</label>
                                 <input
                                     class=" {{ $errors->has('last_name') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
                                     id="last_name" name="last_name" placeholder="e.g. Doe" type="text"
-                                    value="{{ old('last_name', $studentBasicInfo->last_name) }}" required />
+                                    value="{{ old('last_name', $studentBasicInfo->last_name) }}" />
                                 @if ($errors->has('last_name'))
                                     <div class="invalid-feedback">{{ $errors->first('last_name') }}</div>
                                 @endif
@@ -348,7 +348,7 @@
                         </div>
 
                         {{-- subjects --}}
-                        <div class="col-span-1 md:col-span-3">
+                        {{-- <div class="col-span-1 md:col-span-3">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="subjects">
                                 {{ trans('cruds.studentBasicInfo.fields.subject') }}
                             </label>
@@ -363,7 +363,7 @@
                                     @endforeach
                                 </select>
                             </div>
-                        </div>
+                        </div> --}}
 
                         {{-- batches --}}
                         <div class="col-span-1 md:col-span-3">
@@ -385,11 +385,7 @@
                     </div>
                 </div>
 
-
-
-
-
-
+                
 
                 <!-- Guardian Information -->
                 <div class="p-6 md:p-8">

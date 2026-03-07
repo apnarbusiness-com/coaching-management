@@ -121,12 +121,12 @@
 
                             {{-- last_name --}}
                             <div class="col-span-1">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required"
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
                                     for="last_name">{{ trans('cruds.studentBasicInfo.fields.last_name') }}</label>
                                 <input
                                     class=" {{ $errors->has('last_name') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
                                     id="last_name" name="last_name" placeholder="e.g. Doe" type="text"
-                                    value="{{ old('last_name', '') }}" required />
+                                    value="{{ old('last_name', '') }}" />
                                 @if ($errors->has('last_name'))
                                     <div class="invalid-feedback">
                                         {{ $errors->first('last_name') }}
@@ -178,8 +178,8 @@
                                     <input
                                         class=" {{ $errors->has('password') ? 'is-invalid' : '' }} block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3 pr-12"
                                         id="password" name="password"
-                                        placeholder="8 characters minimum and uppercase + lowercase letter" type="password"
-                                        value="{{ old('password', '') }}" />
+                                        placeholder="8 characters minimum and uppercase + lowercase letter"
+                                        type="password" value="{{ old('password', '') }}" />
                                     <button type="button"
                                         class="password-toggle-btn absolute inset-y-0 right-0 px-3 flex items-center text-slate-500 hover:text-primary focus:outline-none"
                                         data-target="password" aria-label="Show password" aria-pressed="false">
@@ -191,7 +191,8 @@
                                         {{ $errors->first('password') }}
                                     </div>
                                 @endif
-                                <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.password_helper') }}</span>
+                                <span
+                                    class="help-block">{{ trans('cruds.studentBasicInfo.fields.password_helper') }}</span>
                             </div>
 
 
@@ -202,7 +203,8 @@
                                     for="dob">{{ trans('cruds.studentBasicInfo.fields.dob') }}</label>
                                 <input
                                     class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
-                                    id="dob" name="dob" type="date" value="{{ old('dob', '') }}" required />
+                                    id="dob" name="dob" type="date" value="{{ old('dob', '') }}"
+                                    required />
                                 @if ($errors->has('dob'))
                                     <div class="invalid-feedback">
                                         {{ $errors->first('dob') }}
@@ -221,7 +223,8 @@
                                     id="gender" name="gender" required>
                                     <option value="{{ null }}">Select Gender</option>
                                     @foreach (App\Models\StudentBasicInfo::GENDER_RADIO as $key => $label)
-                                        <option value="{{ $key }}" {{ old('gender') == $key ? 'selected' : '' }}>{{ $label }}
+                                        <option value="{{ $key }}"
+                                            {{ old('gender') == $key ? 'selected' : '' }}>{{ $label }}
                                         </option>
                                     @endforeach
                                     {{-- <option>Male</option>
@@ -272,7 +275,8 @@
 
                             {{-- religion --}}
                             <div class="col-span-1">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="religion">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    for="religion">
                                     Religion
                                 </label>
                                 <input
@@ -385,7 +389,8 @@
                                 class="{{ $errors->has('academic_background_id') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
                                 id="academic_background_id" name="academic_background_id">
                                 @foreach ($academicBackgrounds as $id => $entry)
-                                    <option value="{{ $id }}" {{ old('academic_background_id') == $id ? 'selected' : '' }}>
+                                    <option value="{{ $id }}"
+                                        {{ old('academic_background_id') == $id ? 'selected' : '' }}>
                                         {{ $entry }}
                                     </option>
                                 @endforeach
@@ -395,27 +400,9 @@
                                     {{ $errors->first('academic_background_id') }}
                                 </div>
                             @endif
-                            <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.academic_background_helper') }}</span>
+                            <span
+                                class="help-block">{{ trans('cruds.studentBasicInfo.fields.academic_background_helper') }}</span>
                         </div>
-
-                        {{-- batches --}}
-                        <div class="col-span-1 md:col-span-3">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="batches">
-                                Batches
-                            </label>
-                            <div class="mt-1">
-                                <select
-                                    class="select2 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
-                                    name="batches[]" id="batches" multiple>
-                                    @foreach ($batches as $id => $batch)
-                                        <option value="{{ $id }}" {{ in_array($id, old('batches', [])) ? 'selected' : '' }}>
-                                            {{ $batch }}
-                                        </option>
-                                    @endforeach
-                                </select>
-                            </div>
-                        </div>
-
 
                         {{-- roll --}}
                         <div class="col-span-1">
@@ -423,7 +410,8 @@
                                 for="roll">{{ trans('cruds.studentBasicInfo.fields.roll') }}</label>
                             <input
                                 class=" {{ $errors->has('roll') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
-                                id="roll" name="roll" placeholder="e.g. 15" type="number" value="{{ old('roll', '') }}" />
+                                id="roll" name="roll" placeholder="e.g. 15" type="number"
+                                value="{{ old('roll', '') }}" />
                             @if ($errors->has('roll'))
                                 <div class="invalid-feedback">
                                     {{ $errors->first('roll') }}
@@ -438,16 +426,39 @@
                                 for="joining_date">{{ trans('cruds.studentBasicInfo.fields.joining_date') }}</label>
                             <input
                                 class=" {{ $errors->has('joining_date') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
-                                id="joining_date" name="joining_date" type="date" value="{{ old('joining_date', now()->format('Y-m-d')) }}"
-                                required />
+                                id="joining_date" name="joining_date" type="date"
+                                value="{{ old('joining_date', now()->format('Y-m-d')) }}" required />
 
                             @if ($errors->has('joining_date'))
                                 <div class="invalid-feedback">
                                     {{ $errors->first('joining_date') }}
                                 </div>
                             @endif
-                            <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.joining_date_helper') }}</span>
+                            <span
+                                class="help-block">{{ trans('cruds.studentBasicInfo.fields.joining_date_helper') }}</span>
                         </div>
+
+                        {{-- batches --}}
+                        <div class="col-span-1 md:col-span-3">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300" for="batches">
+                                Batches
+                            </label>
+                            <div class="mt-1">
+                                <select
+                                    class="select2 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm"
+                                    name="batches[]" id="batches" multiple>
+                                    @foreach ($batches as $id => $batch)
+                                        <option value="{{ $id }}"
+                                            {{ in_array($id, old('batches', [])) ? 'selected' : '' }}>
+                                            {{ $batch }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
+
+
+
                     </div>
                 </div>
 
@@ -508,7 +519,8 @@
                                 <label class="flex items-center cursor-pointer group">
                                     <input type="radio" name="guardian_relation_type" value="Father"
                                         class="w-4 h-4 text-primary border-slate-300 focus:ring-primary dark:border-slate-600 dark:bg-slate-700"
-                                        {{ old('guardian_relation_type', 'Father') == 'Father' ? 'checked' : '' }} required>
+                                        {{ old('guardian_relation_type', 'Father') == 'Father' ? 'checked' : '' }}
+                                        required>
                                     <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">Father</span>
                                 </label>
                                 <label class="flex items-center cursor-pointer group">
@@ -518,7 +530,8 @@
                                     <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">Mother</span>
                                 </label>
                                 <label class="flex items-center cursor-pointer group">
-                                    <input type="radio" name="guardian_relation_type" value="Other" id="relation_other"
+                                    <input type="radio" name="guardian_relation_type" value="Other"
+                                        id="relation_other"
                                         class="w-4 h-4 text-primary border-slate-300 focus:ring-primary dark:border-slate-600 dark:bg-slate-700"
                                         {{ old('guardian_relation_type') == 'Other' ? 'checked' : '' }}>
                                     <span class="ml-2 text-sm font-medium text-slate-700 dark:text-slate-300">Other</span>
@@ -597,8 +610,8 @@
                             <input
                                 class=" {{ $errors->has('guardian_contact_number') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
                                 id="guardian_contact_number" name="guardian_contact_number"
-                                value="{{ old('guardian_contact_number', '') }}" placeholder="e.g. 01xxxxxxxxx" type="tel"
-                                required />
+                                value="{{ old('guardian_contact_number', '') }}" placeholder="e.g. 01xxxxxxxxx"
+                                type="tel" required />
                             @if ($errors->has('guardian_contact_number'))
                                 <div class="invalid-feedback">
                                     {{ $errors->first('guardian_contact_number') }}
@@ -615,8 +628,7 @@
                                 for="address">{{ trans('cruds.studentDetailsInformation.fields.address') }}</label>
                             <textarea
                                 class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
-                                id="address" name="address" placeholder="Enter full address..."
-                                rows="3">{{ old('address', '') }}</textarea>
+                                id="address" name="address" placeholder="Enter full address..." rows="3">{{ old('address', '') }}</textarea>
                             @if ($errors->has('address'))
                                 <div class="invalid-feedback">
                                     {{ $errors->first('address') }}
@@ -648,9 +660,9 @@
 
 @section('scripts')
     <script>
-        $(document).ready(function () {
+        $(document).ready(function() {
             // Need Login Toggle
-            $("#need_login").change(function () {
+            $("#need_login").change(function() {
                 if ($(this).is(":checked")) {
                     $("#password-field").removeClass("d-none").fadeIn();
                 } else {
@@ -659,7 +671,7 @@
             });
 
             // Password show/hide toggle
-            $('.password-toggle-btn').on('click', function () {
+            $('.password-toggle-btn').on('click', function() {
                 const targetId = $(this).data('target');
                 const input = document.getElementById(targetId);
 
@@ -675,7 +687,7 @@
             });
 
             // Guardian Relation Toggle
-            $('input[name="guardian_relation_type"]').change(function () {
+            $('input[name="guardian_relation_type"]').change(function() {
                 if ($(this).val() === 'Other') {
                     $('#other_relation_container').removeClass('hidden').fadeIn();
                     $('#guardian_relation_other').attr('required', true);
@@ -721,12 +733,12 @@
                 dropZone.classList.add('opacity-50', 'cursor-wait');
 
                 fetch('{{ route('admin.student-basic-infos.storeMedia') }}', {
-                    method: 'POST',
-                    body: formData,
-                    headers: {
-                        'X-Requested-With': 'XMLHttpRequest'
-                    }
-                })
+                        method: 'POST',
+                        body: formData,
+                        headers: {
+                            'X-Requested-With': 'XMLHttpRequest'
+                        }
+                    })
                     .then(response => {
                         if (!response.ok) throw new Error('Upload failed');
                         return response.json();
@@ -831,11 +843,11 @@
                 width: 4096,
                 height: 4096
             },
-            success: function (file, response) {
+            success: function(file, response) {
                 $('form').append('<input type="hidden" name="payment_proof[]" value="' + response.name + '">')
                 uploadedPaymentProofMap[file.name] = response.name
             },
-            removedfile: function (file) {
+            removedfile: function(file) {
                 console.log(file)
                 file.previewElement.remove()
                 var name = ''
@@ -846,7 +858,7 @@
                 }
                 $('form').find('input[name="payment_proof[]"][value="' + name + '"]').remove()
             },
-            init: function () {
+            init: function() {
                 @if (isset($expense) && $expense->payment_proof)
                     var files = {!! json_encode($expense->payment_proof) !!}
                     for (var i in files) {
@@ -858,8 +870,8 @@
                             '">')
                     }
                 @endif
-                    },
-            error: function (file, response) {
+            },
+            error: function(file, response) {
                 if ($.type(response) === 'string') {
                     var message = response //dropzone sends it's own error messages in string
                 } else {
@@ -910,7 +922,7 @@
                 }
             },
             init: function () {
-                @if (isset($studentBasicInfo) && $studentBasicInfo -> image)
+                @if (isset($studentBasicInfo) && $studentBasicInfo->image)
                     var file = {!! json_encode($studentBasicInfo -> image)!!
             }
                                 this.options.addedfile.call(this, file)

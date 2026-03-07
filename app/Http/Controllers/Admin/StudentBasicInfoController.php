@@ -222,7 +222,7 @@ class StudentBasicInfoController extends Controller
         $studentBasicInfo->roll = $request->roll;
         $studentBasicInfo->id_no = $request->id_no;
         $studentBasicInfo->first_name = $request->first_name;
-        $studentBasicInfo->last_name = $request->last_name;
+        $studentBasicInfo->last_name = $request->filled('last_name') ? $request->last_name : null;
         $studentBasicInfo->gender = $request->gender;
         $studentBasicInfo->dob = $request->dob;
         $studentBasicInfo->contact_number = $request->contact_number;
@@ -250,7 +250,7 @@ class StudentBasicInfoController extends Controller
             // $user = null;
             // if (!isset($user)) {
             $user = User::create([
-                'name' => $request->first_name . ' ' . $request->last_name,
+                'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
                 'email' => $request->email,
                 'user_name' => $request->user_name ?? null,
                 'admission_id' => $studentBasicInfo->id_no ?? null,
@@ -322,7 +322,7 @@ class StudentBasicInfoController extends Controller
         $studentBasicInfo->update([
             'roll' => $request->roll,
             'first_name' => $request->first_name,
-            'last_name' => $request->last_name,
+            'last_name' => $request->filled('last_name') ? $request->last_name : null,
             'gender' => $request->gender,
             'dob' => $request->dob,
             'contact_number' => $request->contact_number,
@@ -344,7 +344,7 @@ class StudentBasicInfoController extends Controller
                 $user = User::where('email', $request->email)->first();
                 if (!$user) {
                     $user = User::create([
-                        'name' => $request->first_name . ' ' . $request->last_name,
+                        'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
                         'email' => $request->email,
                         'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($request->email),
                     ]);
@@ -354,7 +354,7 @@ class StudentBasicInfoController extends Controller
             } else {
                 $user = $studentBasicInfo->user;
                 $userData = [
-                    'name' => $request->first_name . ' ' . $request->last_name,
+                    'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
                     'email' => $request->email,
                 ];
                 if ($request->filled('password')) {

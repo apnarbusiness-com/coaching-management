@@ -33,8 +33,8 @@ class StoreStudentBasicInfoRequest extends FormRequest
                 'required',
             ],
             'last_name' => [
+                'nullable',
                 'string',
-                'required',
             ],
             'gender' => [
                 'required',
