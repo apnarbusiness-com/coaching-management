@@ -115,7 +115,16 @@
                                         <span class="badge badge-secondary">No</span>
                                     @endif
                                 </td>
-                                <td>{{ $row->processed_status ?? '' }}</td>
+                                <td>
+                                    @php $status = (string) ($row->processed_status ?? ''); @endphp
+                                    @if ($status !== '' && $status !== 'created')
+                                        <span class="badge badge-danger px-2 py-1">{{ $status }}</span>
+                                    @elseif ($status === 'created')
+                                        <span class="badge badge-success px-2 py-1">{{ $status }}</span>
+                                    @else
+                                        {{ $status }}
+                                    @endif
+                                </td>
                                 <td style="max-width: 220px; white-space: nowrap; overflow: hidden; text-overflow: ellipsis;">
                                     {{ $row->processed_note ?? '' }}
                                 </td>
