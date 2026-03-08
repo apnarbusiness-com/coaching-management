@@ -40,6 +40,11 @@ class StudentBasicInfoController extends Controller
      */
     protected array $academicBackgroundCache = [];
 
+    /**
+     * @var array<string, int|null>
+     */
+    protected array $academicClassCache = [];
+
     public function index(Request $request)
     {
         abort_if(Gate::denies('student_basic_info_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -599,7 +604,6 @@ class StudentBasicInfoController extends Controller
 
         $request->validate([
             'source_file' => 'required|string',
-            'duplicate_mode' => 'required|in:skip,update,duplicate',
         ]);
 
         $allRows = StudentImportRaw::query()
@@ -618,7 +622,7 @@ class StudentBasicInfoController extends Controller
         $headerMap = $this->buildHeaderMap($headers);
         if (!$this->hasRequiredImportHeaders($headerMap)) {
             return redirect()->route('admin.student-basic-infos.index')
-                ->with('error', 'Could not detect required headers (ID, Name, Mobile) in raw table data.');
+                ->with('error', 'Could not detect required headers (ID, Student Name, Contact Number) in raw table data.');
         }
 
         $headerRowIndex = $allRows[$headerIndex]->row_index ?? null;
@@ -640,12 +644,9 @@ class StudentBasicInfoController extends Controller
                 ->with('message', 'No unprocessed rows found for this source file.');
         }
 
-        $duplicateMode = $request->input('duplicate_mode', StudentImportService::MODE_SKIP);
         $summary = [
             'created' => 0,
             'updated' => 0,
-            'skipped' => 0,
-            'duplicate_id' => 0,
             'failed' => 0,
             'errors' => [],
         ];
@@ -661,16 +662,12 @@ class StudentBasicInfoController extends Controller
                 $normalized['academic_background_id'] = $this->resolveAcademicBackgroundId(
                     (string) ($normalized['academic_background_name'] ?? '')
                 );
-                $result = $studentImportService->importRow($normalized, $duplicateMode);
+                $result = $studentImportService->importRow($normalized);
 
                 if ($result['status'] === 'created') {
                     $summary['created']++;
                 } elseif ($result['status'] === 'updated') {
                     $summary['updated']++;
-                } elseif ($result['status'] === 'skipped') {
-                    $summary['skipped']++;
-                } elseif ($result['status'] === 'duplicate_id') {
-                    $summary['duplicate_id']++;
                 }
 
                 $rawRow->is_processed = true;
@@ -690,7 +687,7 @@ class StudentBasicInfoController extends Controller
             }
         }
 
-        $message = "Step-2 completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Duplicate ID: {$summary['duplicate_id']}, Failed: {$summary['failed']}.";
+        $message = "Step-2 completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Failed: {$summary['failed']}.";
         session()->flash('message', $message);
         if (!empty($summary['errors'])) {
             session()->flash('import_errors', array_slice($summary['errors'], 0, 25));
@@ -705,7 +702,6 @@ class StudentBasicInfoController extends Controller
 
         $request->validate([
             'csv_file' => 'required|mimes:csv,txt,xls,xlsx',
-            'duplicate_mode' => 'nullable|in:skip,update,duplicate',
         ]);
 
         $file = $request->file('csv_file');
@@ -721,7 +717,7 @@ class StudentBasicInfoController extends Controller
         $headers = $rows[$headerIndex] ?? [];
         $headerMap = $this->buildHeaderMap($headers);
         if (!$this->hasRequiredImportHeaders($headerMap)) {
-            return redirect()->back()->with('error', 'Could not detect required headers (ID, Name, Mobile). Please check your file format.');
+            return redirect()->back()->with('error', 'Could not detect required headers (ID, Student Name, Contact Number). Please check your file format.');
         }
 
         $lines = [];
@@ -733,7 +729,6 @@ class StudentBasicInfoController extends Controller
         $filename = Str::random(18) . '.' . strtolower($extension);
         $file->storeAs('csv_import', $filename);
 
-        $duplicateMode = $request->input('duplicate_mode', StudentImportService::MODE_SKIP);
         $redirect = url()->previous();
 
         return view('admin.studentBasicInfos.parseImport', compact(
@@ -741,8 +736,7 @@ class StudentBasicInfoController extends Controller
             'lines',
             'filename',
             'redirect',
-            'headerIndex',
-            'duplicateMode'
+            'headerIndex'
         ));
     }
 
@@ -754,7 +748,6 @@ class StudentBasicInfoController extends Controller
             'filename' => 'required|string',
             'redirect' => 'required|string',
             'headerIndex' => 'required|integer|min:0',
-            'duplicate_mode' => 'required|in:skip,update,duplicate',
         ]);
 
         $path = storage_path('app/csv_import/' . $request->input('filename'));
@@ -771,16 +764,12 @@ class StudentBasicInfoController extends Controller
         $headerMap = $this->buildHeaderMap($headers);
         if (!$this->hasRequiredImportHeaders($headerMap)) {
             File::delete($path);
-            return redirect($request->input('redirect'))->with('error', 'Could not detect required headers (ID, Name, Mobile). Import aborted.');
+            return redirect($request->input('redirect'))->with('error', 'Could not detect required headers (ID, Student Name, Contact Number). Import aborted.');
         }
-
-        $duplicateMode = $request->input('duplicate_mode', StudentImportService::MODE_SKIP);
 
         $summary = [
             'created' => 0,
             'updated' => 0,
-            'skipped' => 0,
-            'duplicate_id' => 0,
             'failed' => 0,
             'errors' => [],
         ];
@@ -801,17 +790,12 @@ class StudentBasicInfoController extends Controller
                 $normalized['academic_background_id'] = $this->resolveAcademicBackgroundId(
                     (string) ($normalized['academic_background_name'] ?? '')
                 );
-                $result = $studentImportService->importRow($normalized, $duplicateMode);
+                $result = $studentImportService->importRow($normalized);
 
                 if ($result['status'] === 'created') {
                     $summary['created']++;
                 } elseif ($result['status'] === 'updated') {
                     $summary['updated']++;
-                } elseif ($result['status'] === 'skipped') {
-                    $summary['skipped']++;
-                } elseif ($result['status'] === 'duplicate_id') {
-                    $summary['duplicate_id']++;
-                    $summary['errors'][] = "Row {$sourceRowNumber}: Duplicate Admission ID";
                 }
             } catch (\Throwable $exception) {
                 $summary['failed']++;
@@ -821,7 +805,7 @@ class StudentBasicInfoController extends Controller
 
         File::delete($path);
 
-        $message = "Import completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Skipped: {$summary['skipped']}, Duplicate ID: {$summary['duplicate_id']}, Failed: {$summary['failed']}.";
+        $message = "Import completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Failed: {$summary['failed']}.";
         session()->flash('message', $message);
 
         if (!empty($summary['errors'])) {
@@ -841,10 +825,10 @@ class StudentBasicInfoController extends Controller
                 continue;
             }
 
-            $normalized = array_map([$this, 'normalizeHeader'], $row);
-            $hasId = in_array('id', $normalized, true);
-            $hasName = in_array('name', $normalized, true);
-            $hasMobile = in_array('mobile', $normalized, true);
+            $headerMap = $this->buildHeaderMap($row);
+            $hasId = array_key_exists('id', $headerMap);
+            $hasName = array_key_exists('student name', $headerMap) || array_key_exists('name', $headerMap);
+            $hasMobile = array_key_exists('contact number', $headerMap) || array_key_exists('mobile', $headerMap);
 
             if ($hasId && $hasName && $hasMobile) {
                 return $index;
@@ -887,53 +871,69 @@ class StudentBasicInfoController extends Controller
     protected function normalizeImportRow(array $row, array $headerMap): array
     {
         $idNo = $this->valueByHeader($row, $headerMap, ['id']);
-        $name = $this->valueByHeader($row, $headerMap, ['name']);
-        $mobile = $this->valueByHeader($row, $headerMap, ['mobile']);
-        $guardianContact = $this->valueByHeader($row, $headerMap, ['guardian']);
-        $address = $this->valueByHeader($row, $headerMap, ['address']);
+        $classRollRaw = $this->valueByHeader($row, $headerMap, ['class roll', 'roll']);
+        $name = $this->valueByHeader($row, $headerMap, ['student name', 'name']);
+        $mobile = $this->valueByHeader($row, $headerMap, ['contact number', 'mobile']);
+        $guardianContactRaw = $this->valueByHeader($row, $headerMap, ['guardian contact', 'guardian']);
+        $fathersName = $this->valueByHeader($row, $headerMap, ["father s name", "father name"]);
+        $mothersName = $this->valueByHeader($row, $headerMap, ["mother s name", "mother name"]);
+        $dobRaw = $this->valueByHeader($row, $headerMap, ['dob', 'date of birth']);
+        $genderRaw = $this->valueByHeader($row, $headerMap, ['gender']);
+        $address = $this->valueByHeader($row, $headerMap, [
+            'address',
+            'student address',
+            'present address',
+            'current address',
+            'permanent address',
+        ]);
         $bloodGroup = $this->valueByHeader($row, $headerMap, ['blood group']);
-        $groupName = $this->valueByHeader($row, $headerMap, ['group']);
-        $joiningDateRaw = $this->valueByHeader($row, $headerMap, ['joining date']);
+        $className = $this->valueByHeader($row, $headerMap, ['class']);
+        $groupName = $this->valueByHeader($row, $headerMap, ['academic background', 'group']);
+        $joiningDateRaw = $this->valueByHeader($row, $headerMap, ['admission date', 'joining date']);
         $activeStatusRaw = $this->valueByHeader($row, $headerMap, ['active status']);
         $email = $this->valueByHeader($row, $headerMap, ['email']);
         $password = $this->valueByHeader($row, $headerMap, ['password']);
 
-        $roll = is_numeric($idNo) ? (int) $idNo : null;
+        $roll = null;
+        if ($classRollRaw !== '' && is_numeric($classRollRaw)) {
+            $roll = (int) $classRollRaw;
+        } elseif (is_numeric($idNo)) {
+            $roll = (int) $idNo;
+        }
         $idNo = $idNo !== '' ? $idNo : null;
         $firstName = $name !== '' ? $name : 'Unknown';
+        $mobile = $this->normalizePhone($mobile);
+        [$guardianContactParsed, $guardianRelationParsed] = $this->parseGuardianContactAndRelation($guardianContactRaw);
+        $guardianContact = $this->normalizePhone($guardianContactParsed);
 
         $activeStatus = strtolower($activeStatusRaw);
         $status = in_array($activeStatus, ['yes', 'active', '1', 'true'], true) ? '1' : '0';
 
-        $joiningDate = null;
-        if ($joiningDateRaw !== '' && strtolower($joiningDateRaw) !== 'no date') {
-            try {
-                $joiningDate = Carbon::parse($joiningDateRaw)->format('Y-m-d H:i:s');
-            } catch (\Throwable $exception) {
-                $joiningDate = null;
-            }
-        }
+        $dob = $this->normalizeDateValue($dobRaw, 'Y-m-d') ?? '2000-01-01';
+        $gender = $this->normalizeGender($genderRaw);
+
+        $joiningDate = $this->normalizeDateValue($joiningDateRaw, 'Y-m-d H:i:s');
 
         return [
             'roll' => $roll,
             'id_no' => $idNo,
             'first_name' => $firstName,
-            'last_name' => 'N/A',
-            'gender' => 'others',
-            'dob' => '2000-01-01',
+            'last_name' => null,
+            'gender' => $gender,
+            'dob' => $dob,
             'contact_number' => $mobile !== '' ? $mobile : ('MISSING-' . Str::random(8)),
             'email' => $email !== '' ? $email : null,
-            'class_id' => null,
+            'class_id' => $this->resolveClassId($className),
             'section_id' => null,
             'shift_id' => null,
             'academic_background_id' => null,
             'academic_background_name' => $groupName !== '' ? $groupName : null,
             'joining_date' => $joiningDate,
             'status' => $status,
-            'fathers_name' => null,
-            'mothers_name' => null,
+            'fathers_name' => $fathersName !== '' ? $fathersName : null,
+            'mothers_name' => $mothersName !== '' ? $mothersName : null,
             'guardian_name' => null,
-            'guardian_relation' => 'Other',
+            'guardian_relation' => $guardianRelationParsed ?? 'Other',
             'guardian_contact_number' => $guardianContact !== '' ? $guardianContact : ($mobile !== '' ? $mobile : 'N/A'),
             'guardian_email' => null,
             'address' => $address !== '' ? $address : null,
@@ -1024,14 +1024,117 @@ class StudentBasicInfoController extends Controller
         return $record->id;
     }
 
+    protected function resolveClassId(string $className): ?int
+    {
+        $name = trim($className);
+        if ($name === '' || $name === '-' || strcasecmp($name, 'no') === 0) {
+            return null;
+        }
+
+        $cacheKey = strtolower($name);
+        if (array_key_exists($cacheKey, $this->academicClassCache)) {
+            return $this->academicClassCache[$cacheKey];
+        }
+
+        $record = AcademicClass::firstOrCreate(['class_name' => $name]);
+        $this->academicClassCache[$cacheKey] = $record->id;
+
+        return $record->id;
+    }
+
     /**
      * @param array<string, int> $headerMap
      */
     protected function hasRequiredImportHeaders(array $headerMap): bool
     {
         return array_key_exists('id', $headerMap)
-            && array_key_exists('name', $headerMap)
-            && array_key_exists('mobile', $headerMap);
+            && (array_key_exists('student name', $headerMap) || array_key_exists('name', $headerMap))
+            && (array_key_exists('contact number', $headerMap) || array_key_exists('mobile', $headerMap));
+    }
+
+    protected function normalizeGender(string $value): string
+    {
+        $v = strtolower(trim($value));
+        if (in_array($v, ['male', 'm'], true)) {
+            return 'male';
+        }
+        if (in_array($v, ['female', 'f'], true)) {
+            return 'female';
+        }
+
+        return 'others';
+    }
+
+    protected function normalizePhone(string $value): string
+    {
+        $value = trim($value);
+        if ($value === '') {
+            return '';
+        }
+
+        $digits = preg_replace('/\D+/', '', $value) ?? '';
+        if (strlen($digits) === 10) {
+            return '0' . $digits;
+        }
+        if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
+            return $digits;
+        }
+
+        return $digits !== '' ? $digits : $value;
+    }
+
+    protected function normalizeDateValue(string $raw, string $format): ?string
+    {
+        $raw = trim($raw);
+        if ($raw === '' || strtolower($raw) === 'no date') {
+            return null;
+        }
+
+        // Excel serial date handling.
+        if (is_numeric($raw)) {
+            try {
+                $base = Carbon::create(1899, 12, 30, 0, 0, 0);
+                $date = $base->copy()->addDays((int) floor((float) $raw));
+                return $date->format($format);
+            } catch (\Throwable $e) {
+                // Fallback to normal parser below.
+            }
+        }
+
+        try {
+            return Carbon::parse($raw)->format($format);
+        } catch (\Throwable $e) {
+            return null;
+        }
+    }
+
+    /**
+     * @return array{0:string,1:string|null}
+     */
+    protected function parseGuardianContactAndRelation(string $raw): array
+    {
+        $value = trim($raw);
+        if ($value === '') {
+            return ['', null];
+        }
+
+        $relation = null;
+        if (preg_match('/([A-Za-z])\s*$/', $value, $matches) === 1) {
+            $code = strtolower($matches[1]);
+            $relationMap = [
+                'f' => 'Father',
+                'm' => 'Mother',
+                'b' => 'Brother',
+                's' => 'Sister',
+            ];
+
+            if (array_key_exists($code, $relationMap)) {
+                $relation = $relationMap[$code];
+                $value = trim(substr($value, 0, -strlen($matches[0])));
+            }
+        }
+
+        return [$value, $relation];
     }
 
     /**

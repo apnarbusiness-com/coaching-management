@@ -27,21 +27,13 @@
             <form id="step2-process-form" method="POST" action="{{ route('admin.student-basic-infos.processRawToStudents') }}" class="mb-3">
                 @csrf
                 <div class="form-row align-items-end">
-                    <div class="col-md-5">
+                    <div class="col-md-9">
                         <label for="process_source_file">Step-2 Source File</label>
                         <select name="source_file" id="process_source_file" class="form-control" required>
                             <option value="">Select source file</option>
                             @foreach ($rawSourceFiles as $file)
                                 <option value="{{ $file }}" {{ $sourceFile === $file ? 'selected' : '' }}>{{ $file }}</option>
                             @endforeach
-                        </select>
-                    </div>
-                    <div class="col-md-4">
-                        <label for="duplicate_mode">Duplicate Action</label>
-                        <select name="duplicate_mode" id="duplicate_mode" class="form-control" required>
-                            <option value="skip">Skip existing</option>
-                            <option value="update">Update existing</option>
-                            <option value="duplicate">Create duplicate</option>
                         </select>
                     </div>
                     <div class="col-md-3">

@@ -48,17 +48,6 @@
                                     </div>
 
                                     <div class="form-group">
-                                        <label for="duplicate_mode" class="col-md-4 control-label">Duplicate Action</label>
-                                        <div class="col-md-7">
-                                            <select name="duplicate_mode" id="duplicate_mode" class="form-control" required>
-                                                <option value="skip">Skip existing</option>
-                                                <option value="update">Update existing</option>
-                                                <option value="duplicate">Create duplicate</option>
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
                                         <div class="col-md-8 col-md-offset-4">
                                             <button type="submit" class="btn btn-primary">
                                                 Parse Import File
@@ -129,17 +118,6 @@
                                                 @foreach (($rawSourceFiles ?? collect()) as $sourceFile)
                                                     <option value="{{ $sourceFile }}">{{ $sourceFile }}</option>
                                                 @endforeach
-                                            </select>
-                                        </div>
-                                    </div>
-
-                                    <div class="form-group">
-                                        <label for="step2_duplicate_mode" class="col-md-4 control-label">Duplicate Action</label>
-                                        <div class="col-md-7">
-                                            <select name="duplicate_mode" id="step2_duplicate_mode" class="form-control" required>
-                                                <option value="skip">Skip existing</option>
-                                                <option value="update">Update existing</option>
-                                                <option value="duplicate">Create duplicate</option>
                                             </select>
                                         </div>
                                     </div>

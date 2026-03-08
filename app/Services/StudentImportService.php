@@ -10,43 +10,17 @@ use Illuminate\Support\Facades\DB;
 
 class StudentImportService
 {
-    public const MODE_SKIP = 'skip';
-    public const MODE_UPDATE = 'update';
-    public const MODE_DUPLICATE = 'duplicate';
-
     /**
      * @param array<string, mixed> $row
      * @return array{status:string, student_id:int|null, message:string|null}
      */
-    public function importRow(array $row, string $duplicateMode = self::MODE_SKIP): array
+    public function importRow(array $row): array
     {
-        $duplicateMode = in_array($duplicateMode, [self::MODE_SKIP, self::MODE_UPDATE, self::MODE_DUPLICATE], true)
-            ? $duplicateMode
-            : self::MODE_SKIP;
-
-        return DB::transaction(function () use ($row, $duplicateMode) {
+        return DB::transaction(function () use ($row) {
             $existing = $this->findExistingStudent($row);
             $isUpdate = $existing instanceof StudentBasicInfo;
 
-            if ($this->hasDuplicateAdmissionId($row, $existing)) {
-                return [
-                    'status' => 'duplicate_id',
-                    'student_id' => $existing?->id,
-                    'message' => 'Duplicate Admission ID found. Row skipped.',
-                ];
-            }
-
-            if ($isUpdate && $duplicateMode === self::MODE_SKIP) {
-                return [
-                    'status' => 'skipped',
-                    'student_id' => $existing->id,
-                    'message' => 'Duplicate student skipped.',
-                ];
-            }
-
-            $student = $isUpdate && $duplicateMode === self::MODE_UPDATE
-                ? $existing
-                : new StudentBasicInfo();
+            $student = $isUpdate ? $existing : new StudentBasicInfo();
 
             $student->roll = $row['roll'];
             $student->id_no = $row['id_no'];
@@ -67,14 +41,14 @@ class StudentImportService
             $admissionId = $this->resolveAdmissionId($row, $student->id);
             $password = $row['password'] ?: $admissionId;
 
-            $user = $this->resolveUser($student, $row, $admissionId, $password, $duplicateMode);
+            $user = $this->resolveUser($student, $row, $admissionId, $password);
             $student->user_id = $user?->id;
             $student->save();
 
             $this->syncStudentDetails($student, $row);
 
             return [
-                'status' => $isUpdate && $duplicateMode === self::MODE_UPDATE ? 'updated' : 'created',
+                'status' => $isUpdate ? 'updated' : 'created',
                 'student_id' => $student->id,
                 'message' => null,
             ];
@@ -86,22 +60,16 @@ class StudentImportService
      */
     protected function findExistingStudent(array $row): ?StudentBasicInfo
     {
-        if (!empty($row['contact_number'])) {
-            $student = StudentBasicInfo::where('contact_number', $row['contact_number'])->first();
+        $idNo = trim((string) ($row['id_no'] ?? ''));
+        if ($idNo !== '') {
+            $student = StudentBasicInfo::where('id_no', $idNo)->first();
             if ($student) {
                 return $student;
             }
-        }
-
-        if (!empty($row['id_no'])) {
-            $student = StudentBasicInfo::where('id_no', $row['id_no'])->first();
-            if ($student) {
-                return $student;
+            $user = User::where('admission_id', $idNo)->first();
+            if ($user) {
+                return StudentBasicInfo::where('user_id', $user->id)->first();
             }
-        }
-
-        if (!empty($row['email'])) {
-            return StudentBasicInfo::where('email', $row['email'])->first();
         }
 
         return null;
@@ -126,25 +94,9 @@ class StudentImportService
         StudentBasicInfo $student,
         array $row,
         string $admissionId,
-        string $password,
-        string $duplicateMode
+        string $password
     ): ?User {
         $studentRoleId = Role::whereIn('title', ['Student', 'student'])->value('id');
-
-        if ($duplicateMode === self::MODE_DUPLICATE) {
-            $user = User::create([
-                'name' => trim($row['first_name'] . ' ' . $row['last_name']),
-                'email' => $row['email'],
-                'user_name' => $row['user_name'] ?: $admissionId,
-                'admission_id' => $admissionId,
-                'password' => $password,
-            ]);
-            if ($studentRoleId) {
-                $user->roles()->sync([$studentRoleId]);
-            }
-
-            return $user;
-        }
 
         $user = null;
 
@@ -204,29 +156,4 @@ class StudentImportService
         $details->save();
     }
 
-    /**
-     * @param array<string, mixed> $row
-     */
-    protected function hasDuplicateAdmissionId(array $row, ?StudentBasicInfo $existing): bool
-    {
-        $admissionId = trim((string) ($row['id_no'] ?? ''));
-        if ($admissionId === '') {
-            return false;
-        }
-
-        $studentWithSameId = StudentBasicInfo::where('id_no', $admissionId)->first();
-        if ($studentWithSameId && (!$existing || $studentWithSameId->id !== $existing->id)) {
-            return true;
-        }
-
-        $userWithSameAdmission = User::where('admission_id', $admissionId)->first();
-        if ($userWithSameAdmission) {
-            $existingUserId = $existing?->user_id;
-            if (!$existingUserId || (int) $existingUserId !== (int) $userWithSameAdmission->id) {
-                return true;
-            }
-        }
-
-        return false;
-    }
 }

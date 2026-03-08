@@ -16,20 +16,6 @@
                         <input type="hidden" name="redirect" value="{{ $redirect }}" />
                         <input type="hidden" name="headerIndex" value="{{ $headerIndex }}" />
 
-                        <div class="form-group">
-                            <label for="duplicate_mode" class="col-md-2 control-label">Duplicate Action</label>
-                            <div class="col-md-4">
-                                <select name="duplicate_mode" id="duplicate_mode" class="form-control" required>
-                                    <option value="skip" {{ $duplicateMode === 'skip' ? 'selected' : '' }}>Skip existing
-                                    </option>
-                                    <option value="update" {{ $duplicateMode === 'update' ? 'selected' : '' }}>Update
-                                        existing</option>
-                                    <option value="duplicate" {{ $duplicateMode === 'duplicate' ? 'selected' : '' }}>
-                                        Create duplicate</option>
-                                </select>
-                            </div>
-                        </div>
-
                         <table class="table table-bordered">
                             @if (isset($headers))
                                 <tr>
@@ -58,4 +44,3 @@
         </div>
     </div>
 @endsection
-
