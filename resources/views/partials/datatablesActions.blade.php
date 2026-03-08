@@ -7,6 +7,9 @@
     <a class="btn btn-xs btn-info" href="{{ route('admin.' . $crudRoutePart . '.edit', $row->id) }}">
         {{ trans('global.edit') }}
     </a>
+    <a class="btn btn-xs btn-success" href="{{ route('admin.' . $crudRoutePart . '.manage', $row->id) }}">
+        Manage
+    </a>
 @endcan
 @can($deleteGate)
     <form action="{{ route('admin.' . $crudRoutePart . '.destroy', $row->id) }}" method="POST" onsubmit="return confirm('{{ trans('global.areYouSure') }}');" style="display: inline-block;">

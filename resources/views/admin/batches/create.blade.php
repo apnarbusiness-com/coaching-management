@@ -9,7 +9,7 @@
                 </div>
             </div>
 
-            <form method="POST" action="{{ route('admin.batches.store') }}" enctype="multipart/form-data"
+            <form method="POST" action="{{ route('admin.batches.store') }}" enctype="multipart/form-data" novalidate
                 class="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
                 @csrf
 

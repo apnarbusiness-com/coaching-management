@@ -194,4 +194,18 @@ class BatchController extends Controller
 
         return response(null, Response::HTTP_NO_CONTENT);
     }
+
+
+
+
+    // Custom method for batch management
+    public function manage(Batch $batch)
+    {
+        // return $batch;
+        // abort_if(Gate::denies('batch_management_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        // $batches = Batch::with('students')->get();
+
+        return view('admin.batches.manage', compact('batch'));
+    }
 }

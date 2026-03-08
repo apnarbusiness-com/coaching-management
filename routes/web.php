@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
 use Illuminate\Support\Facades\Auth;
@@ -59,6 +60,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('academic-classes', 'AcademicClassController');
 
     // Batch
+    Route::get('batches/{batch}/manage',[BatchController::class,'manage'])->name('batches.manage');
     Route::delete('batches/destroy', 'BatchController@massDestroy')->name('batches.massDestroy');
     Route::resource('batches', 'BatchController');
 
