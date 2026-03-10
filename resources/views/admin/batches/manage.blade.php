@@ -1,93 +1,125 @@
 @extends('layouts.admin')
 @section('content')
-    <!-- Main Container -->
     <div class="max-w-6xl mx-auto p-6 md:p-10">
-        <!-- Page Header Component -->
+        @php
+            $subjectNames = $batch->subjects->pluck('name')->filter()->unique();
+            if ($subjectNames->isEmpty() && $batch->subject) {
+                $subjectNames = collect([$batch->subject->name]);
+            }
+            $classDays = collect($batch->class_days ?? [])->map(fn ($day) => \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day)->implode(', ');
+            $capacity = $batch->capacity;
+            $capacityText = $capacity ? $studentCount . '/' . $capacity : $studentCount . '/∞';
+            $capacityPercent = $capacity ? min(100, round(($studentCount / max($capacity, 1)) * 100)) : null;
+            $className = $batch->class->class_name ?? 'N/A';
+            $subjectLabel = $subjectNames->implode(', ') ?: 'N/A';
+            $timeLabel = $batch->class_time ? \Carbon\Carbon::parse($batch->class_time)->format('h:i A') : 'N/A';
+            $totalIncome = $studentCount * (float) $batch->fee_amount;
+            $totalExpense = (float) $batch->teachers->sum(function ($teacher) {
+                return (float) ($teacher->pivot->salary_amount ?? 0);
+            });
+        @endphp
+
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div class="flex flex-col gap-1">
-                <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">Batch Details: Advanced
-                    Physics 2024</h1>
-                <div class="flex items-center gap-2 text-slate-600 dark:text-slate-400">
-                    <span class="material-symbols-outlined text-sm">calendar_today</span>
-                    <p class="text-base font-normal">Grade 12 • Evening Session • Mon, Wed, Fri</p>
+                <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                    Batch Details: {{ $batch->batch_name }}
+                </h1>
+                <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
+                        <span class="material-symbols-outlined text-[16px]">school</span>
+                        <span>{{ $className }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-blue-50 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">
+                        <span class="material-symbols-outlined text-[16px]">menu_book</span>
+                        <span>{{ $subjectLabel }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-emerald-50 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-300">
+                        <span class="material-symbols-outlined text-[16px]">calendar_today</span>
+                        <span>{{ $classDays ?: 'N/A' }}</span>
+                    </span>
+                    <span class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-amber-50 dark:bg-amber-900/30 text-amber-700 dark:text-amber-300">
+                        <span class="material-symbols-outlined text-[16px]">schedule</span>
+                        <span>{{ $timeLabel }}</span>
+                    </span>
                 </div>
             </div>
             <div class="flex gap-3">
-                <button
+                <a href="{{ route('admin.batches.edit', $batch->id) }}"
                     class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 font-bold text-sm transition-colors hover:bg-slate-300 dark:hover:bg-slate-700">
                     <span class="material-symbols-outlined text-lg">edit</span>
                     <span>Edit Batch</span>
-                </button>
-                <button
+                </a>
+                <a href="{{ route('admin.batches.show', $batch->id) }}"
                     class="flex items-center gap-2 px-5 py-2.5 rounded-lg bg-primary text-white font-bold text-sm shadow-lg shadow-primary/20 hover:bg-primary/90 transition-colors">
-                    <span class="material-symbols-outlined text-lg">share</span>
-                    <span>Export Data</span>
-                </button>
+                    <span class="material-symbols-outlined text-lg">visibility</span>
+                    <span>View Details</span>
+                </a>
             </div>
         </div>
-        <!-- Stats Grid -->
+
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-            <div
-                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+            <div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div class="flex items-center gap-2 text-primary">
                     <span class="material-symbols-outlined">payments</span>
-                    <p class="text-sm font-medium">Monthly Fee</p>
+                    <p class="text-sm font-medium">Fee Amount</p>
                 </div>
-                <p class="text-2xl font-bold tracking-tight">$150</p>
+                <p class="text-2xl font-bold tracking-tight">{{ number_format((float) $batch->fee_amount, 2) }}</p>
+                <p class="text-xs text-slate-500">{{ \App\Models\Batch::FEE_TYPE_SELECT[$batch->fee_type] ?? 'N/A' }}</p>
             </div>
-            <div
-                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+            <div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div class="flex items-center gap-2 text-primary">
                     <span class="material-symbols-outlined">meeting_room</span>
-                    <p class="text-sm font-medium">Classroom</p>
+                    <p class="text-sm font-medium">Class</p>
                 </div>
-                <p class="text-2xl font-bold tracking-tight">Lab 04</p>
+                <p class="text-2xl font-bold tracking-tight">{{ $batch->class->class_name ?? 'N/A' }}</p>
             </div>
-            <div
-                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+            <div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div class="flex items-center gap-2 text-primary">
                     <span class="material-symbols-outlined">schedule</span>
                     <p class="text-sm font-medium">Timing</p>
                 </div>
-                <p class="text-2xl font-bold tracking-tight">04:00 - 06:00 PM</p>
+                <p class="text-2xl font-bold tracking-tight">
+                    {{ $batch->class_time ? \Carbon\Carbon::parse($batch->class_time)->format('h:i A') : 'N/A' }}
+                </p>
             </div>
-            <div
-                class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+            <div class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div class="flex items-center gap-2 text-primary">
                     <span class="material-symbols-outlined">group</span>
-                    <p class="text-sm font-medium">Capacity</p>
+                    <p class="text-sm font-medium">Students</p>
                 </div>
-                <p class="text-2xl font-bold tracking-tight">24/30 Users</p>
+                <p class="text-2xl font-bold tracking-tight">{{ $capacityText }}</p>
+                <p class="text-xs text-slate-500">Current / Capacity</p>
+                @if ($capacityPercent !== null)
+                    <div class="mt-2 h-2 w-full rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                        <div class="h-full bg-primary" style="width: {{ $capacityPercent }}%"></div>
+                    </div>
+                @endif
             </div>
         </div>
-        <!-- Navigation Tabs -->
-        <div class="mb-8 border-b border-slate-200 dark:border-slate-800">
-            <div class="flex gap-8 overflow-x-auto scrollbar-hide">
-                <a class="flex flex-col items-center justify-center border-b-2 border-primary text-primary pb-4 px-1 whitespace-nowrap"
-                    href="#">
-                    <p class="text-sm font-bold">Overview</p>
-                </a>
-                <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-4 px-1 whitespace-nowrap hover:text-primary transition-colors"
-                    href="#">
-                    <p class="text-sm font-bold">Schedule</p>
-                </a>
-                <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-4 px-1 whitespace-nowrap hover:text-primary transition-colors"
-                    href="#">
-                    <p class="text-sm font-bold">Fee Tracking</p>
-                </a>
-                <a class="flex flex-col items-center justify-center border-b-2 border-transparent text-slate-500 dark:text-slate-400 pb-4 px-1 whitespace-nowrap hover:text-primary transition-colors"
-                    href="#">
-                    <p class="text-sm font-bold">Materials</p>
-                </a>
+
+        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
+                <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
+                    <span class="material-symbols-outlined">trending_up</span>
+                    <p class="text-sm font-semibold uppercase tracking-wider">Total Income</p>
+                </div>
+                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ number_format($totalIncome, 2) }}</p>
+                <p class="text-xs text-slate-500 mt-1">Estimated from fee amount and enrolled students</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-rose-50 via-white to-white dark:from-rose-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
+                <div class="flex items-center gap-2 text-rose-700 dark:text-rose-300">
+                    <span class="material-symbols-outlined">trending_down</span>
+                    <p class="text-sm font-semibold uppercase tracking-wider">Total Expense</p>
+                </div>
+                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ number_format($totalExpense, 2) }}</p>
+                <p class="text-xs text-slate-500 mt-1">Sum of assigned teachers salary</p>
             </div>
         </div>
-        <!-- Management Section -->
+
         <div class="space-y-6">
             <h2 class="text-xl font-bold tracking-tight">Management Overview</h2>
             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                <!-- Assigned Teachers Card -->
-                <div
-                    class="flex flex-col gap-5 p-6 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                <div class="flex flex-col gap-5 p-6 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                     <div class="flex justify-between items-start">
                         <div class="flex gap-4 items-center">
                             <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
@@ -95,119 +127,114 @@
                             </div>
                             <div>
                                 <p class="text-lg font-bold">Assigned Teachers</p>
-                                <p class="text-slate-500 dark:text-slate-400 text-sm">4 Faculty members assigned</p>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm">{{ $teacherCount }} teacher(s) assigned</p>
                             </div>
                         </div>
-                        <span
-                            class="px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold uppercase tracking-wider">Active</span>
+                        <span class="px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold uppercase tracking-wider">Active</span>
                     </div>
-                    <div class="flex -space-x-3 overflow-hidden py-2">
-                        <img class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-800"
-                            data-alt="Portrait of a male teacher"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuAYgSkIACkVn9SiU-n351RjPmUedUur90Bgiw8iXT6Dq-D6hI-UvW3XNGISDSZP5o5wLBBz_4psJt8_olbzSDvXQ-fof7-EV4qvEeBB4tb-4AdYFGA38fK3TGn3mmNoZZE8G_fniH4-diYHF6wtTToiNOHISoTkqoY7m2ik9UYZGhcWzPVNbslm-HgXG1OxKKlfWLrO0pthQG42_Ac4ViNIlv-rCpnLchA5nY_hKXuSPXt7YIfRuT62WxG77ty7XUkBnJV3LE-sbEKD" />
-                        <img class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-800"
-                            data-alt="Portrait of a female teacher"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuB8ggIQqCJm-Jwl2uqaRmKD3wD4gTNoglBw--K6jcDVfQlXPwU6sNDfgykT3gJosV1SEwEQY326N7czK2zeH8jUxlA0IebrQK4qrJx7vr99Tc_YLV9sj9aE2BYN3Q4DT1MFgPBmSOwEmF8BPk-G5rSun_oxZUsM5BO-6_ZbUpGnEkjVbhaBLJ3azSHcDr7hGYArddIPj7ZIxeZmlxf8A3lb6tR4-qkOkj1xPgRvrSMVq_WUS7kq6t7HIJX-gUdGdkf0brkc8jto-jnm" />
-                        <img class="inline-block h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-800"
-                            data-alt="Portrait of a science professor"
-                            src="https://lh3.googleusercontent.com/aida-public/AB6AXuBSUF3V20whzwEADb9Wa6TzJPVe4oJ9iACDL409OZJyn5y2uX97hnig7sADqdMr6T1GuGe2eCfE5F4WMQ_j_wIvbPosrh73qIfoWfpcMEm83OrVrGtjJhAjnV8p8pUUuc2fRqsQqRvNLsYdqvOnH-wStDO84h0Wn23x-p1k3-kr5JwbtxynfvZwD6aa1_bSyII5VZaweoL2llOAfveIDIv9sbsd3BdSCVdY-fgAGs-lhPR33AD0pGEtZi_SBB8ksObny8FFCrJSy_C7" />
-                        <div
-                            class="flex items-center justify-center h-10 w-10 rounded-full ring-2 ring-white dark:ring-slate-800 bg-slate-200 dark:bg-slate-700 text-xs font-bold">
-                            +1</div>
+                    <div class="flex flex-wrap gap-2 py-2">
+                        @forelse ($batch->teachers->take(5) as $teacher)
+                            @php
+                                $initials = collect(explode(' ', $teacher->name))
+                                    ->filter()
+                                    ->map(fn ($part) => strtoupper(substr($part, 0, 1)))
+                                    ->take(2)
+                                    ->implode('');
+                            @endphp
+                            <div class="flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold">
+                                <span class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">{{ $initials ?: 'T' }}</span>
+                                <span>{{ $teacher->name }}</span>
+                            </div>
+                        @empty
+                            <p class="text-sm text-slate-500">No teachers assigned yet.</p>
+                        @endforelse
                     </div>
                     <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
-                        <button
+                        <a href="{{ route('admin.batches.assignTeachers', $batch->id) }}"
                             class="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-primary text-white font-bold text-sm shadow-md hover:opacity-90 transition-opacity">
                             <span class="material-symbols-outlined text-lg">person_add</span>
-                            <span>Assign New Teacher</span>
-                        </button>
+                            <span>Assign Teacher</span>
+                        </a>
                     </div>
                 </div>
-                <!-- Enrolled Students Card -->
-                <div
-                    class="flex flex-col gap-5 p-6 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
-                    <div class="flex justify-between items-start">
+                <div class="flex flex-col gap-5 p-6 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
+                    <div class="flex items-start justify-between gap-4">
                         <div class="flex gap-4 items-center">
                             <div class="w-12 h-12 rounded-lg bg-primary/10 flex items-center justify-center text-primary">
                                 <span class="material-symbols-outlined text-3xl">group</span>
                             </div>
                             <div>
                                 <p class="text-lg font-bold">Enrolled Students</p>
-                                <p class="text-slate-500 dark:text-slate-400 text-sm">24 Students currently enrolled</p>
+                                <p class="text-slate-500 dark:text-slate-400 text-sm">{{ $capacityText }} students</p>
                             </div>
                         </div>
-                        <span
-                            class="px-2.5 py-1 rounded-full bg-primary/10 text-primary text-xs font-bold uppercase tracking-wider">80%
-                            Full</span>
+                        <a href="{{ route('admin.batches.assignStudents', $batch->id) }}"
+                            class="text-sm font-semibold text-primary hover:underline">Manage</a>
                     </div>
-                    <div class="flex items-center gap-3 py-2">
-                        <div class="flex-1 bg-slate-200 dark:bg-slate-700 h-2 rounded-full overflow-hidden">
-                            <div class="bg-primary h-full w-[80%]"></div>
+                    <div class="space-y-3">
+                        @if ($capacityPercent !== null)
+                            <div class="flex items-center gap-3">
+                                <div class="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                    <div class="h-full bg-primary" style="width: {{ $capacityPercent }}%"></div>
+                                </div>
+                                <span class="text-xs text-slate-500 font-semibold">{{ $capacityPercent }}%</span>
+                            </div>
+                        @endif
+                        <div class="rounded-lg border border-slate-100 dark:border-slate-700 max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
+                            @forelse ($batch->students as $student)
+                                <div class="flex items-center justify-between gap-2 px-4 py-3">
+                                    <div class="min-w-0">
+                                        <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                            {{ trim($student->first_name . ' ' . $student->last_name) }}
+                                        </p>
+                                        <p class="text-xs text-slate-500 truncate">{{ $student->class->class_name ?? 'N/A' }}</p>
+                                    </div>
+                                    <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
+                                </div>
+                            @empty
+                                <p class="text-sm text-slate-500 px-4 py-6 text-center">No students enrolled yet.</p>
+                            @endforelse
                         </div>
-                        <p class="text-sm font-bold text-slate-600 dark:text-slate-400">24/30</p>
                     </div>
                     <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
-                        <button
+                        <a href="{{ route('admin.batches.assignStudents', $batch->id) }}"
                             class="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-primary text-white font-bold text-sm shadow-md hover:opacity-90 transition-opacity">
                             <span class="material-symbols-outlined text-lg">person_add_alt</span>
-                            <span>Enroll New Student</span>
-                        </button>
+                            <span>Enroll Students</span>
+                        </a>
                     </div>
                 </div>
             </div>
         </div>
-        <!-- Quick Summary Table -->
-        <div
-            class="mt-10 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 overflow-hidden">
+
+        <div class="mt-10 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                <h3 class="font-bold">Recent Fee Activity</h3>
-                <a class="text-primary text-sm font-bold hover:underline" href="#">View All</a>
+                <h3 class="font-bold">Recently Enrolled Students</h3>
+                <a class="text-primary text-sm font-bold hover:underline" href="{{ route('admin.batches.show', $batch->id) }}">View Details</a>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm">
                     <thead>
-                        <tr
-                            class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
+                        <tr class="bg-slate-50 dark:bg-slate-900/50 text-slate-500 dark:text-slate-400 uppercase tracking-wider font-semibold">
                             <th class="px-6 py-3">Student Name</th>
-                            <th class="px-6 py-3">Date</th>
-                            <th class="px-6 py-3">Amount</th>
-                            <th class="px-6 py-3">Status</th>
+                            <th class="px-6 py-3">Student ID</th>
+                            <th class="px-6 py-3">Class</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        <tr>
-                            <td class="px-6 py-4 font-medium">Alex Morgan</td>
-                            <td class="px-6 py-4">Oct 24, 2023</td>
-                            <td class="px-6 py-4">$150.00</td>
-                            <td class="px-6 py-4">
-                                <span class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                    Paid
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-6 py-4 font-medium">Sarah Jenkins</td>
-                            <td class="px-6 py-4">Oct 22, 2023</td>
-                            <td class="px-6 py-4">$150.00</td>
-                            <td class="px-6 py-4">
-                                <span class="flex items-center gap-1.5 text-amber-500">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                    Pending
-                                </span>
-                            </td>
-                        </tr>
-                        <tr>
-                            <td class="px-6 py-4 font-medium">James Wilson</td>
-                            <td class="px-6 py-4">Oct 20, 2023</td>
-                            <td class="px-6 py-4">$150.00</td>
-                            <td class="px-6 py-4">
-                                <span class="flex items-center gap-1.5 text-green-600 dark:text-green-400">
-                                    <span class="w-1.5 h-1.5 rounded-full bg-current"></span>
-                                    Paid
-                                </span>
-                            </td>
-                        </tr>
+                        @forelse ($batch->students->take(5) as $student)
+                            <tr>
+                                <td class="px-6 py-4 font-medium">
+                                    {{ trim($student->first_name . ' ' . $student->last_name) }}
+                                </td>
+                                <td class="px-6 py-4">{{ $student->id_no ?? 'N/A' }}</td>
+                                <td class="px-6 py-4">{{ $student->class->class_name ?? 'N/A' }}</td>
+                            </tr>
+                        @empty
+                            <tr>
+                                <td class="px-6 py-6 text-center text-slate-500" colspan="3">No students enrolled yet.</td>
+                            </tr>
+                        @endforelse
                     </tbody>
                 </table>
             </div>

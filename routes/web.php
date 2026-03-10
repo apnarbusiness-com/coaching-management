@@ -60,7 +60,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('academic-classes', 'AcademicClassController');
 
     // Batch
-    Route::get('batches/{batch}/manage',[BatchController::class,'manage'])->name('batches.manage');
+    Route::get('batches/{batch}/manage', [BatchController::class, 'manage'])->name('batches.manage');
+    Route::get('batches/{batch}/assign-students', [BatchController::class, 'assignStudents'])->name('batches.assignStudents');
+    Route::post('batches/{batch}/assign-students', [BatchController::class, 'storeAssignedStudents'])->name('batches.assignStudents.store');
+    Route::get('batches/{batch}/assign-teachers', [BatchController::class, 'assignTeachers'])->name('batches.assignTeachers');
+    Route::post('batches/{batch}/assign-teachers', [BatchController::class, 'storeAssignedTeacher'])->name('batches.assignTeachers.store');
+    Route::delete('batches/{batch}/assign-teachers/{teacher}', [BatchController::class, 'removeAssignedTeacher'])->name('batches.assignTeachers.remove');
     Route::delete('batches/destroy', 'BatchController@massDestroy')->name('batches.massDestroy');
     Route::resource('batches', 'BatchController');
 

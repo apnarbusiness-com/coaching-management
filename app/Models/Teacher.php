@@ -108,4 +108,11 @@ class Teacher extends Model implements HasMedia
     {
         return $this->belongsToMany(Subject::class);
     }
+
+    public function batches()
+    {
+        return $this->belongsToMany(Batch::class)
+            ->withPivot(['salary_amount', 'role'])
+            ->withTimestamps();
+    }
 }

@@ -62,6 +62,11 @@ class StoreBatchRequest extends FormRequest
                 'required',
                 'date_format:H:i',
             ],
+            'capacity' => [
+                'nullable',
+                'integer',
+                'min:1',
+            ],
             'students.*' => [
                 'integer',
                 'exists:student_basic_infos,id',

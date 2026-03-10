@@ -114,6 +114,18 @@
                             @endif
                         </div>
 
+                        <div class="col-span-1">
+                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                for="capacity">Capacity</label>
+                            <input
+                                class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3 {{ $errors->has('capacity') ? 'border-red-500 ring-red-500' : '' }}"
+                                id="capacity" name="capacity" type="number" min="1"
+                                value="{{ old('capacity', '') }}" placeholder="Leave empty for no limit" />
+                            @if ($errors->has('capacity'))
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $errors->first('capacity') }}</p>
+                            @endif
+                        </div>
+
                         <div class="col-span-1 md:col-span-2">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required"
                                 for="class_days">{{ trans('cruds.batch.fields.class_days') }}</label>

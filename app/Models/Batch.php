@@ -48,6 +48,7 @@ class Batch extends Model
         'duration_in_months',
         'class_days',
         'class_time',
+        'capacity',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -76,5 +77,12 @@ class Batch extends Model
     public function students()
     {
         return $this->belongsToMany(StudentBasicInfo::class);
+    }
+
+    public function teachers()
+    {
+        return $this->belongsToMany(Teacher::class)
+            ->withPivot(['salary_amount', 'role'])
+            ->withTimestamps();
     }
 }

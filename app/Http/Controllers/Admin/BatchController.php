@@ -10,6 +10,7 @@ use App\Models\AcademicClass;
 use App\Models\Batch;
 use App\Models\StudentBasicInfo;
 use App\Models\Subject;
+use App\Models\Teacher;
 // use Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -201,11 +202,87 @@ class BatchController extends Controller
     // Custom method for batch management
     public function manage(Batch $batch)
     {
-        // return $batch;
-        // abort_if(Gate::denies('batch_management_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        // $batches = Batch::with('students')->get();
+        $batch->load(['subject', 'subjects', 'class', 'students', 'teachers']);
 
-        return view('admin.batches.manage', compact('batch'));
+        $teacherCount = $batch->teachers->count();
+        $studentCount = $batch->students->count();
+
+        return view('admin.batches.manage', compact('batch', 'teacherCount', 'studentCount'));
+    }
+
+    public function assignStudents(Batch $batch)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batch->load(['class', 'students']);
+
+        $students = StudentBasicInfo::with(['class', 'section', 'shift', 'studentEarnings'])
+            ->orderBy('first_name')
+            ->orderBy('last_name')
+            ->get();
+
+        $assignedStudentIds = $batch->students->pluck('id')->all();
+
+        return view('admin.batches.assign_students', compact('batch', 'students', 'assignedStudentIds'));
+    }
+
+    public function storeAssignedStudents(Request $request, Batch $batch)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'students'   => ['array'],
+            'students.*' => ['integer', 'exists:student_basic_infos,id'],
+        ]);
+
+        $batch->students()->sync($data['students'] ?? []);
+
+        return redirect()
+            ->route('admin.batches.assignStudents', $batch->id)
+            ->with('status', 'Students updated successfully.');
+    }
+
+    public function assignTeachers(Batch $batch)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batch->load(['subject', 'subjects', 'class', 'teachers']);
+
+        $teachers = Teacher::orderBy('name')->get();
+
+        return view('admin.batches.assign_teachers', compact('batch', 'teachers'));
+    }
+
+    public function storeAssignedTeacher(Request $request, Batch $batch)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'teacher_id'    => ['required', 'integer', 'exists:teachers,id'],
+            'salary_amount' => ['required', 'numeric', 'min:0'],
+            'role'          => ['nullable', 'string', 'in:primary,assistant'],
+        ]);
+
+        $batch->teachers()->syncWithoutDetaching([
+            $data['teacher_id'] => [
+                'salary_amount' => $data['salary_amount'],
+                'role'          => $data['role'] ?? null,
+            ],
+        ]);
+
+        return redirect()
+            ->route('admin.batches.assignTeachers', $batch->id)
+            ->with('status', 'Teacher assignment saved.');
+    }
+
+    public function removeAssignedTeacher(Batch $batch, Teacher $teacher)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batch->teachers()->detach($teacher->id);
+
+        return back()->with('status', 'Teacher removed from batch.');
     }
 }
