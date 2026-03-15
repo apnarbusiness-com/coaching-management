@@ -108,6 +108,31 @@
                                 @endif
                             </div>
 
+                            <!-- Student Connected -->
+                            <div class="space-y-2">
+                                <label
+                                    class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                                    for="is_student_connected">
+                                    Student Connected?
+                                </label>
+                                <div class="flex items-center gap-3">
+                                    <input type="hidden" name="is_student_connected" value="0">
+                                    <input
+                                        class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-primary focus:ring-primary"
+                                        type="checkbox" name="is_student_connected" id="is_student_connected" value="1"
+                                        {{ old('is_student_connected', $earningCategory->is_student_connected) ? 'checked' : '' }}>
+                                    <span class="text-sm text-slate-600 dark:text-slate-400">
+                                        Requires student info when recording earnings for this category.
+                                    </span>
+                                </div>
+                                @if($errors->has('is_student_connected'))
+                                    <p class="text-xs font-medium text-red-500 flex items-center gap-1">
+                                        <span class="material-symbols-outlined !text-[14px]">error</span>
+                                        {{ $errors->first('is_student_connected') }}
+                                    </p>
+                                @endif
+                            </div>
+
                             <!-- Info Box -->
                             <div
                                 class="p-4 bg-amber-50 dark:bg-amber-500/10 rounded-xl border border-amber-100 dark:border-amber-500/20">

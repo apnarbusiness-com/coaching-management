@@ -43,7 +43,9 @@
                                     class="w-full pl-4 pr-10  appearance-none bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 dark:focus:ring-[#60A5FA]/20 focus:border-[#2563EB] dark:focus:border-[#60A5FA] text-[#1F2937] dark:text-[#F9FAFB] {{ $errors->has('earning_category') ? 'border-red-500' : '' }}">
                                     <!-- <option value="">Select category...</option> -->
                                     @foreach ($earning_categories as $id => $entry)
-                                        <option value="{{ $id }}" {{ old('earning_category_id') == $id ? 'selected' : '' }}>
+                                        <option value="{{ $id }}"
+                                            data-student-connected="{{ ($earning_category_flags[$id] ?? false) ? 1 : 0 }}"
+                                            {{ old('earning_category_id') == $id ? 'selected' : '' }}>
                                             {{ $entry }}
                                         </option>
                                     @endforeach
@@ -492,11 +494,10 @@
 
             // Conditional fields based on earning category
             function toggleStudentFeeFields() {
-                const categorySelect = $('#earning_category_id');
-                const selectedText = categorySelect.find('option:selected').text().toLowerCase();
+                const selectedOption = $('#earning_category_id').find('option:selected');
+                const isStudentConnected = Number(selectedOption.data('student-connected')) === 1;
 
-                if (selectedText.includes('student') || selectedText.includes('fee') || selectedText.includes(
-                    'tuition')) {
+                if (isStudentConnected) {
                     $('.student-fee-field').slideDown(300);
                 } else {
                     $('.student-fee-field').slideUp(300);

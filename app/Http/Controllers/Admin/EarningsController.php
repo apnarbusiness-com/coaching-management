@@ -35,6 +35,7 @@ class EarningsController extends Controller
         abort_if(Gate::denies('earning_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $earning_categories = EarningCategory::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $earning_category_flags = EarningCategory::pluck('is_student_connected', 'id');
 
         // We don't load all students here anymore, it's handled via Select2 AJAX
         $students = [];
@@ -44,7 +45,7 @@ class EarningsController extends Controller
         // Generate receipt number Format: REC-YYYY-001
         $receipt_numbers = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
 
-        return view('admin.earnings.create', compact('earning_categories', 'students', 'subjects', 'receipt_numbers'));
+        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers'));
     }
 
     public function getStudents(Request $request)
@@ -101,6 +102,7 @@ class EarningsController extends Controller
         abort_if(Gate::denies('earning_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $earning_categories = EarningCategory::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $earning_category_flags = EarningCategory::pluck('is_student_connected', 'id');
 
         $students = [];
 
@@ -108,7 +110,7 @@ class EarningsController extends Controller
 
         $earning->load('earning_category', 'student', 'subject', 'created_by', 'updated_by');
 
-        return view('admin.earnings.edit', compact('earning', 'earning_categories', 'students', 'subjects'));
+        return view('admin.earnings.edit', compact('earning', 'earning_categories', 'earning_category_flags', 'students', 'subjects'));
     }
 
     public function update(UpdateEarningRequest $request, Earning $earning)

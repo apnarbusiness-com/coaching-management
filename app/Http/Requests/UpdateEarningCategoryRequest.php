@@ -25,6 +25,9 @@ class UpdateEarningCategoryRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'is_student_connected' => [
+                'boolean',
+            ],
         ];
     }
 }

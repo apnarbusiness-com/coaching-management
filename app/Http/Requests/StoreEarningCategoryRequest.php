@@ -25,6 +25,9 @@ class StoreEarningCategoryRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'is_student_connected' => [
+                'boolean',
+            ],
         ];
     }
 }
