@@ -128,6 +128,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('earnings/destroy', 'EarningsController@massDestroy')->name('earnings.massDestroy');
     Route::post('earnings/media', 'EarningsController@storeMedia')->name('earnings.storeMedia');
     Route::post('earnings/ckmedia', 'EarningsController@storeCKEditorImages')->name('earnings.storeCKEditorImages');
+    Route::post('earnings/import', 'EarningsController@importExcel')->name('earnings.import');
     Route::resource('earnings', 'EarningsController');
 });
 Route::group(['prefix' => 'profile', 'as' => 'profile.', 'namespace' => 'Auth', 'middleware' => ['auth']], function () {

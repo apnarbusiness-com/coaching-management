@@ -6,9 +6,34 @@
             <a class="btn btn-success" href="{{ route('admin.earnings.create') }}">
                 {{ trans('global.add') }} {{ trans('cruds.earning.title_singular') }}
             </a>
+            <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#earningImportModal">
+                Import Excel
+            </button>
         </div>
     </div>
 @endcan
+
+@if (session('message'))
+    <div class="alert alert-success">
+        {{ session('message') }}
+    </div>
+@endif
+@if (session('error'))
+    <div class="alert alert-danger">
+        {{ session('error') }}
+    </div>
+@endif
+@if (session('import_errors'))
+    <div class="alert alert-warning">
+        <strong>Some rows failed during import:</strong>
+        <ul class="mb-0">
+            @foreach (session('import_errors') as $error)
+                <li>{{ $error }}</li>
+            @endforeach
+        </ul>
+    </div>
+@endif
+
 <div class="card">
     <div class="card-header">
         {{ trans('cruds.earning.title_singular') }} {{ trans('global.list') }}
@@ -123,6 +148,43 @@
         </div>
     </div>
 </div>
+
+@can('earning_create')
+    <div class="modal fade" id="earningImportModal" tabindex="-1" role="dialog" aria-labelledby="earningImportModalLabel"
+        aria-hidden="true">
+        <div class="modal-dialog" role="document">
+            <form method="POST" action="{{ route('admin.earnings.import') }}" enctype="multipart/form-data">
+                @csrf
+                <div class="modal-content">
+                    <div class="modal-header">
+                        <h5 class="modal-title" id="earningImportModalLabel">Earnings Import</h5>
+                        <button type="button" class="close" data-dismiss="modal" aria-label="Close">
+                            <span aria-hidden="true">&times;</span>
+                        </button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="form-group">
+                            <label for="import_file">Excel File</label>
+                            <input type="file" class="form-control" name="import_file" id="import_file" required>
+                            <small class="form-text text-muted">
+                                Columns: Date, Details, Category, Earning, Admission ID
+                            </small>
+                        </div>
+                        <div class="form-group">
+                            <label for="default_year">Default Year (if date has no year)</label>
+                            <input type="number" class="form-control" name="default_year" id="default_year"
+                                value="{{ now()->year }}" min="1900" max="2100">
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-primary">Import</button>
+                    </div>
+                </div>
+            </form>
+        </div>
+    </div>
+@endcan
 
 
 
