@@ -57,7 +57,9 @@
                                         class="block w-full appearance-none rounded-lg border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-primary focus:bg-white focus:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white dark:placeholder-slate-400 sm:text-sm {{ $errors->has('expense_category_id') ? 'border-red-500 ring-red-500' : '' }}"
                                         id="expense_category_id" name="expense_category_id" required>
                                         @foreach ($expense_categories as $id => $entry)
-                                            <option value="{{ $id }}" {{ old('expense_category_id') == $id ? 'selected' : '' }}>
+                                            <option value="{{ $id }}"
+                                                data-teacher-connected="{{ ($expense_category_flags[$id] ?? false) ? 1 : 0 }}"
+                                                {{ old('expense_category_id') == $id ? 'selected' : '' }}>
                                                 {{ $entry }}
                                             </option>
                                         @endforeach
@@ -559,11 +561,11 @@
         $(document).ready(function () {
             // Teacher section visibility logic
             function toggleTeacherSection() {
-                const categorySelect = document.getElementById('expense_category_id');
+                const selectedOption = $('#expense_category_id').find('option:selected');
                 const teacherSection = document.getElementById('teacher-section');
-                const selectedText = categorySelect.options[categorySelect.selectedIndex].text.toLowerCase();
+                const isTeacherConnected = Number(selectedOption.data('teacher-connected')) === 1;
 
-                if (selectedText.includes('salary')) {
+                if (isTeacherConnected) {
                     teacherSection.classList.remove('hidden');
                 } else {
                     teacherSection.classList.add('hidden');

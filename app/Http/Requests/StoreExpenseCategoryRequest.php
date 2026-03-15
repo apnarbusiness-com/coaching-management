@@ -25,6 +25,9 @@ class StoreExpenseCategoryRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'is_teacher_connected' => [
+                'boolean',
+            ],
         ];
     }
 }

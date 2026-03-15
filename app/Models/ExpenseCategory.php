@@ -22,9 +22,14 @@ class ExpenseCategory extends Model
     protected $fillable = [
         'name',
         'type',
+        'is_teacher_connected',
         'created_at',
         'updated_at',
         'deleted_at',
+    ];
+
+    protected $casts = [
+        'is_teacher_connected' => 'boolean',
     ];
 
     protected function serializeDate(DateTimeInterface $date)

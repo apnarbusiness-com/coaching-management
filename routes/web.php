@@ -103,6 +103,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('expenses/destroy', 'ExpensesController@massDestroy')->name('expenses.massDestroy');
     Route::post('expenses/media', 'ExpensesController@storeMedia')->name('expenses.storeMedia');
     Route::post('expenses/ckmedia', 'ExpensesController@storeCKEditorImages')->name('expenses.storeCKEditorImages');
+    Route::get('expenses/summary', 'ExpensesController@summary')->name('expenses.summary');
+    Route::post('expenses/import', 'ExpensesController@importExcel')->name('expenses.import');
     Route::resource('expenses', 'ExpensesController');
 
     // Teacher
@@ -128,6 +130,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('earnings/destroy', 'EarningsController@massDestroy')->name('earnings.massDestroy');
     Route::post('earnings/media', 'EarningsController@storeMedia')->name('earnings.storeMedia');
     Route::post('earnings/ckmedia', 'EarningsController@storeCKEditorImages')->name('earnings.storeCKEditorImages');
+    Route::get('earnings/summary', 'EarningsController@summary')->name('earnings.summary');
     Route::post('earnings/import', 'EarningsController@importExcel')->name('earnings.import');
     Route::resource('earnings', 'EarningsController');
 });

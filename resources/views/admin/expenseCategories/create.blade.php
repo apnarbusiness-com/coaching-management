@@ -106,6 +106,31 @@
                                 @endif
                             </div>
 
+                            <!-- Teacher Connected -->
+                            <div class="space-y-2">
+                                <label
+                                    class="text-sm font-semibold text-slate-700 dark:text-slate-300 flex items-center gap-2"
+                                    for="is_teacher_connected">
+                                    Teacher Connected?
+                                </label>
+                                <div class="flex items-center gap-3">
+                                    <input type="hidden" name="is_teacher_connected" value="0">
+                                    <input
+                                        class="h-4 w-4 rounded border-slate-300 dark:border-slate-600 text-red-600 focus:ring-red-600"
+                                        type="checkbox" name="is_teacher_connected" id="is_teacher_connected" value="1"
+                                        {{ old('is_teacher_connected', 0) ? 'checked' : '' }}>
+                                    <span class="text-sm text-slate-600 dark:text-slate-400">
+                                        Requires teacher info when recording expenses for this category.
+                                    </span>
+                                </div>
+                                @if($errors->has('is_teacher_connected'))
+                                    <p class="text-xs font-medium text-red-500 flex items-center gap-1">
+                                        <span class="material-symbols-outlined !text-[14px]">error</span>
+                                        {{ $errors->first('is_teacher_connected') }}
+                                    </p>
+                                @endif
+                            </div>
+
                             <!-- Info Box -->
                             <div
                                 class="p-4 bg-orange-50 dark:bg-orange-500/10 rounded-xl border border-orange-100 dark:border-orange-500/20">

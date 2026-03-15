@@ -15,10 +15,12 @@ use App\Models\User;
 use Carbon\Carbon;
 use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\File;
 use Illuminate\Support\Str;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use Symfony\Component\HttpFoundation\Response;
+use Yajra\DataTables\Facades\DataTables;
 
 class EarningsController extends Controller
 {
@@ -34,13 +36,108 @@ class EarningsController extends Controller
      */
     protected array $studentIdCache = [];
 
-    public function index()
+    public function index(Request $request)
     {
         abort_if(Gate::denies('earning_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $earnings = Earning::with(['earning_category', 'student', 'subject', 'created_by', 'updated_by', 'media'])->get();
+        if ($request->ajax()) {
+            $query = Earning::with(['earning_category', 'student', 'subject', 'created_by', 'updated_by'])
+                ->select(sprintf('%s.*', (new Earning)->table));
 
-        return view('admin.earnings.index', compact('earnings'));
+            $categoryId = $request->input('category_id');
+            $month = $request->input('month');
+            $year = $request->input('year');
+
+            if (!empty($categoryId)) {
+                $query->where('earning_category_id', $categoryId);
+            }
+            if (!empty($month)) {
+                $query->whereMonth('earning_date', $month);
+            }
+            if (!empty($year)) {
+                $query->whereYear('earning_date', $year);
+            }
+
+            $table = DataTables::of($query);
+            $table->addColumn('placeholder', '&nbsp;');
+            $table->addColumn('actions', '&nbsp;');
+
+            $table->editColumn('actions', function ($row) {
+                $viewGate = 'earning_show';
+                $editGate = 'earning_edit';
+                $deleteGate = 'earning_delete';
+                $crudRoutePart = 'earnings';
+
+                return view('partials.datatablesActions', compact(
+                    'viewGate',
+                    'editGate',
+                    'deleteGate',
+                    'crudRoutePart',
+                    'row'
+                ));
+            });
+
+            $table->editColumn('id', fn($row) => $row->id ?? '');
+            $table->addColumn('earning_category_name', fn($row) => $row->earning_category->name ?? '');
+            $table->addColumn('student_id_no', fn($row) => $row->student->id_no ?? '');
+            $table->addColumn('subject_name', fn($row) => $row->subject->name ?? '');
+            $table->editColumn('title', fn($row) => $row->title ?? '');
+            $table->editColumn('exam_year', fn($row) => $row->exam_year ?? '');
+            $table->editColumn('amount', fn($row) => $row->amount ?? '');
+            $table->editColumn('earning_date', fn($row) => $row->earning_date ?? '');
+            $table->editColumn('paid_by', fn($row) => $row->paid_by ?? '');
+            $table->editColumn('recieved_by', fn($row) => $row->recieved_by ?? '');
+
+            $table->rawColumns(['actions', 'placeholder']);
+            $table->setRowAttr([
+                'data-entry-id' => fn($row) => $row->id,
+            ]);
+
+            return $table->make(true);
+        }
+
+        $earning_categories = EarningCategory::pluck('name', 'id');
+
+        return view('admin.earnings.index', compact('earning_categories'));
+    }
+
+    public function summary(Request $request)
+    {
+        abort_if(Gate::denies('earning_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $categoryId = $request->input('category_id');
+        $month = $request->input('month');
+        $year = $request->input('year');
+        $summaryYear = !empty($year) ? (int) $year : (int) date('Y');
+
+        $query = Earning::query()
+            ->whereNotNull('earning_date')
+            ->whereYear('earning_date', $summaryYear);
+
+        if (!empty($categoryId)) {
+            $query->where('earning_category_id', $categoryId);
+        }
+        if (!empty($month)) {
+            $query->whereMonth('earning_date', $month);
+        }
+
+        $totals = $query
+            ->selectRaw('MONTH(earning_date) as month, SUM(amount) as total')
+            ->groupBy(DB::raw('MONTH(earning_date)'))
+            ->pluck('total', 'month');
+
+        $result = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $result[] = [
+                'month' => $m,
+                'total' => (float) ($totals[$m] ?? 0),
+            ];
+        }
+
+        return response()->json([
+            'year' => $summaryYear,
+            'totals' => $result,
+        ]);
     }
 
     public function create()

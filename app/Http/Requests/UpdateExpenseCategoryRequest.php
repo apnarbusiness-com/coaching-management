@@ -25,6 +25,9 @@ class UpdateExpenseCategoryRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'is_teacher_connected' => [
+                'boolean',
+            ],
         ];
     }
 }
