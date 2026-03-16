@@ -33,6 +33,66 @@
                     👋</h1>
                 <p class="text-slate-500 mt-1">Here is a quick look at your academic progress and schedule.</p>
             </div>
+            <!-- Payment Spotlight -->
+            <div
+                class="rounded-2xl border border-emerald-200 bg-gradient-to-r from-emerald-50 via-teal-50 to-cyan-50 p-6 shadow-sm dark:border-emerald-900/40 dark:from-emerald-900/30 dark:via-teal-900/20 dark:to-cyan-900/20">
+                <div class="flex flex-col gap-4 md:flex-row md:items-center md:justify-between">
+                    <div>
+                        <div class="inline-flex items-center gap-2 rounded-full bg-emerald-600/10 px-3 py-1 text-xs font-bold uppercase tracking-wider text-emerald-700 dark:text-emerald-300">
+                            <span class="material-symbols-outlined text-sm">check_circle</span>
+                            Payment Status
+                        </div>
+                        @if ($latestPayment)
+                            <h2 class="mt-3 text-2xl font-bold text-slate-900 dark:text-white">
+                                Payment Successful
+                            </h2>
+                            <p class="mt-1 text-slate-600 dark:text-slate-300 text-sm">
+                                Your latest payment has been recorded.
+                            </p>
+                        @else
+                            <h2 class="mt-3 text-2xl font-bold text-slate-900 dark:text-white">
+                                No Payments Found
+                            </h2>
+                            <p class="mt-1 text-slate-600 dark:text-slate-300 text-sm">
+                                Payments linked to your account will appear here.
+                            </p>
+                        @endif
+                    </div>
+                    @if ($latestPayment)
+                        <div class="rounded-xl bg-white/80 p-4 shadow-sm dark:bg-slate-900/70">
+                            <p class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Latest Amount</p>
+                            <p class="text-2xl font-extrabold text-emerald-600">
+                                {{ number_format($latestPayment->amount ?? 0, 2) }} BDT
+                            </p>
+                            <p class="mt-1 text-xs text-slate-500 dark:text-slate-400">
+                                {{ $latestPayment->earning_category->name ?? 'Category' }}
+                            </p>
+                        </div>
+                    @endif
+                </div>
+                @if ($latestPayment)
+                    <div class="mt-5 grid grid-cols-1 gap-4 md:grid-cols-3">
+                        <div class="rounded-xl border border-white/70 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                            <p class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Date</p>
+                            <p class="mt-1 font-semibold text-slate-900 dark:text-white">
+                                {{ $latestPayment->earning_date ?? '—' }}
+                            </p>
+                        </div>
+                        <div class="rounded-xl border border-white/70 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                            <p class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Receipt</p>
+                            <p class="mt-1 font-semibold text-slate-900 dark:text-white">
+                                {{ $latestPayment->earning_reference ?? '—' }}
+                            </p>
+                        </div>
+                        <div class="rounded-xl border border-white/70 bg-white/70 p-4 dark:border-slate-800 dark:bg-slate-900/60">
+                            <p class="text-xs uppercase tracking-wider text-slate-500 dark:text-slate-400">Title</p>
+                            <p class="mt-1 font-semibold text-slate-900 dark:text-white">
+                                {{ $latestPayment->title ?? '—' }}
+                            </p>
+                        </div>
+                    </div>
+                @endif
+            </div>
             <!-- Dashboard Grid -->
             <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
                 <!-- Next Class Card (2/3 width) -->
@@ -76,7 +136,7 @@
                     <!-- Quick Links -->
                     <div class="grid grid-cols-3 gap-4">
                         <a class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors group"
-                            href="#">
+                            href="{{ route('admin.student.profile') }}">
                             <span class="material-symbols-outlined text-primary mb-2">person</span>
                             <p class="text-sm font-bold text-slate-900 dark:text-slate-100 block">Profile</p>
                         </a>
@@ -232,6 +292,55 @@
                     </div>
 
 
+                </div>
+            </div>
+            <!-- Payment History -->
+            <div class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
+                <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                    <div>
+                        <h4 class="font-bold text-slate-900 dark:text-slate-100">Payment History</h4>
+                        <p class="text-xs text-slate-500 mt-1">Showing latest {{ $paymentHistory->count() }} records</p>
+                    </div>
+                </div>
+                <div class="overflow-x-auto">
+                    <table class="w-full text-left">
+                        <thead class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs font-bold uppercase tracking-wider">
+                            <tr>
+                                <th class="px-6 py-4">Date</th>
+                                <th class="px-6 py-4">Category</th>
+                                <th class="px-6 py-4">Title</th>
+                                <th class="px-6 py-4">Amount</th>
+                                <th class="px-6 py-4">Receipt</th>
+                            </tr>
+                        </thead>
+                        <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
+                            @forelse($paymentHistory as $payment)
+                                <tr class="text-sm text-slate-900 dark:text-slate-100">
+                                    <td class="px-6 py-4 text-slate-500 dark:text-slate-400">
+                                        {{ $payment->earning_date ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-4 font-semibold">
+                                        {{ $payment->earning_category->name ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-4">
+                                        {{ $payment->title ?? '—' }}
+                                    </td>
+                                    <td class="px-6 py-4 font-bold text-emerald-600">
+                                        {{ number_format($payment->amount ?? 0, 2) }} BDT
+                                    </td>
+                                    <td class="px-6 py-4 text-slate-500 dark:text-slate-400">
+                                        {{ $payment->earning_reference ?? '—' }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td class="px-6 py-6 text-sm text-slate-500 dark:text-slate-400" colspan="5">
+                                        No payment records found yet.
+                                    </td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                    </table>
                 </div>
             </div>
         </div>

@@ -121,7 +121,40 @@ class HomeController
 
     public function loadStudentDashboard()
     {
-        return view('student.home');
+        $student = auth()->user()->student;
+
+        if (!$student) {
+            return view('student.home', [
+                'latestPayment' => null,
+                'paymentHistory' => collect(),
+            ]);
+        }
+
+        $paymentQuery = Earning::with('earning_category')
+            ->where('student_id', $student->id)
+            ->whereHas('earning_category', function ($query) {
+                $query->where('is_student_connected', true);
+            })
+            ->orderByDesc('earning_date')
+            ->orderByDesc('id');
+
+        $latestPayment = (clone $paymentQuery)->first();
+        $paymentHistory = $paymentQuery->take(20)->get();
+
+        return view('student.home', compact('latestPayment', 'paymentHistory'));
+    }
+
+    public function studentProfile()
+    {
+        $student = auth()->user()->student;
+
+        if (!$student) {
+            return redirect()->route('admin.home')->with('error', 'Student profile not found.');
+        }
+
+        $student->load('class', 'section', 'shift', 'academicBackground', 'subjects', 'studentDetails', 'batches');
+
+        return view('student.profile', compact('student'));
     }
 
     public function index()
