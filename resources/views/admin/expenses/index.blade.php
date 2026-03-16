@@ -9,6 +9,9 @@
             <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#expenseImportModal">
                 Import Excel
             </button>
+            <a class="btn btn-outline-secondary" href="{{ route('admin.expenses.demoCsv') }}">
+                Demo Excel/CSV
+            </a>
         </div>
     </div>
 @endcan

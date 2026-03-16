@@ -104,6 +104,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('expenses/media', 'ExpensesController@storeMedia')->name('expenses.storeMedia');
     Route::post('expenses/ckmedia', 'ExpensesController@storeCKEditorImages')->name('expenses.storeCKEditorImages');
     Route::get('expenses/summary', 'ExpensesController@summary')->name('expenses.summary');
+    Route::get('expenses/demo-csv', 'ExpensesController@downloadDemoCsv')->name('expenses.demoCsv');
     Route::post('expenses/import', 'ExpensesController@importExcel')->name('expenses.import');
     Route::resource('expenses', 'ExpensesController');
 
@@ -131,6 +132,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('earnings/media', 'EarningsController@storeMedia')->name('earnings.storeMedia');
     Route::post('earnings/ckmedia', 'EarningsController@storeCKEditorImages')->name('earnings.storeCKEditorImages');
     Route::get('earnings/summary', 'EarningsController@summary')->name('earnings.summary');
+    Route::get('earnings/demo-csv', 'EarningsController@downloadDemoCsv')->name('earnings.demoCsv');
     Route::post('earnings/import', 'EarningsController@importExcel')->name('earnings.import');
     Route::resource('earnings', 'EarningsController');
 });

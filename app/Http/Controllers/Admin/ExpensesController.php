@@ -137,6 +137,31 @@ class ExpensesController extends Controller
         ]);
     }
 
+    public function downloadDemoCsv()
+    {
+        abort_if(Gate::denies('expense_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $headers = [
+            'Date',
+            'Details',
+            'Category',
+            'Cost',
+            'Employee Code',
+        ];
+
+        $filename = 'expenses_demo_' . date('Ymd_His') . '.csv';
+        $output = fopen('php://temp', 'r+');
+        fputcsv($output, $headers);
+        rewind($output);
+        $csv = stream_get_contents($output);
+        fclose($output);
+
+        return response($csv, 200, [
+            'Content-Type' => 'text/csv',
+            'Content-Disposition' => 'attachment; filename="' . $filename . '"',
+        ]);
+    }
+
     public function create()
     {
         abort_if(Gate::denies('expense_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');

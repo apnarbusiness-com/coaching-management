@@ -18,9 +18,9 @@
                 <a class="btn btn-outline-secondary" href="{{ route('admin.student-basic-infos.rawImports') }}">
                     Raw Rows View
                 </a>
-                {{-- <a class="btn btn-info" href="{{ route('admin.student-basic-infos.demoCsv') }}">
+                <a class="btn btn-info" href="{{ route('admin.student-basic-infos.demoCsv') }}">
                     Demo Excel/CSV
-                </a> --}}
+                </a>
                 <div class="modal fade" id="csvImportModal" tabindex="-1" role="dialog" aria-labelledby="myModalLabel">
                     <div class="modal-dialog" role="document">
                         <div class="modal-content">
