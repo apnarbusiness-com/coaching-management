@@ -150,4 +150,15 @@ class TeacherController extends Controller
 
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }
+
+
+    public function idCard($id)
+    {
+        abort_if(Gate::denies('teacher_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $teacher = Teacher::with('user')->findOrFail($id);
+
+        return view('admin.teachers.id_card', compact('teacher'));
+    }
+
 }

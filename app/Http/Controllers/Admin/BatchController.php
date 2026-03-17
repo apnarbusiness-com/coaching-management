@@ -9,10 +9,13 @@ use App\Http\Requests\UpdateBatchRequest;
 use App\Models\AcademicClass;
 use App\Models\Batch;
 use App\Models\StudentBasicInfo;
+use App\Models\StudentMonthlyDue;
+use Carbon\Carbon;
 use App\Models\Subject;
 use App\Models\Teacher;
 // use Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
@@ -252,7 +255,80 @@ class BatchController extends Controller
             'students.*' => ['integer', 'exists:student_basic_infos,id'],
         ]);
 
-        $batch->students()->sync($data['students'] ?? []);
+        $enrolledAt = now();
+        $enrolledAtString = $enrolledAt->toDateString();
+        $newStudentIds = $data['students'] ?? [];
+
+        $existingStudentIds = $batch->students()->pluck('student_basic_info_id')->toArray();
+        
+        $studentsToEnroll = array_diff($newStudentIds, $existingStudentIds);
+        
+        $enrollmentData = [];
+        foreach ($newStudentIds as $studentId) {
+            if (in_array($studentId, $studentsToEnroll)) {
+                $enrollmentData[$studentId] = [
+                    'enrolled_at' => $enrolledAtString,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ];
+            } else {
+                $enrollmentData[$studentId] = [
+                    'updated_at' => now(),
+                ];
+            }
+        }
+
+        $batch->students()->sync($enrollmentData);
+
+        if (!empty($studentsToEnroll) && $batch->fee_type === 'monthly') {
+            $duration = (int) $batch->duration_in_months;
+            $feeAmount = (float) $batch->fee_amount;
+            
+            $studentsToCreateDues = StudentBasicInfo::whereIn('id', $studentsToEnroll)->get();
+
+            foreach ($studentsToCreateDues as $student) {
+                $pivot = DB::table('batch_student_basic_info')
+                    ->where('batch_id', $batch->id)
+                    ->where('student_basic_info_id', $student->id)
+                    ->first();
+
+                $discount = $pivot->per_student_discount ?? 0;
+                $customFee = $pivot->custom_monthly_fee;
+                $dueAmount = $customFee !== null ? max(0, $customFee - $discount) : max(0, $feeAmount - $discount);
+
+                for ($i = 0; $i < $duration; $i++) {
+                    $dueMonth = $enrolledAt->copy()->addMonths($i);
+                    $month = $dueMonth->month;
+                    $year = $dueMonth->year;
+
+                    $existingDue = StudentMonthlyDue::where('student_id', $student->id)
+                        ->where('batch_id', $batch->id)
+                        ->where('month', $month)
+                        ->where('year', $year)
+                        ->first();
+
+                    if (!$existingDue) {
+                        $dueDate = Carbon::createFromDate($year, $month, 10);
+
+                        StudentMonthlyDue::create([
+                            'student_id' => $student->id,
+                            'batch_id' => $batch->id,
+                            'academic_class_id' => $student->class_id,
+                            'section_id' => $student->section_id,
+                            'shift_id' => $student->shift_id,
+                            'month' => $month,
+                            'year' => $year,
+                            'due_amount' => $dueAmount,
+                            'paid_amount' => 0,
+                            'discount_amount' => $discount,
+                            'due_remaining' => $dueAmount,
+                            'status' => 'unpaid',
+                            'due_date' => $dueDate->format('Y-m-d'),
+                        ]);
+                    }
+                }
+            }
+        }
 
         return redirect()
             ->route('admin.batches.assignStudents', $batch->id)
