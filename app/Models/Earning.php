@@ -31,6 +31,7 @@ class Earning extends Model implements HasMedia
     protected $fillable = [
         'earning_category_id',
         'student_id',
+        'batch_id',
         'subject_id',
         'title',
         'academic_background',
@@ -47,6 +48,7 @@ class Earning extends Model implements HasMedia
         'recieved_by',
         'created_by_id',
         'updated_by_id',
+        'student_monthly_due_id',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -71,6 +73,11 @@ class Earning extends Model implements HasMedia
     public function student()
     {
         return $this->belongsTo(StudentBasicInfo::class, 'student_id');
+    }
+
+    public function batch()
+    {
+        return $this->belongsTo(Batch::class, 'batch_id');
     }
 
     public function subject()

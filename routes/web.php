@@ -136,6 +136,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('earnings/demo-csv', 'EarningsController@downloadDemoCsv')->name('earnings.demoCsv');
     Route::post('earnings/import', 'EarningsController@importExcel')->name('earnings.import');
     Route::resource('earnings', 'EarningsController');
+
+    // Due Collections
+    Route::get('due-collections', 'DueCollectionController@index')->name('due-collections.index');
+    Route::post('due-collections/generate', 'DueCollectionController@generateDues')->name('due-collections.generate');
+    Route::get('due-collections/students', 'DueCollectionController@getStudentList')->name('due-collections.students');
+    Route::get('due-collections/student-dues/{studentId}', 'DueCollectionController@getStudentDues')->name('due-collections.student-dues');
+    Route::post('due-collections/pay', 'DueCollectionController@payDue')->name('due-collections.pay');
 });
 Route::group(['prefix' => 'profile', 'as' => 'profile.', 'namespace' => 'Auth', 'middleware' => ['auth']], function () {
     // Change password

@@ -4,6 +4,8 @@ namespace App\Http\Controllers\Admin;
 
 use App\Models\Earning;
 use App\Models\Expense;
+use App\Models\StudentMonthlyDue;
+use App\Services\DueCalculationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 
@@ -127,8 +129,13 @@ class HomeController
             return view('student.home', [
                 'latestPayment' => null,
                 'paymentHistory' => collect(),
+                'totalDue' => 0,
+                'unpaidDues' => collect(),
             ]);
         }
+
+        $dueService = new DueCalculationService();
+        $dueInfo = $dueService->calculateStudentTotalDue($student->id);
 
         $paymentQuery = Earning::with('earning_category')
             ->where('student_id', $student->id)
@@ -141,7 +148,7 @@ class HomeController
         $latestPayment = (clone $paymentQuery)->first();
         $paymentHistory = $paymentQuery->take(20)->get();
 
-        return view('student.home', compact('latestPayment', 'paymentHistory'));
+        return view('student.home', compact('latestPayment', 'paymentHistory', 'dueInfo'));
     }
 
     public function studentProfile()

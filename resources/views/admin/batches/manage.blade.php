@@ -13,7 +13,6 @@
             $className = $batch->class->class_name ?? 'N/A';
             $subjectLabel = $subjectNames->implode(', ') ?: 'N/A';
             $timeLabel = $batch->class_time ? \Carbon\Carbon::parse($batch->class_time)->format('h:i A') : 'N/A';
-            $totalIncome = $studentCount * (float) $batch->fee_amount;
             $totalExpense = (float) $batch->teachers->sum(function ($teacher) {
                 return (float) ($teacher->pivot->salary_amount ?? 0);
             });
@@ -97,14 +96,56 @@
             </div>
         </div>
 
-        <div class="grid grid-cols-1 md:grid-cols-2 gap-4 mb-10">
+        <div class="mb-6 p-4 bg-white dark:bg-slate-800/50 rounded-lg border border-slate-200 dark:border-slate-700">
+            <form method="GET" action="{{ route('admin.batches.manage', $batch->id) }}" class="flex flex-wrap items-end gap-4">
+                <div class="flex-1 min-w-[150px]">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Month</label>
+                    <select name="month" class="form-select w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+                        @for ($m = 1; $m <= 12; $m++)
+                            <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }}>
+                                {{ \Carbon\Carbon::createFromDate(null, $m, 1)->format('F') }}
+                            </option>
+                        @endfor
+                    </select>
+                </div>
+                <div class="flex-1 min-w-[100px]">
+                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year</label>
+                    <select name="year" class="form-select w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+                        @for ($y = now()->year - 2; $y <= now()->year + 1; $y++)
+                            <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}</option>
+                        @endfor
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md font-medium hover:bg-primary/90">
+                    Filter
+                </button>
+            </form>
+        </div>
+
+        <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-blue-50 via-white to-white dark:from-blue-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
+                <div class="flex items-center gap-2 text-blue-700 dark:text-blue-300">
+                    <span class="material-symbols-outlined">account_balance_wallet</span>
+                    <p class="text-sm font-semibold uppercase tracking-wider">Expected Income</p>
+                </div>
+                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ number_format($expectedIncome, 2) }}</p>
+                <p class="text-xs text-slate-500 mt-1">{{ $studentCount }} × {{ number_format((float) $batch->fee_amount, 2) }} ({{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('F Y') }})</p>
+            </div>
             <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-emerald-50 via-white to-white dark:from-emerald-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
                 <div class="flex items-center gap-2 text-emerald-700 dark:text-emerald-300">
                     <span class="material-symbols-outlined">trending_up</span>
+                    <p class="text-sm font-semibold uppercase tracking-wider">Income This Month</p>
+                </div>
+                <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ number_format($incomeUntilNow, 2) }}</p>
+                <p class="text-xs text-slate-500 mt-1">{{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('F Y') }}</p>
+            </div>
+            <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-teal-50 via-white to-white dark:from-teal-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
+                <div class="flex items-center gap-2 text-teal-700 dark:text-teal-300">
+                    <span class="material-symbols-outlined">savings</span>
                     <p class="text-sm font-semibold uppercase tracking-wider">Total Income</p>
                 </div>
                 <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ number_format($totalIncome, 2) }}</p>
-                <p class="text-xs text-slate-500 mt-1">Estimated from fee amount and enrolled students</p>
+                <p class="text-xs text-slate-500 mt-1">All time collection</p>
             </div>
             <div class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-rose-50 via-white to-white dark:from-rose-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
                 <div class="flex items-center gap-2 text-rose-700 dark:text-rose-300">
@@ -112,7 +153,7 @@
                     <p class="text-sm font-semibold uppercase tracking-wider">Total Expense</p>
                 </div>
                 <p class="mt-2 text-3xl font-black text-slate-900 dark:text-white">{{ number_format($totalExpense, 2) }}</p>
-                <p class="text-xs text-slate-500 mt-1">Sum of assigned teachers salary</p>
+                <p class="text-xs text-slate-500 mt-1">Teachers salary</p>
             </div>
         </div>
 

@@ -534,6 +534,31 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'academic_background_delete',
                 'parent_id' => 90,
             ],
+            [
+                'id'    => 100,
+                'title' => 'due_collection_access',
+                'parent_id' => null,
+            ],
+            [
+                'id'    => 101,
+                'title' => 'due_collection_create',
+                'parent_id' => 100,
+            ],
+            [
+                'id'    => 102,
+                'title' => 'due_collection_show',
+                'parent_id' => 100,
+            ],
+            [
+                'id'    => 103,
+                'title' => 'due_collection_edit',
+                'parent_id' => 100,
+            ],
+            [
+                'id'    => 104,
+                'title' => 'due_collection_delete',
+                'parent_id' => 100,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);

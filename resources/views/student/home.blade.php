@@ -237,12 +237,22 @@
                     <div class="bg-slate-900 text-white rounded-xl p-6 relative overflow-hidden">
                         <div class="relative z-10">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Dues</p>
-                            {{-- <h3 class="text-3xl font-bold">$1,240.50</h3> --}}
-                            <h3 class="text-3xl font-bold">$0.00</h3>
-                            <p class="text-slate-400 text-xs mt-4">Next payment due: Oct 15, 2023</p>
+                            <h3 class="text-3xl font-bold">{{ number_format($dueInfo['total_due'] ?? 0, 2) }} BDT</h3>
+                            <p class="text-slate-400 text-xs mt-4">
+                                @if(($dueInfo['unpaid_months'] ?? 0) > 0)
+                                    {{ $dueInfo['unpaid_months'] }} month(s) pending
+                                @else
+                                    All dues paid!
+                                @endif
+                            </p>
+                            @if(($dueInfo['total_due'] ?? 0) > 0)
                             <button
-                                class="mt-6 w-full py-2.5 bg-primary text-white rounded-lg text-sm font-bold hover:bg-primary/90 transition-colors">Pay
+                                class="mt-6 w-full py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">Pay
                                 Now</button>
+                            @else
+                            <button
+                                class="mt-6 w-full py-2.5 bg-green-600 text-white rounded-lg text-sm font-bold hover:bg-green-700 transition-colors">Up to Date</button>
+                            @endif
                         </div>
                         <div class="absolute -right-4 -bottom-4 opacity-10">
                             <span class="material-symbols-outlined text-9xl">account_balance_wallet</span>
@@ -258,16 +268,18 @@
                             <a class="text-xs text-primary font-bold" href="#">View All</a>
                         </div>
                         <div class="space-y-4">
+                            @if(($dueInfo['total_due'] ?? 0) > 0)
                             <div
                                 class="flex gap-3 items-start p-3 bg-red-50 dark:bg-red-900/20 border-l-4 border-red-500 rounded">
-                                <span class="material-symbols-outlined text-red-500 text-xl">report</span>
+                                <span class="material-symbols-outlined text-red-500 text-xl">warning</span>
                                 <div>
                                     <p class="text-xs font-bold text-slate-900 dark:text-slate-100 leading-tight">
-                                        Exam Registration Closing</p>
-                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">Finish your
-                                        registration by tomorrow 5PM.</p>
+                                        Payment Due Alert</p>
+                                    <p class="text-[10px] text-slate-500 dark:text-slate-400 mt-1">
+                                        You have {{ number_format($dueInfo['total_due'], 2) }} BDT due for {{ $dueInfo['unpaid_months'] }} month(s). Please pay soon.</p>
                                 </div>
                             </div>
+                            @endif
                             <div
                                 class="flex gap-3 items-start p-3 bg-blue-50 dark:bg-blue-900/20 border-l-4 border-primary rounded">
                                 <span class="material-symbols-outlined text-primary text-xl">update</span>

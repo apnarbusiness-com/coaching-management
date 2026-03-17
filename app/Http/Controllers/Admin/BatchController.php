@@ -200,16 +200,31 @@ class BatchController extends Controller
 
 
     // Custom method for batch management
-    public function manage(Batch $batch)
+    public function manage(Batch $batch, Request $request)
     {
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $month = $request->input('month', now()->month);
+        $year = $request->input('year', now()->year);
 
         $batch->load(['subject', 'subjects', 'class', 'students', 'teachers']);
 
         $teacherCount = $batch->teachers->count();
         $studentCount = $batch->students->count();
 
-        return view('admin.batches.manage', compact('batch', 'teacherCount', 'studentCount'));
+        $expectedIncome = $studentCount * (float) $batch->fee_amount;
+        
+        $incomeUntilNow = \App\Models\Earning::where('batch_id', $batch->id)
+            ->where('earning_month', $month)
+            ->where('earning_year', $year)
+            ->whereNotNull('student_monthly_due_id')
+            ->sum('amount');
+
+        $totalIncome = \App\Models\Earning::where('batch_id', $batch->id)
+            ->whereNotNull('student_monthly_due_id')
+            ->sum('amount');
+
+        return view('admin.batches.manage', compact('batch', 'teacherCount', 'studentCount', 'expectedIncome', 'incomeUntilNow', 'totalIncome', 'month', 'year'));
     }
 
     public function assignStudents(Batch $batch)
