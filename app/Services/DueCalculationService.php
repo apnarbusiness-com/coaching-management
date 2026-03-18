@@ -24,32 +24,31 @@ class DueCalculationService
             'errors' => [],
         ];
 
-        $batches = Batch::with('students')->get();
+        $batches = Batch::all();
 
         foreach ($batches as $batch) {
-            $students = $batch->students;
+            $pivots = DB::table('batch_student_basic_info')
+                ->where('batch_id', $batch->id)
+                ->whereMonth('enrolled_at', $month)
+                ->whereYear('enrolled_at', $year)
+                ->get();
 
-            foreach ($students as $student) {
+            if ($pivots->isEmpty()) {
+                continue;
+            }
+
+            $studentsById = StudentBasicInfo::whereIn('id', $pivots->pluck('student_basic_info_id')->all())
+                ->get()
+                ->keyBy('id');
+
+            foreach ($pivots as $pivot) {
+                $student = $studentsById->get($pivot->student_basic_info_id);
+
+                if (!$student) {
+                    $results['skipped']++;
+                    continue;
+                }
                 try {
-                    $pivot = DB::table('batch_student_basic_info')
-                        ->where('batch_id', $batch->id)
-                        ->where('student_basic_info_id', $student->id)
-                        ->first();
-
-                    if (!$pivot) {
-                        $results['skipped']++;
-                        continue;
-                    }
-
-                    $enrolledAt = Carbon::parse($pivot->enrolled_at ?? $student->joining_date);
-                    $enrolledMonth = $enrolledAt->month;
-                    $enrolledYear = $enrolledAt->year;
-
-                    if ($year < $enrolledYear || ($year == $enrolledYear && $month < $enrolledMonth)) {
-                        $results['skipped']++;
-                        continue;
-                    }
-
                     $existingDue = StudentMonthlyDue::where('student_id', $student->id)
                         ->where('batch_id', $batch->id)
                         ->where('month', $month)

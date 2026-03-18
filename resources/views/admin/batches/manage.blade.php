@@ -209,7 +209,7 @@
                                 <p class="text-slate-500 dark:text-slate-400 text-sm">{{ $capacityText }} students</p>
                             </div>
                         </div>
-                        <a href="{{ route('admin.batches.assignStudents', $batch->id) }}"
+                        <a href="{{ route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                             class="text-sm font-semibold text-primary hover:underline">Manage</a>
                     </div>
                     <div class="space-y-3">
@@ -222,7 +222,7 @@
                             </div>
                         @endif
                         <div class="rounded-lg border border-slate-100 dark:border-slate-700 max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
-                            @forelse ($batch->students as $student)
+                            @forelse ($enrolledStudents as $student)
                                 <div class="flex items-center justify-between gap-2 px-4 py-3">
                                     <div class="min-w-0">
                                         <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
@@ -238,7 +238,7 @@
                         </div>
                     </div>
                     <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
-                        <a href="{{ route('admin.batches.assignStudents', $batch->id) }}"
+                        <a href="{{ route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                             class="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-primary text-white font-bold text-sm shadow-md hover:opacity-90 transition-opacity">
                             <span class="material-symbols-outlined text-lg">person_add_alt</span>
                             <span>Enroll Students</span>
@@ -263,7 +263,7 @@
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        @forelse ($batch->students->take(5) as $student)
+                        @forelse ($enrolledStudents->take(5) as $student)
                             <tr>
                                 <td class="px-6 py-4 font-medium">
                                     {{ trim($student->first_name . ' ' . $student->last_name) }}

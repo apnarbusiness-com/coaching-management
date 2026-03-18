@@ -18,6 +18,9 @@
                 <p class="text-slate-600 dark:text-slate-400 text-sm">
                     Enroll students into the <strong>{{ $batch->batch_name }}</strong> batch.
                 </p>
+                <p class="text-slate-500 dark:text-slate-400 text-xs">
+                    Month: {{ \Carbon\Carbon::createFromDate($year, $month, 1)->format('F Y') }}
+                </p>
             </div>
             <div class="flex items-center gap-3">
                 <div class="flex items-center gap-2 px-3 py-1.5 bg-primary/10 dark:bg-primary/20 rounded-lg text-primary text-sm font-medium">
@@ -33,8 +36,44 @@
             </div>
         @endif
 
+        <form method="GET" action="{{ route('admin.batches.assignStudents', $batch->id) }}" class="flex flex-wrap items-end gap-3 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl p-4">
+            <div class="min-w-[160px]">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Month</label>
+                <select name="month" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm">
+                    @for ($m = 1; $m <= 12; $m++)
+                        <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }}>
+                            {{ \Carbon\Carbon::createFromDate(null, $m, 1)->format('F') }}
+                        </option>
+                    @endfor
+                </select>
+            </div>
+            <div class="min-w-[120px]">
+                <label class="block text-xs font-semibold text-slate-500 mb-1">Year</label>
+                <select name="year" class="w-full px-3 py-2 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm">
+                    @for ($y = now()->year - 2; $y <= now()->year + 1; $y++)
+                        <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}</option>
+                    @endfor
+                </select>
+            </div>
+            <button type="submit" class="px-4 py-2.5 bg-primary text-white rounded-xl text-sm font-semibold">
+                Load Month
+            </button>
+        </form>
+        <form method="POST" action="{{ route('admin.batches.assignStudents.copyPrevious', $batch->id) }}" class="flex items-center gap-3">
+            @csrf
+            <input type="hidden" name="month" value="{{ $month }}">
+            <input type="hidden" name="year" value="{{ $year }}">
+            <button type="submit"
+                class="px-4 py-2.5 bg-amber-500 text-white rounded-xl text-sm font-semibold hover:bg-amber-600"
+                onclick="return confirm('Copy last month\'s enrolled students into this month? This will replace the current selection for this month.')">
+                Copy Last Month
+            </button>
+        </form>
+
         <form method="POST" action="{{ route('admin.batches.assignStudents.store', $batch->id) }}" class="flex flex-col gap-6">
             @csrf
+            <input type="hidden" name="month" value="{{ $month }}">
+            <input type="hidden" name="year" value="{{ $year }}">
             <div class="flex flex-col md:flex-row gap-4 items-center">
                 <div class="relative flex-1 w-full">
                     <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400">search</span>
@@ -57,7 +96,7 @@
                         <option value="paid">Paid</option>
                         <option value="not_paid">Not Paid</option>
                     </select>
-                    <a href="{{ route('admin.batches.manage', $batch->id) }}"
+                    <a href="{{ route('admin.batches.manage', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                         class="flex items-center justify-center gap-2 px-4 py-2.5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl text-sm font-medium hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                         <span class="material-symbols-outlined text-sm">arrow_back</span>
                         <span>Back</span>
@@ -159,7 +198,7 @@
                     </div>
                 </div>
                 <div class="flex gap-3 w-full md:w-auto">
-                    <a href="{{ route('admin.batches.manage', $batch->id) }}"
+                    <a href="{{ route('admin.batches.manage', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                         class="flex-1 md:flex-none px-6 py-3 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 font-bold rounded-xl hover:bg-slate-200 dark:hover:bg-slate-600 transition-colors">
                         Cancel
                     </a>
