@@ -131,6 +131,7 @@ class HomeController
                 'paymentHistory' => collect(),
                 'totalDue' => 0,
                 'unpaidDues' => collect(),
+                'myBatches' => collect(),
             ]);
         }
 
@@ -155,7 +156,12 @@ class HomeController
         $latestPayment = (clone $paymentQuery)->first();
         $paymentHistory = $paymentQuery->take(20)->get();
 
-        return view('student.home', compact('latestPayment', 'paymentHistory', 'dueInfo', 'unpaidDues'));
+        $myBatches = $student->batches()
+            ->with(['subjects', 'class', 'teachers'])
+            ->wherePivot('enrolled_at', '<=', now())
+            ->get();
+
+        return view('student.home', compact('latestPayment', 'paymentHistory', 'dueInfo', 'unpaidDues', 'myBatches'));
     }
 
     public function studentProfile()
@@ -169,6 +175,22 @@ class HomeController
         $student->load('class', 'section', 'shift', 'academicBackground', 'subjects', 'studentDetails', 'batches');
 
         return view('student.profile', compact('student'));
+    }
+
+    public function myBatches()
+    {
+        $student = auth()->user()->student;
+
+        if (!$student) {
+            return redirect()->route('admin.home')->with('error', 'Student profile not found.');
+        }
+
+        $batches = $student->batches()
+            ->with(['subjects', 'class', 'teachers'])
+            ->wherePivot('enrolled_at', '<=', now())
+            ->get();
+
+        return view('student.my-batches', compact('batches'));
     }
 
     public function index()

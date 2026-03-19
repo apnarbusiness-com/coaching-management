@@ -21,6 +21,7 @@ Auth::routes(['register' => false]);
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('student/profile', 'HomeController@studentProfile')->name('student.profile');
+    Route::get('student/batches', 'HomeController@myBatches')->name('student.myBatches');
     // Ajax Route for Monthly Revenue Breakdown
 
     Route::get('/monthly-revenue/{months}', [HomeController::class, 'getMonthLyRevenueBreakdown'])->name('monthly.revenue');

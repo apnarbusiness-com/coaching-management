@@ -141,9 +141,9 @@
                             <p class="text-sm font-bold text-slate-900 dark:text-slate-100 block">Profile</p>
                         </a>
                         <a class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors group"
-                            href="#">
+                            href="{{ route('admin.student.myBatches') }}">
                             <span class="material-symbols-outlined text-primary mb-2">layers</span>
-                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 block">Batches</p>
+                            <p class="text-sm font-bold text-slate-900 dark:text-slate-100 block">My Batches</p>
                         </a>
                         <a class="p-4 bg-white dark:bg-slate-900 rounded-xl border border-slate-200 dark:border-slate-800 hover:border-primary/50 transition-colors group"
                             href="#">
@@ -154,79 +154,116 @@
 
                     <!-- Active Batches -->
                     <div
-                        class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800">
-                        <div class="p-6 border-b border-slate-100 dark:border-slate-800">
-                            <h4 class="font-bold text-slate-900 dark:text-slate-100">My Active Batches</h4>
+                        class="bg-white dark:bg-slate-900 rounded-xl shadow-sm border border-slate-200 dark:border-slate-800 overflow-hidden">
+                        <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                            <div class="flex items-center gap-3">
+                                <div class="w-10 h-10 rounded-xl bg-gradient-to-br from-indigo-500 to-purple-600 flex items-center justify-center">
+                                    <span class="material-symbols-outlined text-white text-xl">school</span>
+                                </div>
+                                <div>
+                                    <h4 class="font-bold text-slate-900 dark:text-slate-100">My Active Batches</h4>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400">{{ $myBatches->count() }} batch(es) enrolled</p>
+                                </div>
+                            </div>
                         </div>
-                        <div class="overflow-x-auto">
-                            <table class="w-full text-left">
-                                <thead
-                                    class="bg-slate-50 dark:bg-slate-800/50 text-slate-500 text-xs font-bold uppercase tracking-wider">
-                                    <tr>
-                                        <th class="px-6 py-4">Batch Name</th>
-                                        <th class="px-6 py-4">Instructor</th>
-                                        <th class="px-6 py-4">Schedule</th>
-                                        <th class="px-6 py-4">Attendance</th>
-                                        <th class="px-6 py-4">Action</th>
-                                    </tr>
-                                </thead>
-                                <tbody class="divide-y divide-slate-100 dark:divide-slate-800">
-                                    <tr class="text-sm text-slate-900 dark:text-slate-100">
-                                        <td class="px-6 py-4 font-semibold">CS202: Advanced Algorithms</td>
-                                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">Dr. Sarah Smith</td>
-                                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">Mon, Wed (2:00 PM)</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <div
-                                                    class="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-green-500 w-[92%]"></div>
+                        <div class="p-6">
+                            @if($myBatches->isNotEmpty())
+                                <div class="grid grid-cols-1 md:grid-cols-2 xl:grid-cols-3 gap-4">
+                                    @foreach($myBatches as $batch)
+                                        @php
+                                            $schedule = $batch->formatted_schedule;
+                                            $subjectNames = $batch->subjects->pluck('name')->filter()->unique()->implode(', ');
+                                            $teacherNames = $batch->teachers->pluck('name')->implode(', ');
+                                            $className = $batch->class->class_name ?? '';
+                                            
+                                            $dayColors = [
+                                                'saturday'  => ['bg' => 'bg-rose-100 dark:bg-rose-900/30', 'text' => 'text-rose-600 dark:text-rose-400', 'border' => 'border-rose-200 dark:border-rose-800'],
+                                                'sunday'    => ['bg' => 'bg-orange-100 dark:bg-orange-900/30', 'text' => 'text-orange-600 dark:text-orange-400', 'border' => 'border-orange-200 dark:border-orange-800'],
+                                                'monday'    => ['bg' => 'bg-amber-100 dark:bg-amber-900/30', 'text' => 'text-amber-600 dark:text-amber-400', 'border' => 'border-amber-200 dark:border-amber-800'],
+                                                'tuesday'   => ['bg' => 'bg-yellow-100 dark:bg-yellow-900/30', 'text' => 'text-yellow-600 dark:text-yellow-400', 'border' => 'border-yellow-200 dark:border-yellow-800'],
+                                                'wednesday' => ['bg' => 'bg-lime-100 dark:bg-lime-900/30', 'text' => 'text-lime-600 dark:text-lime-400', 'border' => 'border-lime-200 dark:border-lime-800'],
+                                                'thursday'  => ['bg' => 'bg-green-100 dark:bg-green-900/30', 'text' => 'text-green-600 dark:text-green-400', 'border' => 'border-green-200 dark:border-green-800'],
+                                                'friday'    => ['bg' => 'bg-teal-100 dark:bg-teal-900/30', 'text' => 'text-teal-600 dark:text-teal-400', 'border' => 'border-teal-200 dark:border-teal-800'],
+                                            ];
+                                        @endphp
+                                        <div class="group relative bg-gradient-to-br from-slate-50 to-slate-100 dark:from-slate-800/50 dark:to-slate-800 rounded-xl p-5 border border-slate-200 dark:border-slate-700 hover:border-indigo-300 dark:hover:border-indigo-700 hover:shadow-lg hover:shadow-indigo-500/10 transition-all duration-300">
+                                            <!-- Batch Header -->
+                                            <div class="flex items-start justify-between mb-4">
+                                                <div class="flex-1 min-w-0">
+                                                    <h5 class="font-bold text-slate-900 dark:text-white truncate group-hover:text-indigo-600 dark:group-hover:text-indigo-400 transition-colors">
+                                                        {{ $batch->batch_name }}
+                                                    </h5>
+                                                    @if($subjectNames)
+                                                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-0.5 truncate">
+                                                            {{ $subjectNames }}
+                                                        </p>
+                                                    @endif
                                                 </div>
-                                                <span
-                                                    class="text-xs font-bold text-slate-900 dark:text-slate-100">92%</span>
+                                                <span class="flex-shrink-0 w-8 h-8 rounded-lg bg-indigo-100 dark:bg-indigo-900/40 flex items-center justify-center">
+                                                    <span class="material-symbols-outlined text-indigo-500 text-lg">groups</span>
+                                                </span>
                                             </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <button class="text-primary font-bold hover:underline">View</button>
-                                        </td>
-                                    </tr>
-                                    <tr class="text-sm text-slate-900 dark:text-slate-100">
-                                        <td class="px-6 py-4 font-semibold">CS205: Database Systems</td>
-                                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">Prof. Michael Chen</td>
-                                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">Tue, Thu (10:00 AM)</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <div
-                                                    class="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-primary w-[85%]"></div>
+                                            
+                                            <!-- Class Info -->
+                                            @if($className)
+                                                <div class="flex items-center gap-2 mb-4">
+                                                    <span class="material-symbols-outlined text-slate-400 text-sm">meeting_room</span>
+                                                    <span class="text-xs text-slate-600 dark:text-slate-300">{{ $className }}</span>
                                                 </div>
-                                                <span
-                                                    class="text-xs font-bold text-slate-900 dark:text-slate-100">85%</span>
-                                            </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <button class="text-primary font-bold hover:underline">View</button>
-                                        </td>
-                                    </tr>
-                                    <tr class="text-sm text-slate-900 dark:text-slate-100">
-                                        <td class="px-6 py-4 font-semibold">MA101: Discrete Mathematics</td>
-                                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">Dr. Emily Watson</td>
-                                        <td class="px-6 py-4 text-slate-500 dark:text-slate-400">Fri (1:00 PM)</td>
-                                        <td class="px-6 py-4">
-                                            <div class="flex items-center gap-2">
-                                                <div
-                                                    class="w-24 h-1.5 bg-slate-100 dark:bg-slate-800 rounded-full overflow-hidden">
-                                                    <div class="h-full bg-yellow-500 w-[74%]"></div>
+                                            @endif
+                                            
+                                            <!-- Schedule Section -->
+                                            <div class="space-y-2">
+                                                <div class="flex items-center gap-2 text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wider">
+                                                    <span class="material-symbols-outlined text-sm">calendar_month</span>
+                                                    <span>Class Schedule</span>
+                                                    <span class="ml-auto text-indigo-600 dark:text-indigo-400 font-bold">{{ count($schedule) }} day(s)</span>
                                                 </div>
-                                                <span
-                                                    class="text-xs font-bold text-slate-900 dark:text-slate-100">74%</span>
+                                                
+                                                @if(!empty($schedule))
+                                                    <div class="flex flex-wrap gap-2">
+                                                        @foreach($schedule as $dayKey => $info)
+                                                            <div class="flex items-center gap-1.5 px-2.5 py-1.5 rounded-lg {{ $dayColors[$dayKey]['bg'] ?? 'bg-slate-100 dark:bg-slate-800' }} border {{ $dayColors[$dayKey]['border'] ?? 'border-slate-200 dark:border-slate-700' }}">
+                                                                <span class="text-[11px] font-semibold {{ $dayColors[$dayKey]['text'] ?? 'text-slate-700 dark:text-slate-300' }}">
+                                                                    {{ substr($info['day'], 0, 3) }}
+                                                                </span>
+                                                                <span class="text-[11px] font-bold {{ $dayColors[$dayKey]['text'] ?? 'text-slate-900 dark:text-white' }}">
+                                                                    {{ $info['time'] }}
+                                                                </span>
+                                                            </div>
+                                                        @endforeach
+                                                    </div>
+                                                @else
+                                                    <p class="text-xs text-slate-400 dark:text-slate-500 italic">No schedule set</p>
+                                                @endif
                                             </div>
-                                        </td>
-                                        <td class="px-6 py-4">
-                                            <button class="text-primary font-bold hover:underline">View</button>
-                                        </td>
-                                    </tr>
-                                </tbody>
-                            </table>
+                                            
+                                            <!-- Teacher -->
+                                            @if($teacherNames)
+                                                <div class="flex items-center gap-2 mt-4 pt-4 border-t border-slate-200 dark:border-slate-700">
+                                                    <div class="w-6 h-6 rounded-full bg-gradient-to-br from-emerald-400 to-teal-500 flex items-center justify-center">
+                                                        <span class="text-white text-[10px] font-bold">{{ substr($teacherNames, 0, 1) }}</span>
+                                                    </div>
+                                                    <span class="text-xs text-slate-600 dark:text-slate-300 truncate">{{ $teacherNames }}</span>
+                                                </div>
+                                            @endif
+                                            
+                                            <!-- Action -->
+                                            <a href="{{ route('admin.batches.show', $batch->id) }}" class="absolute inset-0 z-10">
+                                                <span class="sr-only">View {{ $batch->batch_name }}</span>
+                                            </a>
+                                        </div>
+                                    @endforeach
+                                </div>
+                            @else
+                                <div class="text-center py-8">
+                                    <div class="w-16 h-16 mx-auto mb-4 rounded-full bg-slate-100 dark:bg-slate-800 flex items-center justify-center">
+                                        <span class="material-symbols-outlined text-4xl text-slate-400">school</span>
+                                    </div>
+                                    <h5 class="font-semibold text-slate-900 dark:text-white">No Batches Enrolled</h5>
+                                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">You haven't enrolled in any batch yet.</p>
+                                </div>
+                            @endif
                         </div>
                     </div>
                 </div>
