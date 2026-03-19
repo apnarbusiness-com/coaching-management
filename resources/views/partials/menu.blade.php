@@ -155,7 +155,7 @@
         @endcan
         @can('student_information_access')
             <li
-                class="c-sidebar-nav-dropdown {{ request()->is("admin/student-basic-infos*") ? "c-show" : "" }} {{ request()->is("admin/student-details-informations*") ? "c-show" : "" }}">
+                class="c-sidebar-nav-dropdown {{ request()->is("admin/student-basic-infos*") ? "c-show" : "" }} {{ request()->is("admin/student-details-informations*") ? "c-show" : "" }} {{ request()->is("admin/due-collections*") ? "c-show" : "" }}">
                 <a class="c-sidebar-nav-dropdown-toggle" href="#">
                     <i class="fa-fw fas fa-users c-sidebar-nav-icon">
 
@@ -171,6 +171,17 @@
 
                                 </i>
                                 {{ trans('cruds.studentBasicInfo.title') }}
+                            </a>
+                        </li>
+                    @endcan
+                    @can('due_collection_access')
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route("admin.due-collections.index") }}"
+                                class="c-sidebar-nav-link {{ request()->is("admin/due-collections") || request()->is("admin/due-collections/*") ? "c-active" : "" }}">
+                                <i class="fa-fw fas fa-dollar-sign c-sidebar-nav-icon">
+
+                                </i>
+                                {{ trans('cruds.dueCollection.title') }}
                             </a>
                         </li>
                     @endcan

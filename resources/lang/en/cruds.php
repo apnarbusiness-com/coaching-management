@@ -520,6 +520,10 @@ return [
             'deleted_at_helper'            => ' ',
         ],
     ],
+    'dueCollection' => [
+        'title'          => 'Due Collections',
+        'title_singular' => 'Due Collection',
+    ],
     'teacherSudent' => [
         'title'          => 'Teacher Settings',
         'title_singular' => 'Teacher Setting',
