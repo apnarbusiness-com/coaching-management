@@ -272,14 +272,11 @@
                                         {{ $batch->subject->name ?? 'N/A' }} | {{ $batch->class->class_name ?? 'N/A' }} |
                                         {{ \App\Models\Batch::FEE_TYPE_SELECT[$batch->fee_type] ?? $batch->fee_type }}
                                     </p>
-                                    <p class="text-xs text-slate-600 mt-2">
-                                        <span class="font-semibold">Class Time:</span>
-                                        {{ \Carbon\Carbon::parse($batch->class_time)->format('h:i A') }}
-                                    </p>
                                     <div class="mt-2 flex flex-wrap gap-2">
-                                        @foreach ($batch->class_days ?? [] as $day)
+                                        @foreach ($batch->class_schedule ?? [] as $day => $time)
                                             <span class="px-2 py-1 bg-primary/10 text-primary text-[11px] font-semibold rounded">
-                                                {{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}
+                                                {{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}:
+                                                {{ \Carbon\Carbon::parse($time)->format('h:i A') }}
                                             </span>
                                         @endforeach
                                     </div>

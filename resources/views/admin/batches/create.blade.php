@@ -264,10 +264,8 @@
             });
 
             @if(old('class_schedule'))
-                @foreach(old('class_schedule') as $index => $schedule)
-                    @if(isset($schedule['day']) && isset($schedule['time']))
-                        addScheduleRow('{{ $schedule['day'] }}', '{{ $schedule['time'] }}');
-                    @endif
+                @foreach(old('class_schedule') as $day => $time)
+                    addScheduleRow('{{ $day }}', '{{ $time }}');
                 @endforeach
             @else
                 addScheduleRow();

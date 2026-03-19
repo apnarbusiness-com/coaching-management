@@ -201,7 +201,7 @@
             let rowCounter = 0;
 
             function addScheduleRow(dayKey = '', timeValue = '') {
-                const id = 'schedule_' + rowCounter++;
+                const id = rowCounter++;
                 const availableDays = Object.entries(days);
                 const usedDays = [];
                 $container.find('.schedule-day-select').each(function() {
@@ -215,12 +215,12 @@
                 }).join('');
 
                 const row = $(`
-                    <div class="schedule-row flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
-                        <select name="class_schedule[day][]" class="schedule-day-select form-control select2 flex-1 py-2" required>
+                    <div class="schedule-row flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg" data-row-id="${id}">
+                        <select name="class_schedule[${id}][day]" class="schedule-day-select form-control select2 flex-1 py-2" required>
                             <option value="">Select Day</option>
                             ${options}
                         </select>
-                        <input type="time" name="class_schedule[time][]" class="schedule-time-input form-control flex-1 py-2 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" value="${timeValue}" required />
+                        <input type="time" name="class_schedule[${id}][time]" class="schedule-time-input form-control flex-1 py-2 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" value="${timeValue}" required />
                         <button type="button" class="remove-schedule-row p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors">
                             <span class="material-symbols-outlined text-[20px]">delete</span>
                         </button>
@@ -272,9 +272,9 @@
                 });
             });
 
-            @if(old('class_schedule.day'))
-                @foreach(old('class_schedule.day') as $index => $day)
-                    addScheduleRow('{{ $day }}', '{{ old("class_schedule.time.$index") }}');
+            @if(old('class_schedule'))
+                @foreach(old('class_schedule') as $day => $time)
+                    addScheduleRow('{{ $day }}', '{{ $time }}');
                 @endforeach
             @elseif($batch->class_schedule)
                 @foreach($batch->class_schedule as $day => $time)

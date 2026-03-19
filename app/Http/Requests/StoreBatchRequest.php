@@ -56,14 +56,6 @@ class StoreBatchRequest extends FormRequest
                 'array',
                 'min:1',
             ],
-            'class_schedule.*.day' => [
-                'required',
-                Rule::in(array_keys(Batch::CLASS_DAY_SELECT)),
-            ],
-            'class_schedule.*.time' => [
-                'required',
-                'date_format:H:i',
-            ],
             'capacity' => [
                 'nullable',
                 'integer',
@@ -90,5 +82,31 @@ class StoreBatchRequest extends FormRequest
             }
             $this->merge(['class_schedule' => $schedule]);
         }
+    }
+
+    public function withValidator($validator)
+    {
+        $validator->after(function ($validator) {
+            if (!$this->has('class_schedule') || !is_array($this->class_schedule)) {
+                return;
+            }
+
+            $validDays = array_keys(Batch::CLASS_DAY_SELECT);
+            $schedule = $this->class_schedule;
+
+            foreach ($schedule as $day => $time) {
+                if (!in_array($day, $validDays)) {
+                    $validator->errors()->add("class_schedule.{$day}", "The selected day {$day} is invalid.");
+                    continue;
+                }
+                if (!$time || !preg_match('/^([01]\d|2[0-3]):([0-5]\d)$/', $time)) {
+                    $validator->errors()->add("class_schedule.{$day}", "The time for {$day} must be in HH:MM format.");
+                }
+            }
+
+            if (empty($schedule)) {
+                $validator->errors()->add('class_schedule', 'At least one class schedule is required.');
+            }
+        });
     }
 }

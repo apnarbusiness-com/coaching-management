@@ -16,46 +16,6 @@
 
         <div class="card-body">
             <table class=" table table-bordered table-striped table-hover ajaxTable datatable datatable-Batch">
-                <thead>
-                    <tr>
-                        <th width="10">
-
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.id') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.batch_name') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.subject') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.class') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.fee_type') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.fee_amount') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.duration_in_months') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.class_days') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.class_time') }}
-                        </th>
-                        <th>
-                            {{ trans('cruds.batch.fields.students') }}
-                        </th>
-                        <th>
-                            &nbsp;
-                        </th>
-                    </tr>
-                </thead>
             </table>
         </div>
     </div>
@@ -107,62 +67,74 @@
 
             let dtOverrideGlobals = {
                 buttons: dtButtons,
-                processing: true,
                 serverSide: true,
                 retrieve: true,
                 aaSorting: [],
                 ajax: "{{ route('admin.batches.index') }}",
                 columns: [{
                         data: 'placeholder',
-                        name: 'placeholder'
+                        name: 'placeholder',
+                        title: '',
+                        orderable: false,
+                        searchable: false
                     },
                     {
                         data: 'id',
-                        name: 'id'
+                        name: 'id',
+                        title: 'ID'
                     },
                     {
                         data: 'batch_name',
-                        name: 'batch_name'
+                        name: 'batch_name',
+                        title: 'Batch Name'
                     },
                     {
                         data: 'subject_names',
                         name: 'subject_names',
+                        title: 'Subject',
                         searchable: false,
                         sortable: false
                     },
                     {
                         data: 'class_class_name',
-                        name: 'class.class_name'
+                        name: 'class.class_name',
+                        title: 'Class'
                     },
                     {
                         data: 'fee_type',
-                        name: 'fee_type'
+                        name: 'fee_type',
+                        title: 'Fee Type'
                     },
                     {
                         data: 'fee_amount',
-                        name: 'fee_amount'
+                        name: 'fee_amount',
+                        title: 'Fee Amount'
                     },
                     {
                         data: 'duration_in_months',
-                        name: 'duration_in_months'
+                        name: 'duration_in_months',
+                        title: 'Duration (Months)'
                     },
                     {
                         data: 'class_days_display',
-                        name: 'class_days'
-                    },
-                    {
-                        data: 'class_time',
-                        name: 'class_time'
+                        name: 'class_days',
+                        title: 'Schedule',
+                        searchable: false,
+                        sortable: false
                     },
                     {
                         data: 'students_count',
                         name: 'students_count',
+                        title: 'Students',
                         searchable: false,
                         sortable: false
                     },
                     {
                         data: 'actions',
-                        name: '{{ trans('global.actions') }}'
+                        name: 'actions',
+                        title: '',
+                        orderable: false,
+                        searchable: false
                     }
                 ],
                 orderCellsTop: true,
