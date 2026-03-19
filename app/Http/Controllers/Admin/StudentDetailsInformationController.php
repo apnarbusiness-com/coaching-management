@@ -9,7 +9,7 @@ use App\Http\Requests\StoreStudentDetailsInformationRequest;
 use App\Http\Requests\UpdateStudentDetailsInformationRequest;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentDetailsInformation;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;

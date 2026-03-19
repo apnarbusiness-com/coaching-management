@@ -11,7 +11,7 @@ use App\Models\Role;
 use App\Models\Subject;
 use App\Models\Teacher;
 use App\Models\User;
-// use Gate;
+// use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;

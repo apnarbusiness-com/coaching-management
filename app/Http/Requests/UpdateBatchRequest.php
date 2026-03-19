@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Batch;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Validation\Rule;
 
@@ -50,15 +50,25 @@ class UpdateBatchRequest extends FormRequest
                 'min:1',
                 'required_if:fee_type,course',
             ],
-            'class_days' => [
+            'class_schedule' => [
                 'required',
                 'array',
                 'min:1',
             ],
-            'class_days.*' => [
+            'class_schedule.day' => [
+                'required',
+                'array',
+                'min:1',
+            ],
+            'class_schedule.day.*' => [
+                'required',
                 Rule::in(array_keys(Batch::CLASS_DAY_SELECT)),
             ],
-            'class_time' => [
+            'class_schedule.time' => [
+                'required',
+                'array',
+            ],
+            'class_schedule.time.*' => [
                 'required',
                 'date_format:H:i',
             ],
@@ -75,5 +85,18 @@ class UpdateBatchRequest extends FormRequest
                 'array',
             ],
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        if ($this->has('class_schedule') && isset($this->class_schedule['day'])) {
+            $schedule = [];
+            foreach ($this->class_schedule['day'] as $index => $day) {
+                if ($day && isset($this->class_schedule['time'][$index])) {
+                    $schedule[$day] = $this->class_schedule['time'][$index];
+                }
+            }
+            $this->merge(['class_schedule' => $schedule]);
+        }
     }
 }

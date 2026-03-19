@@ -3,8 +3,9 @@
 namespace App\Http\Requests;
 
 use App\Models\Batch;
-use Gate;
+// use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Http\FormRequest;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Validation\Rule;
 
 class StoreBatchRequest extends FormRequest
@@ -50,15 +51,16 @@ class StoreBatchRequest extends FormRequest
                 'min:1',
                 'required_if:fee_type,course',
             ],
-            'class_days' => [
+            'class_schedule' => [
                 'required',
                 'array',
                 'min:1',
             ],
-            'class_days.*' => [
+            'class_schedule.*.day' => [
+                'required',
                 Rule::in(array_keys(Batch::CLASS_DAY_SELECT)),
             ],
-            'class_time' => [
+            'class_schedule.*.time' => [
                 'required',
                 'date_format:H:i',
             ],
@@ -75,5 +77,18 @@ class StoreBatchRequest extends FormRequest
                 'array',
             ],
         ];
+    }
+
+    protected function prepareForValidation()
+    {
+        if ($this->has('class_schedule') && is_array($this->class_schedule)) {
+            $schedule = [];
+            foreach ($this->class_schedule as $key => $row) {
+                if (isset($row['day']) && isset($row['time']) && $row['day'] && $row['time']) {
+                    $schedule[$row['day']] = $row['time'];
+                }
+            }
+            $this->merge(['class_schedule' => $schedule]);
+        }
     }
 }

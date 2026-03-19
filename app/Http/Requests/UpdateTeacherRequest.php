@@ -3,7 +3,7 @@
 namespace App\Http\Requests;
 
 use App\Models\Teacher;
-// use Gate;
+// use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;

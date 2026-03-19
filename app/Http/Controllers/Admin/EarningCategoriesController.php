@@ -7,7 +7,7 @@ use App\Http\Requests\MassDestroyEarningCategoryRequest;
 use App\Http\Requests\StoreEarningCategoryRequest;
 use App\Http\Requests\UpdateEarningCategoryRequest;
 use App\Models\EarningCategory;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 

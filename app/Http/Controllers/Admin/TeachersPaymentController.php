@@ -8,7 +8,7 @@ use App\Http\Requests\StoreTeachersPaymentRequest;
 use App\Http\Requests\UpdateTeachersPaymentRequest;
 use App\Models\Teacher;
 use App\Models\TeachersPayment;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 

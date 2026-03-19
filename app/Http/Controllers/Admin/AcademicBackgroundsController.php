@@ -7,7 +7,7 @@ use App\Http\Requests\MassDestroyAcademicBackgroundRequest;
 use App\Http\Requests\StoreAcademicBackgroundRequest;
 use App\Http\Requests\UpdateAcademicBackgroundRequest;
 use App\Models\AcademicBackground;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 class AcademicBackgroundsController extends Controller

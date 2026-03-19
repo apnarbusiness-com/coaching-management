@@ -112,19 +112,6 @@
                         </div>
 
                         <div class="col-span-1">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required"
-                                for="class_time">{{ trans('cruds.batch.fields.class_time') }}</label>
-                            <input
-                                class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3 {{ $errors->has('class_time') ? 'border-red-500 ring-red-500' : '' }}"
-                                id="class_time" name="class_time" type="time"
-                                value="{{ old('class_time', $batch->class_time ? \Carbon\Carbon::parse($batch->class_time)->format('H:i') : '') }}"
-                                required />
-                            @if ($errors->has('class_time'))
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $errors->first('class_time') }}</p>
-                            @endif
-                        </div>
-
-                        <div class="col-span-1">
                             <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
                                 for="capacity">Capacity</label>
                             <input
@@ -137,19 +124,21 @@
                         </div>
 
                         <div class="col-span-1 md:col-span-2">
-                            <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required"
-                                for="class_days">{{ trans('cruds.batch.fields.class_days') }}</label>
-                            <select
-                                class="form-control select2 mt-1 block w-full {{ $errors->has('class_days') ? 'is-invalid' : '' }}"
-                                name="class_days[]" id="class_days" multiple required>
-                                @foreach (\App\Models\Batch::CLASS_DAY_SELECT as $key => $label)
-                                    <option value="{{ $key }}"
-                                        {{ in_array($key, old('class_days', $batch->class_days ?? []), true) ? 'selected' : '' }}>
-                                        {{ $label }}</option>
-                                @endforeach
-                            </select>
-                            @if ($errors->has('class_days'))
-                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $errors->first('class_days') }}</p>
+                            <div class="flex items-center justify-between">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required">
+                                    Class Schedule
+                                </label>
+                                <button type="button" id="add-schedule-row"
+                                    class="inline-flex items-center px-3 py-1.5 text-xs font-medium text-primary bg-primary/10 hover:bg-primary/20 rounded-md transition-colors">
+                                    <span class="material-symbols-outlined text-[16px] mr-1">add</span>
+                                    Add Class Day
+                                </button>
+                            </div>
+                            <div id="schedule-container" class="mt-2 space-y-2">
+                            </div>
+                            <p class="mt-1 text-xs text-slate-500">Select days and set time for each. Unselected days are off.</p>
+                            @if ($errors->has('class_schedule'))
+                                <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $errors->first('class_schedule') }}</p>
                             @endif
                         </div>
 
@@ -206,6 +195,94 @@
 
             toggleDuration();
             $feeType.on('change', toggleDuration);
+
+            const days = @json(\App\Models\Batch::CLASS_DAY_SELECT);
+            const $container = $('#schedule-container');
+            let rowCounter = 0;
+
+            function addScheduleRow(dayKey = '', timeValue = '') {
+                const id = 'schedule_' + rowCounter++;
+                const availableDays = Object.entries(days);
+                const usedDays = [];
+                $container.find('.schedule-day-select').each(function() {
+                    if ($(this).val()) usedDays.push($(this).val());
+                });
+
+                const options = availableDays.map(([key, label]) => {
+                    const disabled = usedDays.includes(key) && key !== dayKey;
+                    const selected = key === dayKey ? 'selected' : '';
+                    return `<option value="${key}" ${selected} ${disabled ? 'disabled' : ''}>${label}</option>`;
+                }).join('');
+
+                const row = $(`
+                    <div class="schedule-row flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg">
+                        <select name="class_schedule[day][]" class="schedule-day-select form-control select2 flex-1 py-2" required>
+                            <option value="">Select Day</option>
+                            ${options}
+                        </select>
+                        <input type="time" name="class_schedule[time][]" class="schedule-time-input form-control flex-1 py-2 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" value="${timeValue}" required />
+                        <button type="button" class="remove-schedule-row p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors">
+                            <span class="material-symbols-outlined text-[20px]">delete</span>
+                        </button>
+                    </div>
+                `);
+
+                $container.append(row);
+                row.find('.select2').select2({ width: 'resolve' });
+                
+                if (dayKey) {
+                    row.find('.schedule-day-select').val(dayKey).trigger('change');
+                }
+            }
+
+            function updateDayOptions() {
+                const usedDays = [];
+                $container.find('.schedule-day-select').each(function() {
+                    if ($(this).val()) usedDays.push($(this).val());
+                });
+
+                $container.find('.schedule-day-select').each(function() {
+                    const currentVal = $(this).val();
+                    $(this).find('option').each(function() {
+                        const optVal = $(this).val();
+                        if (optVal && optVal !== currentVal) {
+                            $(this).prop('disabled', usedDays.includes(optVal));
+                        }
+                    });
+                    $(this).trigger('change.select2');
+                });
+            }
+
+            $('#add-schedule-row').on('click', function() {
+                addScheduleRow();
+            });
+
+            $container.on('change', '.schedule-day-select', function() {
+                updateDayOptions();
+            });
+
+            $container.on('click', '.remove-schedule-row', function() {
+                $(this).closest('.schedule-row').remove();
+                updateDayOptions();
+            });
+
+            $('form').on('submit', function() {
+                $container.find('.schedule-day-select').each(function() {
+                    $(this).trigger('change');
+                });
+            });
+
+            @if(old('class_schedule.day'))
+                @foreach(old('class_schedule.day') as $index => $day)
+                    addScheduleRow('{{ $day }}', '{{ old("class_schedule.time.$index") }}');
+                @endforeach
+            @elseif($batch->class_schedule)
+                @foreach($batch->class_schedule as $day => $time)
+                    addScheduleRow('{{ $day }}', '{{ $time }}');
+                @endforeach
+            @else
+                addScheduleRow();
+            @endif
         });
     </script>
 @endsection

@@ -29,6 +29,8 @@ class Batch extends Model
         'friday'    => 'Friday',
     ];
 
+    public const DAY_ORDER = ['saturday', 'sunday', 'monday', 'tuesday', 'wednesday', 'thursday', 'friday'];
+
     protected $dates = [
         'created_at',
         'updated_at',
@@ -36,7 +38,7 @@ class Batch extends Model
     ];
 
     protected $casts = [
-        'class_days' => 'array',
+        'class_schedule' => 'array',
     ];
 
     protected $fillable = [
@@ -46,13 +48,38 @@ class Batch extends Model
         'fee_type',
         'fee_amount',
         'duration_in_months',
-        'class_days',
-        'class_time',
+        'class_schedule',
         'capacity',
         'created_at',
         'updated_at',
         'deleted_at',
     ];
+
+    public function getClassDaysAttribute()
+    {
+        if (isset($this->attributes['class_schedule'])) {
+            $schedule = is_array($this->attributes['class_schedule']) 
+                ? $this->attributes['class_schedule'] 
+                : json_decode($this->attributes['class_schedule'], true);
+            return array_keys($schedule ?? []);
+        }
+        return [];
+    }
+
+    public function getFormattedScheduleAttribute()
+    {
+        $schedule = $this->class_schedule ?? [];
+        $formatted = [];
+        foreach (self::DAY_ORDER as $day) {
+            if (isset($schedule[$day])) {
+                $formatted[$day] = [
+                    'day' => self::CLASS_DAY_SELECT[$day],
+                    'time' => \Carbon\Carbon::parse($schedule[$day])->format('h:i A')
+                ];
+            }
+        }
+        return $formatted;
+    }
 
     protected function serializeDate(DateTimeInterface $date)
     {

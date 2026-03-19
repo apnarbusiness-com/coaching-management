@@ -65,16 +65,27 @@
                                 </div>
                             @endif
                             <div>
-                                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Class Days</label>
-                                <div class="mt-2 flex flex-wrap gap-2">
-                                    @foreach ($batch->class_days ?? [] as $day)
-                                        <span class="badge badge-info">{{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}</span>
+                                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Class Schedule</label>
+                                <div class="mt-2 flex flex-col gap-2">
+                                    @php
+                                        $schedule = $batch->class_schedule ?? [];
+                                        $dayOrder = \App\Models\Batch::DAY_ORDER;
+                                        $hasSchedule = false;
+                                    @endphp
+                                    @foreach($dayOrder as $day)
+                                        @if(isset($schedule[$day]))
+                                            @php $hasSchedule = true; @endphp
+                                            <div class="flex items-center gap-2">
+                                                <span class="badge badge-info">{{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}</span>
+                                                <span class="text-slate-600 dark:text-slate-400">-</span>
+                                                <span class="font-medium">{{ \Carbon\Carbon::parse($schedule[$day])->format('h:i A') }}</span>
+                                            </div>
+                                        @endif
                                     @endforeach
+                                    @if(!$hasSchedule)
+                                        <p class="text-slate-500">No schedule set</p>
+                                    @endif
                                 </div>
-                            </div>
-                            <div>
-                                <label class="text-xs font-bold uppercase tracking-wider text-slate-400">Class Time</label>
-                                <p class="mt-1 text-lg font-semibold">{{ \Carbon\Carbon::parse($batch->class_time)->format('h:i A') }}</p>
                             </div>
                         </div>
                     </div>

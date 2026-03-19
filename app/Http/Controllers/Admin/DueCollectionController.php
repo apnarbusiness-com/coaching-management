@@ -13,7 +13,7 @@ use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
 use Carbon\Carbon;
-// use Gate;
+// use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;

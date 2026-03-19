@@ -12,7 +12,7 @@ use App\Models\StudentBasicInfo;
 use Carbon\Carbon;
 use App\Models\Subject;
 use App\Models\Teacher;
-// use Gate;
+// use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -75,19 +75,24 @@ class BatchController extends Controller
                 return $row->duration_in_months ? $row->duration_in_months : '';
             });
             $table->addColumn('class_days_display', function ($row) {
-                if (! is_array($row->class_days)) {
+                $schedule = $row->class_schedule ?? [];
+                if (empty($schedule)) {
                     return '';
                 }
 
                 $labels = [];
-                foreach ($row->class_days as $day) {
-                    $labels[] = sprintf('<span class="label label-info label-many">%s</span>', Batch::CLASS_DAY_SELECT[$day] ?? $day);
+                foreach (Batch::DAY_ORDER as $day) {
+                    if (isset($schedule[$day])) {
+                        $time = \Carbon\Carbon::parse($schedule[$day])->format('h:i A');
+                        $labels[] = sprintf(
+                            '<span class="label label-info label-many">%s: %s</span>',
+                            Batch::CLASS_DAY_SELECT[$day] ?? $day,
+                            $time
+                        );
+                    }
                 }
 
                 return implode(' ', $labels);
-            });
-            $table->editColumn('class_time', function ($row) {
-                return $row->class_time ? date('h:i A', strtotime($row->class_time)) : '';
             });
             $table->addColumn('students_count', function ($row) {
                 return $row->students->count();

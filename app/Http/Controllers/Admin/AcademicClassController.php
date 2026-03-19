@@ -10,7 +10,7 @@ use App\Http\Requests\UpdateAcademicClassRequest;
 use App\Models\AcademicClass;
 use App\Models\Section;
 use App\Models\Shift;
-use Gate;
+use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
