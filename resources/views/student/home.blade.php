@@ -238,7 +238,7 @@
                         <div class="relative z-10">
                             <p class="text-slate-400 text-xs font-bold uppercase tracking-wider mb-1">Total Dues</p>
                             <h3 class="text-3xl font-bold">{{ number_format($dueInfo['total_due'] ?? 0, 2) }} BDT</h3>
-                            <p class="text-slate-400 text-xs mt-4">
+                            <p class="text-slate-400 text-xs mt-4 cursor-pointer hover:underline" onclick="openDueModal()">
                                 @if(($dueInfo['unpaid_months'] ?? 0) > 0)
                                     {{ $dueInfo['unpaid_months'] }} month(s) pending
                                 @else
@@ -247,6 +247,7 @@
                             </p>
                             @if(($dueInfo['total_due'] ?? 0) > 0)
                             <button
+                                onclick="openDueModal()"
                                 class="mt-6 w-full py-2.5 bg-red-600 text-white rounded-lg text-sm font-bold hover:bg-red-700 transition-colors">Pay
                                 Now</button>
                             @else
@@ -357,11 +358,120 @@
             </div>
         </div>
     </main>
+
+    <!-- Due Details Modal -->
+    <div id="dueModal" class="fixed inset-0 bg-black/50 z-50 hidden items-center justify-center p-4">
+        <div class="bg-white dark:bg-slate-900 rounded-2xl shadow-2xl max-w-2xl w-full max-h-[90vh] overflow-hidden">
+            <div class="p-6 border-b border-slate-100 dark:border-slate-800 flex items-center justify-between">
+                <div>
+                    <h3 class="text-xl font-bold text-slate-900 dark:text-white">Due Details</h3>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mt-1">Your pending payment breakdown</p>
+                </div>
+                <button onclick="closeDueModal()" class="p-2 hover:bg-slate-100 dark:hover:bg-slate-800 rounded-lg transition-colors">
+                    <span class="material-symbols-outlined text-slate-500">close</span>
+                </button>
+            </div>
+            <div class="p-6 overflow-y-auto max-h-[calc(90vh-180px)]">
+                @if($unpaidDues->isNotEmpty())
+                    <div class="space-y-4">
+                        @foreach($unpaidDues as $due)
+                            <div class="border border-slate-200 dark:border-slate-700 rounded-xl p-4 {{ $due->status === 'partial' ? 'bg-amber-50 dark:bg-amber-900/20 border-amber-200' : 'bg-red-50/50 dark:bg-red-900/10' }}">
+                                <div class="flex items-start justify-between mb-3">
+                                    <div>
+                                        <h4 class="font-bold text-slate-900 dark:text-white">
+                                            {{ \Carbon\Carbon::createFromDate(null, $due->month, 1)->format('F') }} {{ $due->year }}
+                                        </h4>
+                                        <p class="text-sm text-slate-500 dark:text-slate-400">
+                                            {{ $due->batch->batch_name ?? 'N/A' }}
+                                            @if($due->academicClass)
+                                                <span class="mx-1">•</span>
+                                                {{ $due->academicClass->class_name }}
+                                            @endif
+                                        </p>
+                                    </div>
+                                    @if($due->status === 'partial')
+                                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-amber-100 text-amber-700 dark:bg-amber-900/50 dark:text-amber-300">Partial</span>
+                                    @else
+                                        <span class="px-2 py-1 text-xs font-bold rounded-full bg-red-100 text-red-700 dark:bg-red-900/50 dark:text-red-300">Unpaid</span>
+                                    @endif
+                                </div>
+                                <div class="grid grid-cols-3 gap-4 text-sm">
+                                    <div>
+                                        <p class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Due Amount</p>
+                                        <p class="font-bold text-slate-900 dark:text-white">{{ number_format($due->due_amount, 2) }} BDT</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Paid</p>
+                                        <p class="font-bold text-emerald-600">{{ number_format($due->paid_amount, 2) }} BDT</p>
+                                    </div>
+                                    <div>
+                                        <p class="text-slate-500 dark:text-slate-400 text-xs uppercase tracking-wider">Remaining</p>
+                                        <p class="font-bold text-red-600">{{ number_format($due->due_remaining, 2) }} BDT</p>
+                                    </div>
+                                </div>
+                                @if($due->status === 'partial')
+                                    <div class="mt-3 pt-3 border-t border-amber-200 dark:border-amber-800">
+                                        <div class="flex items-center gap-2 text-xs text-amber-700 dark:text-amber-300">
+                                            <span class="material-symbols-outlined text-sm">info</span>
+                                            Partial payment received. Complete your payment to clear this month.
+                                        </div>
+                                    </div>
+                                @endif
+                            </div>
+                        @endforeach
+                    </div>
+                    <div class="mt-6 p-4 bg-slate-900 text-white rounded-xl">
+                        <div class="flex justify-between items-center">
+                            <span class="text-slate-300 font-medium">Total Outstanding</span>
+                            <span class="text-2xl font-bold">{{ number_format($dueInfo['total_due'] ?? 0, 2) }} BDT</span>
+                        </div>
+                    </div>
+                @else
+                    <div class="text-center py-8">
+                        <span class="material-symbols-outlined text-6xl text-emerald-500">check_circle</span>
+                        <h4 class="mt-4 font-bold text-slate-900 dark:text-white">All Clear!</h4>
+                        <p class="text-slate-500 dark:text-slate-400 mt-2">You have no pending dues.</p>
+                    </div>
+                @endif
+            </div>
+            <div class="p-6 border-t border-slate-100 dark:border-slate-800 bg-slate-50 dark:bg-slate-800/50">
+                <p class="text-xs text-slate-500 dark:text-slate-400 text-center">
+                    For any payment related queries, please contact the administration.
+                </p>
+            </div>
+        </div>
+    </div>
 @endsection
 @section('scripts')
     @parent
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <script>
         $(document).ready(function() {});
+
+        function openDueModal() {
+            const modal = document.getElementById('dueModal');
+            modal.classList.remove('hidden');
+            modal.classList.add('flex');
+            document.body.style.overflow = 'hidden';
+        }
+
+        function closeDueModal() {
+            const modal = document.getElementById('dueModal');
+            modal.classList.add('hidden');
+            modal.classList.remove('flex');
+            document.body.style.overflow = '';
+        }
+
+        document.getElementById('dueModal').addEventListener('click', function(e) {
+            if (e.target === this) {
+                closeDueModal();
+            }
+        });
+
+        document.addEventListener('keydown', function(e) {
+            if (e.key === 'Escape') {
+                closeDueModal();
+            }
+        });
     </script>
 @endsection

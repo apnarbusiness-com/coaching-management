@@ -136,6 +136,13 @@ class HomeController
 
         $dueService = new DueCalculationService();
         $dueInfo = $dueService->calculateStudentTotalDue($student->id);
+        
+        $unpaidDues = StudentMonthlyDue::where('student_id', $student->id)
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->with(['batch', 'academicClass'])
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
 
         $paymentQuery = Earning::with('earning_category')
             ->where('student_id', $student->id)
@@ -148,7 +155,7 @@ class HomeController
         $latestPayment = (clone $paymentQuery)->first();
         $paymentHistory = $paymentQuery->take(20)->get();
 
-        return view('student.home', compact('latestPayment', 'paymentHistory', 'dueInfo'));
+        return view('student.home', compact('latestPayment', 'paymentHistory', 'dueInfo', 'unpaidDues'));
     }
 
     public function studentProfile()
