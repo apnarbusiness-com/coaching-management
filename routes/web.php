@@ -1,5 +1,6 @@
 <?php
 
+use App\Http\Controllers\Admin\BatchAttendanceController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
@@ -148,6 +149,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections/students', 'DueCollectionController@getStudentList')->name('due-collections.students');
     Route::get('due-collections/student-dues/{studentId}', 'DueCollectionController@getStudentDues')->name('due-collections.student-dues');
     Route::post('due-collections/pay', 'DueCollectionController@payDue')->name('due-collections.pay');
+
+    // Batch Attendance
+    Route::get('batch-attendances', [BatchAttendanceController::class, 'index'])->name('batch-attendances.index');
+    Route::get('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'showAttendanceForm'])->name('batch-attendances.take');
+    Route::post('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'store'])->name('batch-attendances.store');
+    Route::get('batch-attendances/{batchId}/report', [BatchAttendanceController::class, 'getReport'])->name('batch-attendances.report');
 });
 Route::group(['prefix' => 'profile', 'as' => 'profile.', 'namespace' => 'Auth', 'middleware' => ['auth']], function () {
     // Change password

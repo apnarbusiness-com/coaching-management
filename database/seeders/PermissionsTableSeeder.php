@@ -559,6 +559,11 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'due_collection_delete',
                 'parent_id' => 100,
             ],
+            [
+                'id'    => 105,
+                'title' => 'batch_attendance_access',
+                'parent_id' => null,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);
