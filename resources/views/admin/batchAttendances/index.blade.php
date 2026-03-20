@@ -1,88 +1,126 @@
 @extends('layouts.admin')
 @section('content')
 <style>
+    .attendance-wrap {
+        padding: 18px;
+    }
+    .attendance-hero {
+        background: radial-gradient(1200px 300px at 20% -10%, #dbeafe 0%, #f8fafc 45%, #ffffff 100%);
+        border: 1px solid #e2e8f0;
+        border-radius: 16px;
+        padding: 20px;
+        margin-bottom: 18px;
+    }
+    .attendance-hero h3 {
+        margin: 0 0 6px;
+        font-weight: 800;
+        color: #0f172a;
+    }
+    .attendance-hero .subtitle {
+        color: #64748b;
+        font-size: 13px;
+    }
     .batch-grid {
         display: grid;
-        grid-template-columns: repeat(auto-fill, minmax(280px, 1fr));
+        grid-template-columns: repeat(auto-fit, minmax(260px, 1fr));
         gap: 16px;
-        padding: 16px;
     }
     .batch-card {
-        background: #fff;
+        background: #ffffff;
         border: 1px solid #e2e8f0;
-        border-radius: 12px;
-        padding: 20px;
-        box-shadow: 0 2px 4px rgba(0,0,0,0.05);
-        transition: transform 0.2s, box-shadow 0.2s;
+        border-radius: 16px;
+        padding: 18px;
+        display: flex;
+        flex-direction: column;
+        gap: 12px;
+        box-shadow: 0 8px 20px rgba(15, 23, 42, 0.06);
+        transition: transform 0.2s ease, box-shadow 0.2s ease;
     }
     .batch-card:hover {
         transform: translateY(-2px);
-        box-shadow: 0 4px 12px rgba(0,0,0,0.1);
+        box-shadow: 0 12px 26px rgba(15, 23, 42, 0.12);
     }
-    .batch-card .batch-name {
+    .batch-name {
         font-size: 18px;
-        font-weight: 700;
-        color: #1e293b;
-        margin-bottom: 8px;
+        font-weight: 800;
+        color: #0f172a;
     }
-    .batch-card .subject-badge {
-        display: inline-block;
-        background: #e0f2fe;
-        color: #0369a1;
-        padding: 4px 12px;
-        border-radius: 20px;
+    .subject-badge {
+        display: inline-flex;
+        align-items: center;
+        gap: 6px;
+        background: #eef2ff;
+        color: #4338ca;
+        padding: 4px 10px;
+        border-radius: 999px;
         font-size: 12px;
-        font-weight: 600;
-        margin-bottom: 12px;
+        font-weight: 700;
+        width: fit-content;
     }
-    .batch-card .student-count {
+    .student-count {
         display: flex;
         align-items: center;
         gap: 8px;
-        color: #64748b;
-        font-size: 14px;
-        margin-bottom: 16px;
+        color: #475569;
+        font-size: 13px;
     }
-    .batch-card .action-btn {
+    .student-count .count-pill {
+        background: #f1f5f9;
+        color: #0f172a;
+        font-weight: 700;
+        padding: 2px 8px;
+        border-radius: 999px;
+        font-size: 12px;
+    }
+    .action-btn {
         width: 100%;
-        padding: 12px;
-        border-radius: 8px;
-        font-weight: 600;
+        padding: 12px 14px;
+        border-radius: 10px;
+        font-weight: 700;
+        text-transform: none;
+        letter-spacing: 0.2px;
     }
-    .header-actions {
-        display: flex;
-        justify-content: space-between;
-        align-items: center;
-        margin-bottom: 20px;
+    .empty-state {
+        text-align: center;
+        padding: 40px 16px;
+        color: #94a3b8;
     }
-    .header-actions h3 {
-        margin: 0;
+    @media (max-width: 768px) {
+        .attendance-wrap { padding: 12px; }
+        .attendance-hero { padding: 16px; }
+        .batch-card { padding: 16px; }
     }
 </style>
 
-<div class="header-actions">
-    <h3>Batch Attendance</h3>
-</div>
-
-<div class="batch-grid">
-    @forelse($batches as $batch)
-    <div class="batch-card">
-        <div class="batch-name">{{ $batch['batch_name'] }}</div>
-        <div class="subject-badge">{{ $batch['subject_name'] }}</div>
-        <div class="student-count">
-            <svg width="16" height="16" fill="none" stroke="currentColor" viewBox="0 0 24 24">
-                <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M12 4.354a4 4 0 110 5.292M15 21H3v-1a6 6 0 0112 0v1zm0 0h6v-1a6 6 0 00-9-5.197m13.5-9a2.5 2.5 0 11-5 0 2.5 2.5 0 015 0z"/>
-            </svg>
-            {{ count($batch->students) }} Students
+<div class="attendance-wrap">
+    <div class="attendance-hero">
+        <h3>Batch Attendance</h3>
+        <div class="subtitle">
+            Current enrollment month: {{ $attendanceMonthLabel ?? '' }}
         </div>
-        <a href="{{ route('admin.batch-attendances.take', $batch['id']) }}" class="btn btn-primary action-btn">
-            Take Attendance
-        </a>
     </div>
-    @empty
-    <div class="col-12 text-center py-5">
-        <p class="text-muted">No batches found with enrolled students.</p>
+
+    <div class="batch-grid">
+        @forelse($batches as $batch)
+        <div class="batch-card">
+            <div class="batch-name">{{ $batch->batch_name }}</div>
+            <div class="subject-badge">
+                <i class="fa fa-book"></i> {{ $batch->subject?->name ?? 'N/A' }}
+            </div>
+            <div class="student-count">
+                <i class="fa fa-users"></i>
+                <span class="count-pill">{{ (int) ($batch->students_count ?? 0) }}</span>
+                Students Enrolled
+            </div>
+            <a href="{{ route('admin.batch-attendances.take', $batch->id) }}" class="btn btn-primary action-btn">
+                Take Attendance
+            </a>
+        </div>
+        @empty
+        <div class="empty-state">
+            <p>No batches found with enrolled students.</p>
+        </div>
+        @endforelse
     </div>
-    @endforelse
 </div>
 @endsection

@@ -9,6 +9,7 @@ use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -18,7 +19,17 @@ class BatchAttendanceController extends Controller
     {
         abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $batches = Batch::orderBy('batch_name')
+        $attendanceMonth = Carbon::today()->month;
+        $attendanceYear = Carbon::today()->year;
+
+        $batches = Batch::with('subject')
+            ->withCount([
+                'students as students_count' => function ($query) use ($attendanceMonth, $attendanceYear) {
+                    $query->whereMonth('batch_student_basic_info.enrolled_at', $attendanceMonth)
+                        ->whereYear('batch_student_basic_info.enrolled_at', $attendanceYear);
+                }
+            ])
+            ->orderBy('batch_name')
             ->get();
             // ->map(function ($batch) {
             //     return [
@@ -31,7 +42,14 @@ class BatchAttendanceController extends Controller
 
             // return  $batches[0]->students;
 
-        return view('admin.batchAttendances.index', compact('batches'));
+        $attendanceMonthLabel = Carbon::createFromDate($attendanceYear, $attendanceMonth, 1)->format('F Y');
+
+        return view('admin.batchAttendances.index', compact(
+            'batches',
+            'attendanceMonth',
+            'attendanceYear',
+            'attendanceMonthLabel'
+        ));
     }
 
     public function showAttendanceForm(Request $request, $batchId)
@@ -40,10 +58,13 @@ class BatchAttendanceController extends Controller
 
         $batch = Batch::with('subject')->findOrFail($batchId);
         $date = $request->input('date', Carbon::today()->format('Y-m-d'));
+        $attendanceMonth = Carbon::parse($date)->month;
+        $attendanceYear = Carbon::parse($date)->year;
 
         $students = $batch->students()
             ->with('studentDetails')
-            ->wherePivot('enrolled_at', '<=', $date)
+            ->whereMonth('batch_student_basic_info.enrolled_at', $attendanceMonth)
+            ->whereYear('batch_student_basic_info.enrolled_at', $attendanceYear)
             ->orderBy('first_name')
             ->orderBy('last_name')
             ->get();
@@ -56,29 +77,16 @@ class BatchAttendanceController extends Controller
         $currentMonth = Carbon::parse($date)->month;
         $currentYear = Carbon::parse($date)->year;
 
-        $studentDues = StudentMonthlyDue::whereIn('student_id', $students->pluck('id'))
+        $studentTotalDues = StudentMonthlyDue::whereIn('student_id', $students->pluck('id'))
             ->where('batch_id', $batchId)
             ->whereIn('status', ['unpaid', 'partial'])
-            ->where(function ($query) use ($currentMonth, $currentYear) {
-                $query->where(function ($q) use ($currentMonth, $currentYear) {
-                    $q->where('month', '<', $currentMonth)
-                      ->orWhere(function ($q2) use ($currentMonth, $currentYear) {
-                          $q2->where('month', '=', $currentMonth)
-                             ->where('year', '<=', $currentYear);
-                      });
-                });
-            })
-            ->orWhere(function ($query) use ($currentMonth, $currentYear) {
-                $query->where('month', $currentMonth)
-                      ->where('year', $currentYear)
-                      ->whereIn('status', ['unpaid', 'partial']);
-            })
-            ->get()
-            ->groupBy('student_id');
+            ->groupBy('student_id')
+            ->select('student_id', DB::raw('sum(due_remaining) as due_remaining_total'))
+            ->pluck('due_remaining_total', 'student_id');
 
-        $formattedStudents = $students->map(function ($student) use ($existingAttendances, $studentDues, $batchId) {
-            $dueInfo = $studentDues->get($student->id)?->first();
-            $hasDue = $dueInfo !== null && $dueInfo->due_remaining > 0;
+        $formattedStudents = $students->map(function ($student) use ($existingAttendances, $studentTotalDues) {
+            $totalDueRemaining = (float) ($studentTotalDues[$student->id] ?? 0);
+            $hasDue = $totalDueRemaining > 0;
 
             return [
                 'id' => $student->id,
@@ -88,7 +96,7 @@ class BatchAttendanceController extends Controller
                 'image' => $student->image?->thumbnail ?? null,
                 'status' => $existingAttendances[$student->id] ?? null,
                 'has_due' => $hasDue,
-                'due_amount' => $dueInfo?->due_remaining ?? 0,
+                'due_amount' => $totalDueRemaining,
             ];
         });
 
@@ -100,8 +108,16 @@ class BatchAttendanceController extends Controller
             'marked' => count($existingAttendances),
         ];
 
+        $attendanceMonthLabel = Carbon::createFromDate($attendanceYear, $attendanceMonth, 1)->format('F Y');
+
         return view('admin.batchAttendances.take', compact(
-            'batch', 'date', 'formattedStudents', 'stats'
+            'batch',
+            'date',
+            'formattedStudents',
+            'stats',
+            'attendanceMonth',
+            'attendanceYear',
+            'attendanceMonthLabel'
         ));
     }
 
@@ -194,5 +210,64 @@ class BatchAttendanceController extends Controller
         return view('admin.batchAttendances.report', compact(
             'batch', 'startDate', 'endDate', 'reportData'
         ));
+    }
+
+    public function getStudentDueSummary(Request $request, $batchId, $studentId)
+    {
+        abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batch = Batch::findOrFail($batchId);
+        $student = StudentBasicInfo::findOrFail($studentId);
+
+        $isEnrolled = $batch->students()
+            ->where('student_basic_infos.id', $studentId)
+            ->exists();
+
+        if (!$isEnrolled) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Student not found in this batch.',
+            ], 404);
+        }
+
+        $dues = StudentMonthlyDue::where('batch_id', $batchId)
+            ->where('student_id', $studentId)
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        $totals = [
+            'total_due' => (float) $dues->sum('due_amount'),
+            'total_paid' => (float) $dues->sum('paid_amount'),
+            'total_discount' => (float) $dues->sum('discount_amount'),
+            'total_remaining' => (float) $dues->sum('due_remaining'),
+        ];
+
+        $items = $dues->map(function ($due) {
+            return [
+                'month' => $due->month,
+                'year' => $due->year,
+                'month_name' => $due->month_name,
+                'due_amount' => (float) $due->due_amount,
+                'paid_amount' => (float) $due->paid_amount,
+                'discount_amount' => (float) $due->discount_amount,
+                'due_remaining' => (float) $due->due_remaining,
+                'status' => $due->status,
+            ];
+        })->values();
+
+        return response()->json([
+            'success' => true,
+            'student' => [
+                'id' => $student->id,
+                'name' => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+            ],
+            'batch' => [
+                'id' => $batch->id,
+                'name' => $batch->batch_name,
+            ],
+            'totals' => $totals,
+            'items' => $items,
+        ]);
     }
 }

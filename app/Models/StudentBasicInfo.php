@@ -147,7 +147,8 @@ class StudentBasicInfo extends Model implements HasMedia
 
     public function batches()
     {
-        return $this->belongsToMany(Batch::class);
+        return $this->belongsToMany(Batch::class)
+            ->withPivot(['enrolled_at', 'per_student_discount', 'custom_monthly_fee']);
     }
 
 }

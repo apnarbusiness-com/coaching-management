@@ -155,6 +155,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'showAttendanceForm'])->name('batch-attendances.take');
     Route::post('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'store'])->name('batch-attendances.store');
     Route::get('batch-attendances/{batchId}/report', [BatchAttendanceController::class, 'getReport'])->name('batch-attendances.report');
+    Route::get('batch-attendances/{batchId}/students/{studentId}/due-summary', [BatchAttendanceController::class, 'getStudentDueSummary'])->name('batch-attendances.dueSummary');
 });
 Route::group(['prefix' => 'profile', 'as' => 'profile.', 'namespace' => 'Auth', 'middleware' => ['auth']], function () {
     // Change password
