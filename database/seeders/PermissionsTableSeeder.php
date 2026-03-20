@@ -562,7 +562,7 @@ class PermissionsTableSeeder extends Seeder
             [
                 'id'    => 105,
                 'title' => 'batch_attendance_access',
-                'parent_id' => null,
+                'parent_id' => 19,
             ],
         ];
 

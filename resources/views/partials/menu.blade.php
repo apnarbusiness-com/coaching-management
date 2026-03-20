@@ -185,6 +185,17 @@
                             </a>
                         </li>
                     @endcan
+                    @can('batch_attendance_access')
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route("admin.batch-attendances.index") }}"
+                                class="c-sidebar-nav-link {{ request()->is("admin/batch-attendances") || request()->is("admin/batch-attendances/*") ? "c-active" : "" }}">
+                                <i class="fa-fw fas fa-clipboard-check c-sidebar-nav-icon">
+
+                                </i>
+                                Batch Attendance
+                            </a>
+                        </li>
+                    @endcan
                     {{-- @can('student_details_information_access')
                         <li class="c-sidebar-nav-item">
                             <a href="{{ route("admin.student-details-informations.index") }}"
