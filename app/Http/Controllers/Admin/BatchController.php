@@ -8,7 +8,9 @@ use App\Http\Requests\StoreBatchRequest;
 use App\Http\Requests\UpdateBatchRequest;
 use App\Models\AcademicClass;
 use App\Models\Batch;
+use App\Models\Earning;
 use App\Models\StudentBasicInfo;
+use App\Models\StudentMonthlyDue;
 use Carbon\Carbon;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -25,8 +27,27 @@ class BatchController extends Controller
     {
         abort_if(Gate::denies('batch_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
+        $summary = $this->buildBatchIndexSummary($month, $year);
+
         if ($request->ajax()) {
-            $query = Batch::with(['subject', 'subjects', 'class', 'students'])->select(sprintf('%s.*', (new Batch)->table));
+            $enrolledCountSub = DB::table('batch_student_basic_info')
+                ->selectRaw('count(distinct student_basic_info_id)')
+                ->whereColumn('batch_student_basic_info.batch_id', 'batches.id')
+                ->whereMonth('enrolled_at', $month)
+                ->whereYear('enrolled_at', $year);
+
+            $dueRemainingSub = DB::table('student_monthly_dues')
+                ->selectRaw('coalesce(sum(due_remaining), 0)')
+                ->whereColumn('student_monthly_dues.batch_id', 'batches.id')
+                ->where('month', $month)
+                ->where('year', $year);
+
+            $query = Batch::with(['subject', 'subjects', 'class'])
+                ->select(sprintf('%s.*', (new Batch)->table))
+                ->selectSub($enrolledCountSub, 'students_count')
+                ->selectSub($dueRemainingSub, 'total_due_remaining');
             $table = Datatables::of($query);
 
             $table->addColumn('placeholder', '&nbsp;');
@@ -74,6 +95,23 @@ class BatchController extends Controller
             $table->editColumn('duration_in_months', function ($row) {
                 return $row->duration_in_months ? $row->duration_in_months : '';
             });
+            $table->addColumn('expected_income', function ($row) {
+                $studentCount = (int) ($row->students_count ?? 0);
+                $feeAmount = (float) ($row->fee_amount ?? 0);
+                $duration = (int) ($row->duration_in_months ?? 0);
+                $monthlyFee = $feeAmount;
+
+                if ($row->fee_type === 'course' && $duration > 0) {
+                    $monthlyFee = $feeAmount / $duration;
+                }
+
+                $expected = $monthlyFee * $studentCount;
+
+                return number_format($expected, 2);
+            });
+            $table->addColumn('total_due_remaining', function ($row) {
+                return number_format((float) ($row->total_due_remaining ?? 0), 2);
+            });
             $table->addColumn('class_days_display', function ($row) {
                 $schedule = $row->class_schedule ?? [];
                 if (empty($schedule)) {
@@ -95,15 +133,57 @@ class BatchController extends Controller
                 return implode(' ', $labels);
             });
             $table->addColumn('students_count', function ($row) {
-                return $row->students->count();
+                return (int) ($row->students_count ?? 0);
             });
 
             $table->rawColumns(['actions', 'placeholder', 'class_days_display']);
 
-            return $table->make(true);
+            return $table->with('summary', $summary)->make(true);
         }
 
-        return view('admin.batches.index');
+        return view('admin.batches.index', compact('month', 'year', 'summary'));
+    }
+
+    protected function buildBatchIndexSummary(int $month, int $year): array
+    {
+        $enrolledCountSub = DB::table('batch_student_basic_info')
+            ->selectRaw('count(distinct student_basic_info_id)')
+            ->whereColumn('batch_student_basic_info.batch_id', 'batches.id')
+            ->whereMonth('enrolled_at', $month)
+            ->whereYear('enrolled_at', $year);
+
+        $batches = Batch::query()
+            ->select('id', 'fee_type', 'fee_amount', 'duration_in_months')
+            ->selectSub($enrolledCountSub, 'students_count')
+            ->get();
+
+        $totalExpected = 0;
+        foreach ($batches as $batch) {
+            $studentCount = (int) ($batch->students_count ?? 0);
+            $feeAmount = (float) ($batch->fee_amount ?? 0);
+            $duration = (int) ($batch->duration_in_months ?? 0);
+            $monthlyFee = $feeAmount;
+
+            if ($batch->fee_type === 'course' && $duration > 0) {
+                $monthlyFee = $feeAmount / $duration;
+            }
+
+            $totalExpected += ($monthlyFee * $studentCount);
+        }
+
+        $totalEarnings = (float) Earning::where('earning_month', $month)
+            ->where('earning_year', $year)
+            ->sum('amount');
+
+        $totalRemaining = (float) StudentMonthlyDue::where('month', $month)
+            ->where('year', $year)
+            ->sum('due_remaining');
+
+        return [
+            'total_expected' => $totalExpected,
+            'total_earned' => $totalEarnings,
+            'total_remaining' => $totalRemaining,
+        ];
     }
 
     public function create()
@@ -400,6 +480,68 @@ class BatchController extends Controller
         return redirect()
             ->route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year])
             ->with('status', 'Copied previous month enrollments successfully.');
+    }
+
+    public function copyPreviousMonthEnrollmentsAll(Request $request)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year'  => ['required', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $month = (int) $data['month'];
+        $year = (int) $data['year'];
+
+        $currentMonthStart = Carbon::createFromDate($year, $month, 1);
+        $previousMonthStart = $currentMonthStart->copy()->subMonth();
+
+        $prevMonth = (int) $previousMonthStart->month;
+        $prevYear = (int) $previousMonthStart->year;
+
+        $previousEnrollments = DB::table('batch_student_basic_info')
+            ->whereMonth('enrolled_at', $prevMonth)
+            ->whereYear('enrolled_at', $prevYear)
+            ->get();
+
+        if ($previousEnrollments->isEmpty()) {
+            return redirect()
+                ->route('admin.batches.index', ['month' => $month, 'year' => $year])
+                ->with('status', 'Previous month has no enrolled students to copy.');
+        }
+
+        $grouped = $previousEnrollments->groupBy('batch_id');
+        $enrolledAt = $currentMonthStart->toDateString();
+        $totalInserted = 0;
+
+        foreach ($grouped as $batchId => $rows) {
+            DB::table('batch_student_basic_info')
+                ->where('batch_id', $batchId)
+                ->whereMonth('enrolled_at', $month)
+                ->whereYear('enrolled_at', $year)
+                ->delete();
+
+            $insertRows = [];
+            foreach ($rows as $prev) {
+                $insertRows[] = [
+                    'batch_id' => $prev->batch_id,
+                    'student_basic_info_id' => $prev->student_basic_info_id,
+                    'enrolled_at' => $enrolledAt,
+                    'per_student_discount' => $prev->per_student_discount ?? 0,
+                    'custom_monthly_fee' => $prev->custom_monthly_fee ?? null,
+                ];
+            }
+
+            if (!empty($insertRows)) {
+                DB::table('batch_student_basic_info')->insert($insertRows);
+                $totalInserted += count($insertRows);
+            }
+        }
+
+        return redirect()
+            ->route('admin.batches.index', ['month' => $month, 'year' => $year])
+            ->with('status', "Copied previous month enrollments for all batches. Total students enrolled: {$totalInserted}.");
     }
 
     public function assignTeachers(Batch $batch)
