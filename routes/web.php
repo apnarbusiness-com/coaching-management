@@ -1,14 +1,19 @@
 <?php
 
+use App\Http\Controllers\Admin\AdmissionApplicationsController;
 use App\Http\Controllers\Admin\BatchAttendanceController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
 use App\Http\Controllers\Admin\TeacherController;
+use App\Http\Controllers\AdmissionApplicationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
 Route::redirect('/', '/login');
+Route::get('/admission', [AdmissionApplicationController::class, 'create'])->name('admission.public');
+Route::post('/admission', [AdmissionApplicationController::class, 'store'])->name('admission.public.store');
+Route::get('/admission/thank-you/{application}', [AdmissionApplicationController::class, 'thankYou'])->name('admission.public.thankyou');
 Route::get('/home', function () {
     if (session('status')) {
         return redirect()->route('admin.home')->with('status', session('status'));
@@ -90,6 +95,12 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('student-basic-infos/print-id-card/{id}', [StudentBasicInfoController::class, 'printIdCard'])->name('student-basic-infos.printIdCard');
     Route::post('student-basic-infos/{studentBasicInfo}/sync-subjects', 'StudentBasicInfoController@syncSubjects')->name('student-basic-infos.syncSubjects');
     Route::resource('student-basic-infos', 'StudentBasicInfoController');
+
+    // Admission Applications
+    Route::get('admission-applications', [AdmissionApplicationsController::class, 'index'])->name('admission-applications.index');
+    Route::get('admission-applications/{application}', [AdmissionApplicationsController::class, 'show'])->name('admission-applications.show');
+    Route::post('admission-applications/{application}/approve', [AdmissionApplicationsController::class, 'approve'])->name('admission-applications.approve');
+    Route::delete('admission-applications/{application}', [AdmissionApplicationsController::class, 'destroy'])->name('admission-applications.destroy');
 
     // Student Details Information
     Route::delete('student-details-informations/destroy', 'StudentDetailsInformationController@massDestroy')->name('student-details-informations.massDestroy');

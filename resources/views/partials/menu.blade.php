@@ -173,6 +173,15 @@
                                 {{ trans('cruds.studentBasicInfo.title') }}
                             </a>
                         </li>
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route("admin.admission-applications.index") }}"
+                                class="c-sidebar-nav-link {{ request()->is("admin/admission-applications") || request()->is("admin/admission-applications/*") ? "c-active" : "" }}">
+                                <i class="fa-fw fas fa-file-signature c-sidebar-nav-icon">
+
+                                </i>
+                                Admission Applications
+                            </a>
+                        </li>
                     @endcan
                     @can('due_collection_access')
                         <li class="c-sidebar-nav-item">
