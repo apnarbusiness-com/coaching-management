@@ -273,11 +273,21 @@
                                         {{ \App\Models\Batch::FEE_TYPE_SELECT[$batch->fee_type] ?? $batch->fee_type }}
                                     </p>
                                     <div class="mt-2 flex flex-wrap gap-2">
-                                        @foreach ($batch->class_schedule ?? [] as $day => $time)
-                                            <span class="px-2 py-1 bg-primary/10 text-primary text-[11px] font-semibold rounded">
-                                                {{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}:
-                                                {{ \Carbon\Carbon::parse($time)->format('h:i A') }}
-                                            </span>
+                                        @foreach ($batch->class_schedule ?? [] as $day => $entry)
+                                            @php
+                                                $timeValue = is_array($entry) ? ($entry['time'] ?? null) : $entry;
+                                                $roomId = is_array($entry) ? ($entry['class_room_id'] ?? null) : null;
+                                                $roomName = $roomId ? ($classRooms[$roomId] ?? null) : null;
+                                            @endphp
+                                            @if($timeValue)
+                                                <span class="px-2 py-1 bg-primary/10 text-primary text-[11px] font-semibold rounded">
+                                                    {{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}:
+                                                    {{ \Carbon\Carbon::parse($timeValue)->format('h:i A') }}
+                                                    @if($roomName)
+                                                        ({{ $roomName }})
+                                                    @endif
+                                                </span>
+                                            @endif
                                         @endforeach
                                     </div>
                                 </li>

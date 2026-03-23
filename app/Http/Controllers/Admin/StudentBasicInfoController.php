@@ -10,6 +10,7 @@ use App\Http\Requests\UpdateStudentBasicInfoRequest;
 use App\Models\AcademicClass;
 use App\Models\AcademicBackground;
 use App\Models\Batch;
+use App\Models\ClassRoom;
 use App\Models\Section;
 use App\Models\Shift;
 use App\Models\StudentBasicInfo;
@@ -425,8 +426,9 @@ class StudentBasicInfoController extends Controller
         $score = 0;
 
         $subjects = Subject::pluck('name', 'id');
+        $classRooms = ClassRoom::pluck('name', 'id');
 
-        return view('admin.studentBasicInfos.show', compact('studentBasicInfo', 'attendancePercent', 'score', 'subjects'));
+        return view('admin.studentBasicInfos.show', compact('studentBasicInfo', 'attendancePercent', 'score', 'subjects', 'classRooms'));
     }
 
     public function syncSubjects(Request $request, StudentBasicInfo $studentBasicInfo)

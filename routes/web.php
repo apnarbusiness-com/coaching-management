@@ -140,6 +140,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::delete('academic-backgrounds/destroy', 'AcademicBackgroundsController@massDestroy')->name('academic-backgrounds.massDestroy');
     Route::resource('academic-backgrounds', 'AcademicBackgroundsController');
 
+    // Class Rooms
+    Route::delete('class-rooms/destroy', 'ClassRoomsController@massDestroy')->name('class-rooms.massDestroy');
+    Route::resource('class-rooms', 'ClassRoomsController');
+
     // Teachers Payment
     Route::delete('teachers-payments/destroy', 'TeachersPaymentController@massDestroy')->name('teachers-payments.massDestroy');
     Route::resource('teachers-payments', 'TeachersPaymentController');

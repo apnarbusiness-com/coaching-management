@@ -72,9 +72,16 @@ class Batch extends Model
         $formatted = [];
         foreach (self::DAY_ORDER as $day) {
             if (isset($schedule[$day])) {
+                $entry = $schedule[$day];
+                $timeValue = is_array($entry) ? ($entry['time'] ?? null) : $entry;
+                $roomId = is_array($entry) ? ($entry['class_room_id'] ?? null) : null;
+                if (!$timeValue) {
+                    continue;
+                }
                 $formatted[$day] = [
                     'day' => self::CLASS_DAY_SELECT[$day],
-                    'time' => \Carbon\Carbon::parse($schedule[$day])->format('h:i A')
+                    'time' => \Carbon\Carbon::parse($timeValue)->format('h:i A'),
+                    'class_room_id' => $roomId,
                 ];
             }
         }

@@ -535,6 +535,31 @@ class PermissionsTableSeeder extends Seeder
                 'parent_id' => 90,
             ],
             [
+                'id'    => 106,
+                'title' => 'class_room_access',
+                'parent_id' => null,
+            ],
+            [
+                'id'    => 107,
+                'title' => 'class_room_create',
+                'parent_id' => 106,
+            ],
+            [
+                'id'    => 108,
+                'title' => 'class_room_edit',
+                'parent_id' => 106,
+            ],
+            [
+                'id'    => 109,
+                'title' => 'class_room_show',
+                'parent_id' => 106,
+            ],
+            [
+                'id'    => 110,
+                'title' => 'class_room_delete',
+                'parent_id' => 106,
+            ],
+            [
                 'id'    => 100,
                 'title' => 'due_collection_access',
                 'parent_id' => null,

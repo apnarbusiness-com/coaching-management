@@ -127,7 +127,7 @@
                             </div>
                             <div id="schedule-container" class="mt-2 space-y-2">
                             </div>
-                            <p class="mt-1 text-xs text-slate-500">Select days and set time for each. Unselected days are off.</p>
+                            <p class="mt-1 text-xs text-slate-500">Select days, time, and class room for each. Unselected days are off.</p>
                             @if ($errors->has('class_schedule'))
                                 <p class="mt-1 text-sm text-red-600 dark:text-red-400">{{ $errors->first('class_schedule') }}</p>
                             @endif
@@ -188,10 +188,11 @@
             $feeType.on('change', toggleDuration);
 
             const days = @json(\App\Models\Batch::CLASS_DAY_SELECT);
+            const classRooms = @json($classRooms);
             const $container = $('#schedule-container');
             let rowCounter = 0;
 
-            function addScheduleRow(dayKey = '', timeValue = '') {
+            function addScheduleRow(dayKey = '', timeValue = '', roomId = '') {
                 const id = rowCounter++;
                 const availableDays = Object.entries(days);
                 const usedDays = [];
@@ -205,6 +206,11 @@
                     return `<option value="${key}" ${selected} ${disabled ? 'disabled' : ''}>${label}</option>`;
                 }).join('');
 
+                const roomOptions = Object.entries(classRooms).map(([key, label]) => {
+                    const selected = String(key) === String(roomId) ? 'selected' : '';
+                    return `<option value="${key}" ${selected}>${label}</option>`;
+                }).join('');
+
                 const row = $(`
                     <div class="schedule-row flex items-center gap-2 p-3 bg-slate-50 dark:bg-slate-800 rounded-lg" data-row-id="${id}">
                         <select name="class_schedule[${id}][day]" class="schedule-day-select form-control select2 flex-1 py-2" required>
@@ -212,6 +218,10 @@
                             ${options}
                         </select>
                         <input type="time" name="class_schedule[${id}][time]" class="schedule-time-input form-control flex-1 py-2 rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white" value="${timeValue}" required />
+                        <select name="class_schedule[${id}][class_room_id]" class="schedule-room-select form-control select2 flex-1 py-2" required>
+                            <option value="">Select Room</option>
+                            ${roomOptions}
+                        </select>
                         <button type="button" class="remove-schedule-row p-2 text-red-500 hover:bg-red-100 dark:hover:bg-red-900/30 rounded-md transition-colors">
                             <span class="material-symbols-outlined text-[20px]">delete</span>
                         </button>
@@ -220,7 +230,7 @@
 
                 $container.append(row);
                 row.find('.select2').select2({ width: 'resolve' });
-                
+
                 if (dayKey) {
                     row.find('.schedule-day-select').val(dayKey).trigger('change');
                 }
@@ -268,8 +278,9 @@
                     @php
                         $rowDay = is_array($time) ? ($time['day'] ?? '') : $day;
                         $rowTime = is_array($time) ? ($time['time'] ?? '') : $time;
+                        $rowRoom = is_array($time) ? ($time['class_room_id'] ?? '') : '';
                     @endphp
-                    addScheduleRow('{{ $rowDay }}', '{{ $rowTime }}');
+                    addScheduleRow('{{ $rowDay }}', '{{ $rowTime }}', '{{ $rowRoom }}');
                 @endforeach
             @else
                 addScheduleRow();

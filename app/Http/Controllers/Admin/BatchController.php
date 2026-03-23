@@ -8,6 +8,7 @@ use App\Http\Requests\StoreBatchRequest;
 use App\Http\Requests\UpdateBatchRequest;
 use App\Models\AcademicClass;
 use App\Models\Batch;
+use App\Models\ClassRoom;
 use App\Models\Earning;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
@@ -119,13 +120,26 @@ class BatchController extends Controller
                 }
 
                 $labels = [];
+                static $roomNames = null;
+                if ($roomNames === null) {
+                    $roomNames = ClassRoom::pluck('name', 'id');
+                }
                 foreach (Batch::DAY_ORDER as $day) {
                     if (isset($schedule[$day])) {
-                        $time = \Carbon\Carbon::parse($schedule[$day])->format('h:i A');
+                        $entry = $schedule[$day];
+                        $timeValue = is_array($entry) ? ($entry['time'] ?? null) : $entry;
+                        $roomId = is_array($entry) ? ($entry['class_room_id'] ?? null) : null;
+                        if (!$timeValue) {
+                            continue;
+                        }
+                        $time = \Carbon\Carbon::parse($timeValue)->format('h:i A');
+                        $roomLabel = $roomId ? ($roomNames[$roomId] ?? null) : null;
+                        $suffix = $roomLabel ? ' (' . $roomLabel . ')' : '';
                         $labels[] = sprintf(
-                            '<span class="label label-info label-many">%s: %s</span>',
+                            '<span class="label label-info label-many">%s: %s%s</span>',
                             Batch::CLASS_DAY_SELECT[$day] ?? $day,
-                            $time
+                            $time,
+                            $suffix
                         );
                     }
                 }
@@ -192,6 +206,7 @@ class BatchController extends Controller
 
         $subjects = Subject::pluck('name', 'id');
         $classes  = AcademicClass::pluck('class_name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $classRooms = ClassRoom::pluck('name', 'id');
         $students = StudentBasicInfo::orderBy('first_name')
             ->get()
             ->mapWithKeys(function ($student) {
@@ -201,7 +216,7 @@ class BatchController extends Controller
                 return [$student->id => $name . $idNo];
             });
 
-        return view('admin.batches.create', compact('subjects', 'classes', 'students'));
+        return view('admin.batches.create', compact('subjects', 'classes', 'classRooms', 'students'));
     }
 
     public function store(StoreBatchRequest $request)
@@ -225,6 +240,7 @@ class BatchController extends Controller
 
         $subjects = Subject::pluck('name', 'id');
         $classes  = AcademicClass::pluck('class_name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $classRooms = ClassRoom::pluck('name', 'id');
         $students = StudentBasicInfo::orderBy('first_name')
             ->get()
             ->mapWithKeys(function ($student) {
@@ -236,7 +252,7 @@ class BatchController extends Controller
 
         $batch->load('subject', 'subjects', 'class', 'students');
 
-        return view('admin.batches.edit', compact('batch', 'subjects', 'classes', 'students'));
+        return view('admin.batches.edit', compact('batch', 'subjects', 'classes', 'classRooms', 'students'));
     }
 
     public function update(UpdateBatchRequest $request, Batch $batch)
@@ -259,8 +275,9 @@ class BatchController extends Controller
         abort_if(Gate::denies('batch_show'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $batch->load('subject', 'subjects', 'class', 'students');
+        $classRooms = ClassRoom::pluck('name', 'id');
 
-        return view('admin.batches.show', compact('batch'));
+        return view('admin.batches.show', compact('batch', 'classRooms'));
     }
 
     public function destroy(Batch $batch)

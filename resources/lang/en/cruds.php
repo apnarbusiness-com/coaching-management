@@ -444,6 +444,22 @@ return [
             'deleted_at_helper' => ' ',
         ],
     ],
+    'classRoom' => [
+        'title'          => 'Class Rooms',
+        'title_singular' => 'Class Room',
+        'fields'         => [
+            'id'                => 'ID',
+            'id_helper'         => ' ',
+            'name'              => 'Room Name',
+            'name_helper'       => 'E.g. Room 101, Lab A',
+            'created_at'        => 'Created at',
+            'created_at_helper' => ' ',
+            'updated_at'        => 'Updated at',
+            'updated_at_helper' => ' ',
+            'deleted_at'        => 'Deleted at',
+            'deleted_at_helper' => ' ',
+        ],
+    ],
     'teachersPayment' => [
         'title'          => 'Teachers Payment',
         'title_singular' => 'Teachers Payment',

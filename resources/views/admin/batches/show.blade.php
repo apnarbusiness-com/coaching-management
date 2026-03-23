@@ -74,12 +74,24 @@
                                     @endphp
                                     @foreach($dayOrder as $day)
                                         @if(isset($schedule[$day]))
-                                            @php $hasSchedule = true; @endphp
-                                            <div class="flex items-center gap-2">
-                                                <span class="badge badge-info">{{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}</span>
-                                                <span class="text-slate-600 dark:text-slate-400">-</span>
-                                                <span class="font-medium">{{ \Carbon\Carbon::parse($schedule[$day])->format('h:i A') }}</span>
-                                            </div>
+                                            @php
+                                                $hasSchedule = true;
+                                                $entry = $schedule[$day];
+                                                $timeValue = is_array($entry) ? ($entry['time'] ?? null) : $entry;
+                                                $roomId = is_array($entry) ? ($entry['class_room_id'] ?? null) : null;
+                                                $roomName = $roomId ? ($classRooms[$roomId] ?? null) : null;
+                                            @endphp
+                                            @if($timeValue)
+                                                <div class="flex items-center gap-2">
+                                                    <span class="badge badge-info">{{ \App\Models\Batch::CLASS_DAY_SELECT[$day] ?? $day }}</span>
+                                                    <span class="text-slate-600 dark:text-slate-400">-</span>
+                                                    <span class="font-medium">{{ \Carbon\Carbon::parse($timeValue)->format('h:i A') }}</span>
+                                                    @if($roomName)
+                                                        <span class="text-slate-400">·</span>
+                                                        <span class="text-slate-600 dark:text-slate-400">{{ $roomName }}</span>
+                                                    @endif
+                                                </div>
+                                            @endif
                                         @endif
                                     @endforeach
                                     @if(!$hasSchedule)

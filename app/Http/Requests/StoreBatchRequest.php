@@ -77,7 +77,10 @@ class StoreBatchRequest extends FormRequest
             $schedule = [];
             foreach ($this->class_schedule as $key => $row) {
                 if (isset($row['day']) && isset($row['time']) && $row['day'] && $row['time']) {
-                    $schedule[$row['day']] = $row['time'];
+                    $schedule[$row['day']] = [
+                        'time' => $row['time'],
+                        'class_room_id' => $row['class_room_id'] ?? null,
+                    ];
                 }
             }
             $this->merge(['class_schedule' => $schedule]);
@@ -94,13 +97,20 @@ class StoreBatchRequest extends FormRequest
             $validDays = array_keys(Batch::CLASS_DAY_SELECT);
             $schedule = $this->class_schedule;
 
-            foreach ($schedule as $day => $time) {
+            foreach ($schedule as $day => $entry) {
                 if (!in_array($day, $validDays)) {
                     $validator->errors()->add("class_schedule.{$day}", "The selected day {$day} is invalid.");
                     continue;
                 }
-                if (!$time || !preg_match('/^([01]\d|2[0-3]):([0-5]\d)$/', $time)) {
+                $timeValue = is_array($entry) ? ($entry['time'] ?? null) : $entry;
+                $roomId = is_array($entry) ? ($entry['class_room_id'] ?? null) : null;
+                if (!$timeValue || !preg_match('/^([01]\d|2[0-3]):([0-5]\d)$/', $timeValue)) {
                     $validator->errors()->add("class_schedule.{$day}", "The time for {$day} must be in HH:MM format.");
+                }
+                if (!$roomId) {
+                    $validator->errors()->add("class_schedule.{$day}", "The class room for {$day} is required.");
+                } elseif (!\App\Models\ClassRoom::whereKey($roomId)->exists()) {
+                    $validator->errors()->add("class_schedule.{$day}", "The class room for {$day} is invalid.");
                 }
             }
 
