@@ -1,7 +1,16 @@
-@extends('layouts.app')
+<!DOCTYPE html>
+<html lang="en">
 
-@section('styles')
-    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap" rel="stylesheet" />
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <meta http-equiv="X-UA-Compatible" content="ie=edge">
+    <title>Document</title>
+
+    <link href="https://stackpath.bootstrapcdn.com/bootstrap/4.1.3/css/bootstrap.min.css" rel="stylesheet" />
+
+    <link href="https://fonts.googleapis.com/css2?family=Manrope:wght@400;500;600;700;800&display=swap"
+        rel="stylesheet" />
     <style>
         :root {
             --ink: #0f172a;
@@ -115,9 +124,9 @@
             }
         }
     </style>
-@endsection
+</head>
 
-@section('content')
+<body>
     <div class="admission-wrap">
         <div class="admission-card mx-auto" style="max-width: 980px;">
             <div class="admission-hero">
@@ -181,8 +190,7 @@
                         </div>
                         <div class="form-group col-md-6">
                             <label>Last Name (optional)</label>
-                            <input type="text" name="last_name" class="form-control"
-                                value="{{ old('last_name') }}">
+                            <input type="text" name="last_name" class="form-control" value="{{ old('last_name') }}">
                         </div>
                     </div>
                     <div class="form-row">
@@ -193,18 +201,20 @@
                                 <option value="male" {{ old('gender') === 'male' ? 'selected' : '' }}>Male</option>
                                 <option value="female" {{ old('gender') === 'female' ? 'selected' : '' }}>Female
                                 </option>
-                                <option value="others" {{ old('gender') === 'others' ? 'selected' : '' }}>Others</option>
+                                <option value="others" {{ old('gender') === 'others' ? 'selected' : '' }}>Others
+                                </option>
                             </select>
                         </div>
                         <div class="form-group col-md-4">
                             <label>Date of Birth</label>
-                            <input type="date" name="dob" class="form-control" required value="{{ old('dob') }}">
+                            <input type="date" name="dob" class="form-control" required
+                                value="{{ old('dob') }}">
                         </div>
                         <div class="form-group col-md-4">
                             <label>Blood Group</label>
                             <select name="student_blood_group" class="custom-select">
                                 <option value="">Select</option>
-                                @foreach (['A+','A-','B+','B-','O+','O-','AB+','AB-'] as $group)
+                                @foreach (['A+', 'A-', 'B+', 'B-', 'O+', 'O-', 'AB+', 'AB-'] as $group)
                                     <option value="{{ $group }}"
                                         {{ old('student_blood_group') === $group ? 'selected' : '' }}>
                                         {{ $group }}
@@ -285,17 +295,20 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>Class</label>
-                            <input type="text" name="class_name" class="form-control" value="{{ old('class_name') }}">
+                            <input type="text" name="class_name" class="form-control"
+                                value="{{ old('class_name') }}">
                         </div>
                         <div class="form-group col-md-4">
                             <label>Class Roll</label>
-                            <input type="text" name="class_roll" class="form-control" value="{{ old('class_roll') }}">
+                            <input type="text" name="class_roll" class="form-control"
+                                value="{{ old('class_roll') }}">
                         </div>
                     </div>
                     <div class="form-row">
                         <div class="form-group col-md-6">
                             <label>Batch Name</label>
-                            <input type="text" name="batch_name" class="form-control" value="{{ old('batch_name') }}">
+                            <input type="text" name="batch_name" class="form-control"
+                                value="{{ old('batch_name') }}">
                         </div>
                         <div class="form-group col-md-3">
                             <label>Village</label>
@@ -303,17 +316,19 @@
                         </div>
                         <div class="form-group col-md-3">
                             <label>Post Office</label>
-                            <input type="text" name="post_office" class="form-control" value="{{ old('post_office') }}">
+                            <input type="text" name="post_office" class="form-control"
+                                value="{{ old('post_office') }}">
                         </div>
                     </div>
 
                     <div class="form-group">
                         <label>Subjects</label>
                         <div class="d-flex flex-wrap">
-                            @foreach (['Bangla','English','Math','Science','ICT'] as $subject)
+                            @foreach (['Bangla', 'English', 'Math', 'Science', 'ICT'] as $subject)
                                 <div class="custom-control custom-checkbox mr-4 mb-2">
-                                    <input type="checkbox" class="custom-control-input" id="subject-{{ $subject }}"
-                                        name="subjects[]" value="{{ $subject }}"
+                                    <input type="checkbox" class="custom-control-input"
+                                        id="subject-{{ $subject }}" name="subjects[]"
+                                        value="{{ $subject }}"
                                         {{ in_array($subject, old('subjects', [])) ? 'checked' : '' }}>
                                     <label class="custom-control-label" for="subject-{{ $subject }}">
                                         {{ $subject }}
@@ -327,7 +342,8 @@
                 <div class="admission-section">
                     <div class="terms-card mb-3">
                         <div class="custom-control custom-checkbox">
-                            <input type="checkbox" class="custom-control-input" id="terms" name="terms" required>
+                            <input type="checkbox" class="custom-control-input" id="terms" name="terms"
+                                required>
                             <label class="custom-control-label" for="terms">
                                 I accept the terms & conditions mentioned by the authority.
                             </label>
@@ -343,4 +359,6 @@
             </form>
         </div>
     </div>
-@endsection
+</body>
+
+</html>

@@ -265,7 +265,11 @@
 
             @if(old('class_schedule'))
                 @foreach(old('class_schedule') as $day => $time)
-                    addScheduleRow('{{ $day }}', '{{ $time }}');
+                    @php
+                        $rowDay = is_array($time) ? ($time['day'] ?? '') : $day;
+                        $rowTime = is_array($time) ? ($time['time'] ?? '') : $time;
+                    @endphp
+                    addScheduleRow('{{ $rowDay }}', '{{ $rowTime }}');
                 @endforeach
             @else
                 addScheduleRow();
