@@ -6,12 +6,12 @@
             <a class="btn btn-success" href="{{ route('admin.earnings.create') }}">
                 {{ trans('global.add') }} {{ trans('cruds.earning.title_singular') }}
             </a>
-            <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#earningImportModal">
+            {{-- <button class="btn btn-primary" type="button" data-toggle="modal" data-target="#earningImportModal">
                 Import Excel
             </button>
             <a class="btn btn-outline-secondary" href="{{ route('admin.earnings.demoCsv') }}">
                 Demo Excel/CSV
-            </a>
+            </a> --}}
         </div>
     </div>
 @endcan

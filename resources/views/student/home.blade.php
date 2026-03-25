@@ -367,7 +367,7 @@
                             @forelse($paymentHistory as $payment)
                                 <tr class="text-sm text-slate-900 dark:text-slate-100">
                                     <td class="px-6 py-4 text-slate-500 dark:text-slate-400">
-                                        {{ $payment->earning_date ?? '—' }}
+                                        {{ \Carbon\Carbon::parse($payment->earning_date ?? '')->format('d-m-Y') }}
                                     </td>
                                     <td class="px-6 py-4 font-semibold">
                                         {{ $payment->earning_category->name ?? '—' }}
