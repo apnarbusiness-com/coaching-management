@@ -70,6 +70,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Batch
     Route::get('batches/{batch}/manage', [BatchController::class, 'manage'])->name('batches.manage');
+    Route::post('batches/{batch}/quick-enroll', [BatchController::class, 'quickEnrollStudents'])->name('batches.quickEnroll');
+    Route::delete('batches/{batch}/un-enroll/{student}', [BatchController::class, 'unEnrollStudent'])->name('batches.unEnroll');
     Route::get('batches/{batch}/assign-students', [BatchController::class, 'assignStudents'])->name('batches.assignStudents');
     Route::post('batches/{batch}/assign-students', [BatchController::class, 'storeAssignedStudents'])->name('batches.assignStudents.store');
     Route::post('batches/{batch}/assign-students/copy-previous', [BatchController::class, 'copyPreviousMonthEnrollments'])->name('batches.assignStudents.copyPrevious');

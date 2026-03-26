@@ -290,14 +290,23 @@
                         <a href="{{ route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                             class="text-sm font-semibold text-primary hover:underline">Manage</a>
                     </div>
-                    <div class="flex items-center gap-2">
-                        <input type="text" id="studentIdsInput" placeholder="e.g. 417 410 415 380"
-                            class="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
-                        <button type="button" onclick="formatStudentIds()"
-                            class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-md hover:bg-primary/90">
-                            Format
+                    <form method="POST" action="{{ route('admin.batches.quickEnroll', $batch->id) }}" class="space-y-2">
+                        @csrf
+                        <input type="hidden" name="month" value="{{ $month }}">
+                        <input type="hidden" name="year" value="{{ $year }}">
+                        <div class="flex items-center gap-2">
+                            <input type="text" name="student_ids" id="studentIdsInput" placeholder="e.g. 417 410 415 380"
+                                class="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                            <button type="button" onclick="formatStudentIds()"
+                                class="px-4 py-2 bg-slate-500 text-white text-sm font-bold rounded-md hover:bg-slate-600">
+                                Format
+                            </button>
+                        </div>
+                        <button type="submit"
+                            class="w-full px-4 py-2 bg-primary text-white text-sm font-bold rounded-md hover:bg-primary/90">
+                            Confirm Enrollment
                         </button>
-                    </div>
+                    </form>
                     <div class="space-y-3">
                         @if ($capacityPercent !== null)
                             <div class="flex items-center gap-3">
@@ -318,7 +327,16 @@
                                         <p class="text-xs text-slate-500 truncate">
                                             {{ $student->class->class_name ?? 'N/A' }}</p>
                                     </div>
-                                    <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
+                                    <div class="flex items-center gap-2">
+                                        <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
+                                        <form method="POST" action="{{ route('admin.batches.unEnroll', [$batch->id, $student->id, 'month' => $month, 'year' => $year]) }}">
+                                            @csrf
+                                            @method('DELETE')
+                                            <button type="submit" onclick="return confirm('Are you sure you want to un-enroll this student?')" class="text-slate-400 hover:text-red-500 transition-colors">
+                                                <span class="material-symbols-outlined text-lg">delete</span>
+                                            </button>
+                                        </form>
+                                    </div>
                                 </div>
                             @empty
                                 <p class="text-sm text-slate-500 px-4 py-6 text-center">No students enrolled yet.</p>
