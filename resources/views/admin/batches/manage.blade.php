@@ -290,6 +290,14 @@
                         <a href="{{ route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                             class="text-sm font-semibold text-primary hover:underline">Manage</a>
                     </div>
+                    <div class="flex items-center gap-2">
+                        <input type="text" id="studentIdsInput" placeholder="e.g. 417 410 415 380"
+                            class="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
+                        <button type="button" onclick="formatStudentIds()"
+                            class="px-4 py-2 bg-primary text-white text-sm font-bold rounded-md hover:bg-primary/90">
+                            Format
+                        </button>
+                    </div>
                     <div class="space-y-3">
                         @if ($capacityPercent !== null)
                             <div class="flex items-center gap-3">
@@ -369,5 +377,16 @@
 
 @section('scripts')
     @parent
-    <script></script>
+    <script>
+        function formatStudentIds() {
+            const input = document.getElementById('studentIdsInput');
+            let value = input.value.trim();
+            if (!value) return;
+
+            const ids = value.split(/[\s,]+/).filter(id => id.trim() !== '');
+            if (ids.length > 0) {
+                input.value = ids.join(',');
+            }
+        }
+    </script>
 @endsection

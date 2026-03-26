@@ -1,0 +1,2 @@
+http://dev-coaching-management.test/admin/batches/7/manage 
+i didn't mean that. if input: 417,232 344 432 the output: 417,232,344,432 . if input: 417,232,344,432 output: 417,232,344,432. if input: 417 232 344 432 output: 417,232,344,432
