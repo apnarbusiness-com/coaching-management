@@ -127,6 +127,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Teacher
     Route::get('teachers/{id}/id-card', [TeacherController::class,'idCard'])->name('teachers.idCard');
+    Route::post('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('teachers.toggleStatus');
     Route::delete('teachers/destroy', 'TeacherController@massDestroy')->name('teachers.massDestroy');
     Route::post('teachers/media', 'TeacherController@storeMedia')->name('teachers.storeMedia');
     Route::post('teachers/ckmedia', 'TeacherController@storeCKEditorImages')->name('teachers.storeCKEditorImages');

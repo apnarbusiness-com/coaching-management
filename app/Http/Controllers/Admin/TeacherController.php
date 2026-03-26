@@ -151,6 +151,16 @@ class TeacherController extends Controller
         return response()->json(['id' => $media->id, 'url' => $media->getUrl()], Response::HTTP_CREATED);
     }
 
+    public function toggleStatus(Request $request, Teacher $teacher)
+    {
+        abort_if(Gate::denies('teacher_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $teacher->status = $request->boolean('status');
+        $teacher->save();
+
+        return response()->json(['status' => (int) $teacher->status]);
+    }
+
 
     public function idCard($id)
     {
