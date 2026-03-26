@@ -537,6 +537,121 @@ class BatchController extends Controller
             ->with('status', 'Student un-enrolled successfully.');
     }
 
+    public function quickEnrollStudentsAjax(Request $request, Batch $batch)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'student_ids' => ['required', 'string'],
+            'month'       => ['required', 'integer', 'min:1', 'max:12'],
+            'year'        => ['required', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $month = (int) $data['month'];
+        $year = (int) $data['year'];
+        $enrolledAt = Carbon::createFromDate($year, $month, 1)->toDateString();
+
+        $idNos = array_filter(
+            array_map('intval', preg_split('/[\s,]+/', $data['student_ids'])),
+            fn($id) => $id > 0
+        );
+
+        if (empty($idNos)) {
+            return response()->json(['success' => false, 'message' => 'No valid student ID numbers provided.']);
+        }
+
+        $studentIds = DB::table('student_basic_infos')
+            ->whereIn('id_no', $idNos)
+            ->pluck('id')
+            ->all();
+
+        if (empty($studentIds)) {
+            return response()->json(['success' => false, 'message' => 'No students found with the provided ID numbers.']);
+        }
+
+        $existingStudentIds = DB::table('batch_student_basic_info')
+            ->where('batch_id', $batch->id)
+            ->whereMonth('enrolled_at', $month)
+            ->whereYear('enrolled_at', $year)
+            ->pluck('student_basic_info_id')
+            ->unique()
+            ->values()
+            ->all();
+
+        $studentsToEnroll = array_values(array_diff($studentIds, $existingStudentIds));
+
+        if (!empty($studentsToEnroll)) {
+            $validStudentIds = DB::table('student_basic_infos')
+                ->whereIn('id', $studentsToEnroll)
+                ->pluck('id')
+                ->all();
+
+            if (!empty($validStudentIds)) {
+                $rows = [];
+                foreach ($validStudentIds as $studentId) {
+                    $rows[] = [
+                        'batch_id' => $batch->id,
+                        'student_basic_info_id' => $studentId,
+                        'enrolled_at' => $enrolledAt,
+                        'per_student_discount' => 0,
+                        'custom_monthly_fee' => null,
+                    ];
+                }
+
+                DB::table('batch_student_basic_info')->insert($rows);
+            }
+        }
+
+        return response()->json(['success' => true, 'message' => count($studentsToEnroll) . ' student(s) enrolled successfully.']);
+    }
+
+    public function unEnrollStudentAjax(Request $request, Batch $batch, StudentBasicInfo $student)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $month = (int) $request->query('month', now()->month);
+        $year = (int) $request->query('year', now()->year);
+
+        DB::table('batch_student_basic_info')
+            ->where('batch_id', $batch->id)
+            ->where('student_basic_info_id', $student->id)
+            ->whereMonth('enrolled_at', $month)
+            ->whereYear('enrolled_at', $year)
+            ->delete();
+
+        return response()->json(['success' => true, 'message' => 'Student un-enrolled successfully.']);
+    }
+
+    public function getEnrolledStudentsAjax(Request $request, Batch $batch)
+    {
+        $month = (int) $request->query('month', now()->month);
+        $year = (int) $request->query('year', now()->year);
+
+        $enrolledStudents = $batch->students()
+            ->whereMonth('enrolled_at', $month)
+            ->whereYear('enrolled_at', $year)
+            ->get();
+
+        $studentCount = $enrolledStudents->count();
+        $capacity = $batch->capacity;
+        $capacityText = $capacity ? $studentCount . '/' . $capacity : $studentCount . '/∞';
+        $capacityPercent = $capacity ? min(100, round(($studentCount / max($capacity, 1)) * 100)) : null;
+
+        return response()->json([
+            'success' => true,
+            'students' => $enrolledStudents->map(fn($s) => [
+                'id' => $s->id,
+                'first_name' => $s->first_name,
+                'last_name' => $s->last_name,
+                'id_no' => $s->id_no,
+                'class_name' => $s->class->class_name ?? 'N/A',
+            ]),
+            'studentCount' => $studentCount,
+            'capacityText' => $capacityText,
+            'capacityPercent' => $capacityPercent,
+        ]);
+    }
+
     public function copyPreviousMonthEnrollments(Request $request, Batch $batch)
     {
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');

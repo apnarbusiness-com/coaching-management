@@ -290,10 +290,7 @@
                         <a href="{{ route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                             class="text-sm font-semibold text-primary hover:underline">Manage</a>
                     </div>
-                    <form method="POST" action="{{ route('admin.batches.quickEnroll', $batch->id) }}" class="space-y-2">
-                        @csrf
-                        <input type="hidden" name="month" value="{{ $month }}">
-                        <input type="hidden" name="year" value="{{ $year }}">
+                    <div class="space-y-2">
                         <div class="flex items-center gap-2">
                             <input type="text" name="student_ids" id="studentIdsInput" placeholder="e.g. 417 410 415 380"
                                 class="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
@@ -302,24 +299,26 @@
                                 Format
                             </button>
                         </div>
-                        <button type="submit"
+                        <button type="button" onclick="quickEnrollStudents()"
                             class="w-full px-4 py-2 bg-primary text-white text-sm font-bold rounded-md hover:bg-primary/90">
                             Confirm Enrollment
                         </button>
-                    </form>
+                    </div>
                     <div class="space-y-3">
-                        @if ($capacityPercent !== null)
-                            <div class="flex items-center gap-3">
-                                <div class="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                    <div class="h-full bg-primary" style="width: {{ $capacityPercent }}%"></div>
+                        <div id="capacityContainer">
+                            @if ($capacityPercent !== null)
+                                <div class="flex items-center gap-3">
+                                    <div class="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                        <div class="h-full bg-primary" id="capacityBar" style="width: {{ $capacityPercent }}%"></div>
+                                    </div>
+                                    <span class="text-xs text-slate-500 font-semibold" id="capacityPercent">{{ $capacityPercent }}%</span>
                                 </div>
-                                <span class="text-xs text-slate-500 font-semibold">{{ $capacityPercent }}%</span>
-                            </div>
-                        @endif
-                        <div
+                            @endif
+                        </div>
+                        <div id="studentListContainer"
                             class="rounded-lg border border-slate-100 dark:border-slate-700 max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
                             @forelse ($enrolledStudents as $student)
-                                <div class="flex items-center justify-between gap-2 px-4 py-3">
+                                <div class="flex items-center justify-between gap-2 px-4 py-3 student-row" data-student-id="{{ $student->id }}">
                                     <div class="min-w-0">
                                         <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                                             {{ trim($student->first_name . ' ' . $student->last_name) }}
@@ -329,17 +328,13 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
-                                        <form method="POST" action="{{ route('admin.batches.unEnroll', [$batch->id, $student->id, 'month' => $month, 'year' => $year]) }}">
-                                            @csrf
-                                            @method('DELETE')
-                                            <button type="submit" onclick="return confirm('Are you sure you want to un-enroll this student?')" class="text-slate-400 hover:text-red-500 transition-colors">
-                                                <span class="material-symbols-outlined text-lg">delete</span>
-                                            </button>
-                                        </form>
+                                        <button type="button" onclick="unEnrollStudent({{ $student->id }})" class="text-slate-400 hover:text-red-500 transition-colors">
+                                            <span class="material-symbols-outlined text-lg">delete</span>
+                                        </button>
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-sm text-slate-500 px-4 py-6 text-center">No students enrolled yet.</p>
+                                <p class="text-sm text-slate-500 px-4 py-6 text-center" id="emptyMessage">No students enrolled yet.</p>
                             @endforelse
                         </div>
                     </div>
@@ -396,6 +391,10 @@
 @section('scripts')
     @parent
     <script>
+        const batchId = {{ $batch->id }};
+        const currentMonth = {{ $month }};
+        const currentYear = {{ $year }};
+
         function formatStudentIds() {
             const input = document.getElementById('studentIdsInput');
             let value = input.value.trim();
@@ -405,6 +404,126 @@
             if (ids.length > 0) {
                 input.value = ids.join(',');
             }
+        }
+
+        function quickEnrollStudents() {
+            const input = document.getElementById('studentIdsInput');
+            const studentIds = input.value.trim();
+            
+            if (!studentIds) {
+                alert('Please enter student ID numbers.');
+                return;
+            }
+
+            fetch(`{{ route('admin.batches.quickEnrollAjax', $batch->id) }}`, {
+                method: 'POST',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify({
+                    student_ids: studentIds,
+                    month: currentMonth,
+                    year: currentYear
+                })
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    input.value = '';
+                    refreshStudentList();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        function unEnrollStudent(studentId) {
+            if (!confirm('Are you sure you want to un-enroll this student?')) {
+                return;
+            }
+
+            fetch(`{{ route('admin.batches.unEnrollAjax', [$batch->id, '__student__']) }}`.replace('__student__', studentId) + `?month=${currentMonth}&year=${currentYear}`, {
+                method: 'DELETE',
+                headers: {
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                }
+            })
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    refreshStudentList();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        function refreshStudentList() {
+            fetch(`{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`)
+            .then(res => res.json())
+            .then(data => {
+                if (data.success) {
+                    updateStudentList(data);
+                }
+            })
+            .catch(err => console.error(err));
+        }
+
+        function updateStudentList(data) {
+            const container = document.getElementById('studentListContainer');
+            const emptyMessage = document.getElementById('emptyMessage');
+            const capacityContainer = document.getElementById('capacityContainer');
+
+            if (data.students.length === 0) {
+                container.innerHTML = '<p class="text-sm text-slate-500 px-4 py-6 text-center" id="emptyMessage">No students enrolled yet.</p>';
+                
+                if (data.capacityPercent !== null) {
+                    capacityContainer.innerHTML = `
+                        <div class="flex items-center gap-3">
+                            <div class="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                                <div class="h-full bg-primary" id="capacityBar" style="width: ${data.capacityPercent}%"></div>
+                            </div>
+                            <span class="text-xs text-slate-500 font-semibold" id="capacityPercent">${data.capacityPercent}%</span>
+                        </div>
+                    `;
+                }
+                return;
+            }
+
+            if (data.capacityPercent !== null) {
+                capacityContainer.innerHTML = `
+                    <div class="flex items-center gap-3">
+                        <div class="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
+                            <div class="h-full bg-primary" id="capacityBar" style="width: ${data.capacityPercent}%"></div>
+                        </div>
+                        <span class="text-xs text-slate-500 font-semibold" id="capacityPercent">${data.capacityPercent}%</span>
+                    </div>
+                `;
+            }
+
+            let html = '';
+            data.students.forEach(student => {
+                html += `
+                    <div class="flex items-center justify-between gap-2 px-4 py-3 student-row" data-student-id="${student.id}">
+                        <div class="min-w-0">
+                            <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
+                                ${student.first_name} ${student.last_name}
+                            </p>
+                            <p class="text-xs text-slate-500 truncate">${student.class_name}</p>
+                        </div>
+                        <div class="flex items-center gap-2">
+                            <span class="text-xs text-slate-400">${student.id_no}</span>
+                            <button type="button" onclick="unEnrollStudent(${student.id})" class="text-slate-400 hover:text-red-500 transition-colors">
+                                <span class="material-symbols-outlined text-lg">delete</span>
+                            </button>
+                        </div>
+                    </div>
+                `;
+            });
+            container.innerHTML = html;
         }
     </script>
 @endsection
