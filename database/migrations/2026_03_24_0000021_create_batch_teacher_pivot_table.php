@@ -12,10 +12,14 @@ return new class extends Migration
             $table->unsignedBigInteger('batch_id');
             $table->unsignedBigInteger('teacher_id');
             $table->decimal('salary_amount', 15, 2)->default(0);
+            $table->string('salary_amount_type')->default('fixed');
             $table->string('role')->nullable();
+            $table->tinyInteger('month')->nullable();
+            $table->smallInteger('year')->nullable();
             $table->timestamps();
+            
 
-            $table->unique(['batch_id', 'teacher_id'], 'batch_teacher_unique');
+            // $table->unique(['batch_id', 'teacher_id'], 'batch_teacher_unique');
             $table->foreign('batch_id', 'batch_teacher_batch_fk')->references('id')->on('batches')->onDelete('cascade');
             $table->foreign('teacher_id', 'batch_teacher_teacher_fk')->references('id')->on('teachers')->onDelete('cascade');
         });

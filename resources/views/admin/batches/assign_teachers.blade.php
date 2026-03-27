@@ -6,6 +6,13 @@
             if ($subjectNames->isEmpty() && $batch->subject) {
                 $subjectNames = collect([$batch->subject->name]);
             }
+            $months = [
+                1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
+                5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
+                9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+            ];
+            $currentYear = now()->year;
+            $years = range($currentYear - 1, $currentYear + 1);
         @endphp
 
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">
@@ -17,11 +24,39 @@
                 </p>
             </div>
             <div class="flex gap-2">
-                <a href="{{ route('admin.batches.manage', $batch->id) }}"
+                <a href="{{ route('admin.batches.manage', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                     class="px-4 py-2 rounded-lg bg-slate-200 dark:bg-slate-800 text-slate-700 dark:text-slate-200 text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-700 transition-colors">
                     Back to Manage
                 </a>
             </div>
+        </div>
+
+        <!-- Month/Year Selector -->
+        <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm p-4">
+            <form method="GET" action="{{ route('admin.batches.assignTeachers', $batch->id) }}" class="flex flex-wrap items-end gap-4">
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Month</label>
+                    <select name="month" class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary">
+                        @foreach($months as $num => $name)
+                            <option value="{{ $num }}" {{ $month == $num ? 'selected' : '' }}>{{ $name }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <div class="flex flex-col gap-1">
+                    <label class="text-xs font-medium text-slate-500 dark:text-slate-400">Year</label>
+                    <select name="year" class="px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary">
+                        @foreach($years as $yr)
+                            <option value="{{ $yr }}" {{ $year == $yr ? 'selected' : '' }}>{{ $yr }}</option>
+                        @endforeach
+                    </select>
+                </div>
+                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90 transition-colors">
+                    Change Month
+                </button>
+            </form>
+            <p class="text-sm text-slate-500 dark:text-slate-400 mt-2">
+                Currently viewing: <span class="font-medium text-primary">{{ $months[$month] }} {{ $year }}</span>
+            </p>
         </div>
 
         @if (session('status'))
@@ -33,10 +68,15 @@
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
                 <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Assignment Form</h2>
-                <p class="text-sm text-slate-500 dark:text-slate-400">Assign or update a teacher with salary and role.</p>
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    Assign or update a teacher for <span class="font-medium text-primary">{{ $months[$month] }} {{ $year }}</span>
+                </p>
             </div>
             <form method="POST" action="{{ route('admin.batches.assignTeachers.store', $batch->id) }}" class="px-6 py-6 space-y-6">
                 @csrf
+                <input type="hidden" name="month" value="{{ $month }}">
+                <input type="hidden" name="year" value="{{ $year }}">
+                
                 <div class="space-y-4">
                     <div class="flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary text-xl">person_search</span>
@@ -76,6 +116,14 @@
                             </div>
                         </div>
                         <div class="flex flex-col gap-1.5">
+                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Salary Amount Type</label>
+                            <select name="salary_amount_type"
+                                class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none appearance-none">
+                                <option value="fixed">Fixed Amount</option>
+                                <option value="percentage">Percentage (%)</option>
+                            </select>
+                        </div>
+                        <div class="flex flex-col gap-1.5">
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Role</label>
                             <div class="grid grid-cols-2 gap-2">
                                 <label class="cursor-pointer">
@@ -96,7 +144,7 @@
                 </div>
 
                 <div class="flex items-center justify-end gap-3">
-                    <a href="{{ route('admin.batches.manage', $batch->id) }}"
+                    <a href="{{ route('admin.batches.manage', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                         class="px-6 py-2.5 rounded-lg text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors">
                         Cancel
                     </a>
@@ -111,7 +159,9 @@
 
         <div class="bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 rounded-xl shadow-sm overflow-hidden">
             <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700">
-                <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">Assigned Teachers</h2>
+                <h2 class="text-lg font-bold text-slate-900 dark:text-slate-100">
+                    Assigned Teachers for {{ $months[$month] }} {{ $year }}
+                </h2>
             </div>
             <div class="overflow-x-auto">
                 <table class="w-full text-left text-sm text-slate-700 dark:text-slate-200">
@@ -120,29 +170,45 @@
                             <th class="px-6 py-3">Teacher</th>
                             <th class="px-6 py-3">Role</th>
                             <th class="px-6 py-3">Salary</th>
+                            <th class="px-6 py-3">Type</th>
                             <th class="px-6 py-3 text-right">Action</th>
                         </tr>
                     </thead>
                     <tbody class="divide-y divide-slate-100 dark:divide-slate-700">
-                        @forelse ($batch->teachers as $teacher)
+                        @forelse ($assignedTeachers as $assignment)
+                            @php
+                                $teacher = $teachers->find($assignment->teacher_id);
+                            @endphp
                             <tr>
                                 <td class="px-6 py-4 font-medium text-slate-900 dark:text-slate-100">
-                                    {{ $teacher->name }}
-                                    <div class="text-xs text-slate-500">{{ $teacher->emloyee_code }}</div>
+                                    {{ $teacher->name ?? 'Unknown' }}
+                                    <div class="text-xs text-slate-500">{{ $teacher->emloyee_code ?? '' }}</div>
                                 </td>
-                                <td class="px-6 py-4 text-slate-700 dark:text-slate-200">{{ ucfirst($teacher->pivot->role ?? 'primary') }}</td>
-                                <td class="px-6 py-4 text-slate-700 dark:text-slate-200">{{ number_format((float) $teacher->pivot->salary_amount, 2) }}</td>
+                                <td class="px-6 py-4 text-slate-700 dark:text-slate-200">{{ ucfirst($assignment->role ?? 'primary') }}</td>
+                                <td class="px-6 py-4 text-slate-700 dark:text-slate-200">
+                                    {{ number_format((float) $assignment->salary_amount, 2) }}
+                                    @if($assignment->salary_amount_type === 'percentage')
+                                        <span class="text-xs text-slate-500">({{ $assignment->salary_amount }}%)</span>
+                                    @endif
+                                </td>
+                                <td class="px-6 py-4 text-slate-700 dark:text-slate-200">
+                                    {{ $assignment->salary_amount_type === 'percentage' ? 'Percentage' : 'Fixed' }}
+                                </td>
                                 <td class="px-6 py-4 text-right">
-                                    <form method="POST" action="{{ route('admin.batches.assignTeachers.remove', [$batch->id, $teacher->id]) }}" onsubmit="return confirm('Remove this teacher from the batch?');" class="inline-block">
+                                    <form method="POST" action="{{ route('admin.batches.assignTeachers.remove', [$batch->id, $assignment->teacher_id]) }}" onsubmit="return confirm('Remove this teacher from the batch?');" class="inline-block">
                                         @csrf
                                         @method('DELETE')
+                                        <input type="hidden" name="month" value="{{ $month }}">
+                                        <input type="hidden" name="year" value="{{ $year }}">
                                         <button class="text-red-600 hover:text-red-800 text-sm font-semibold">Remove</button>
                                     </form>
                                 </td>
                             </tr>
                         @empty
                             <tr>
-                                <td class="px-6 py-6 text-center text-slate-500" colspan="4">No teachers assigned yet.</td>
+                                <td class="px-6 py-6 text-center text-slate-500" colspan="5">
+                                    No teachers assigned for {{ $months[$month] }} {{ $year }}.
+                                </td>
                             </tr>
                         @endforelse
                     </tbody>

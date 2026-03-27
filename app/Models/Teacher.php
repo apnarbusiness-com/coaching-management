@@ -33,6 +33,11 @@ class Teacher extends Model implements HasMedia
         'variable' => 'variable',
     ];
 
+    public const SALARY_AMOUNT_TYPE_SELECT = [
+        'fixed' => 'Fixed Amount',
+        'percentage' => 'Percentage',
+    ];
+
     public const GENDER_SELECT = [
         'male' => 'Male',
         'female' => 'Female',
@@ -51,6 +56,7 @@ class Teacher extends Model implements HasMedia
         'status',
         'salary_type',
         'salary_amount',
+        'salary_amount_type',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -112,7 +118,7 @@ class Teacher extends Model implements HasMedia
     public function batches()
     {
         return $this->belongsToMany(Batch::class)
-            ->withPivot(['salary_amount', 'role'])
+            ->withPivot(['salary_amount', 'salary_amount_type', 'role'])
             ->withTimestamps();
     }
 }

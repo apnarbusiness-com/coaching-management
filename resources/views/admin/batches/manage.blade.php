@@ -268,7 +268,7 @@
                         @endforelse
                     </div>
                     <div class="pt-2 border-t border-slate-100 dark:border-slate-700">
-                        <a href="{{ route('admin.batches.assignTeachers', $batch->id) }}"
+                        <a href="{{ route('admin.batches.assignTeachers', [$batch->id, 'month' => $month, 'year' => $year]) }}"
                             class="w-full flex items-center justify-center gap-2 py-3 rounded-lg bg-primary text-white font-bold text-sm shadow-md hover:opacity-90 transition-opacity">
                             <span class="material-symbols-outlined text-lg">person_add</span>
                             <span>Assign Teacher</span>

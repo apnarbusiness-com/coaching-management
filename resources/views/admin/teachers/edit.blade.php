@@ -195,6 +195,18 @@
                                 <p class="mt-1 text-xs text-red-500">{{ $errors->first('salary_amount') }}</p>
                             @endif
                         </div>
+                        <div>
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Salary Amount Type</label>
+                            <select name="salary_amount_type" id="salary_amount_type"
+                                class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary {{ $errors->has('salary_amount_type') ? 'ring-2 ring-red-500' : '' }}">
+                                @foreach(App\Models\Teacher::SALARY_AMOUNT_TYPE_SELECT as $key => $label)
+                                    <option value="{{ $key }}" {{ old('salary_amount_type', $teacher->salary_amount_type ?? 'fixed') == $key ? 'selected' : '' }}>
+                                        {{ $label }}
+                                    </option>
+                                @endforeach
+                            </select>
+                            <p class="mt-1 text-[10px] text-text-secondary">Used when salary_type is 'fixed'</p>
+                        </div>
                     </div>
                 </div>
 

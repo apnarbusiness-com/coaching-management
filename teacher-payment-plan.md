@@ -38,31 +38,31 @@ When teacher is assigned to a batch, `salary_amount` can be:
 ## Implementation Checklist
 
 ### Database & Model Changes
-- [ ] Add `salary_amount_type` column to `teachers` table (fixed/percentage)
-- [ ] Add `salary_amount_type` column to `batch_teacher` pivot table (fixed/percentage)
-- [ ] Update `Teacher` model with new fields and accessors
-- [ ] Update migration files
+- [x] Add `salary_amount_type` column to `teachers` table (fixed/percentage)
+- [x] Add `salary_amount_type` column to `batch_teacher` pivot table (fixed/percentage)
+- [x] Update `Teacher` model with new fields and accessors
+- [x] Add `amount` column to `teachers_payments` table
 
 ### Teacher CRUD Updates
-- [ ] Update teacher create/edit forms to include salary_type and salary_amount_type
-- [ ] Update `TeacherController` store/update logic
+- [x] Update teacher create/edit forms to include salary_type and salary_amount_type
+- [x] Update `TeacherController` store/update logic
 
 ### Batch Teacher Assignment Updates
-- [ ] Update batch assign teachers form to include salary_amount_type selector
-- [ ] Update `BatchController::storeAssignedTeacher()` to save amount type
+- [x] Update batch assign teachers form to include salary_amount_type selector
+- [x] Update `BatchController::storeAssignedTeacher()` to save amount type
 
 ### Salary Calculation Service
-- [ ] Create `TeacherSalaryCalculationService` 
-- [ ] Method: `calculateMonthlySalary(teacher_id, month, year)`
-- [ ] Method: `calculateBatchTeacherSalary(batch_id, month, year)`
-- [ ] Handle fixed salary_type on Teacher model
-- [ ] Handle variable with fixed amount from batch
-- [ ] Handle variable with percentage from batch revenue
+- [x] Create `TeacherSalaryCalculationService` 
+- [x] Method: `calculateMonthlySalary(teacher_id, month, year)`
+- [x] Method: `calculateBatchTeacherSalary(batch_id, month, year)`
+- [x] Handle fixed salary_type on Teacher model
+- [x] Handle variable with fixed amount from batch
+- [x] Handle variable with percentage from batch revenue
 
 ### TeachersPayment Integration
-- [ ] Update TeachersPayment creation to auto-calculate salary
-- [ ] Add "Generate Monthly Salaries" button/action
-- [ ] Bulk create salary records for all teachers
+- [x] Update TeachersPayment creation to auto-calculate salary
+- [x] Add "Generate Monthly Salaries" route/action
+- [x] Bulk create salary records for all teachers
 
 ### Dashboard & Reports
 - [ ] Add teacher salary summary on admin dashboard
@@ -125,30 +125,64 @@ $table->decimal('salary_amount', 15, 2)->default(0);
 $table->string('salary_amount_type')->default('fixed'); // 'fixed' or 'percentage'
 ```
 
+### teachers_payments table
+```php
+// Added
+$table->decimal('amount', 15, 2)->nullable();
+```
+
 ---
 
 ## File Changes
 
 ### Models
-- `app/Models/Teacher.php`
-- `app/Models\Batch.php` (update relationship)
+- `app/Models/Teacher.php` - Added SALARY_AMOUNT_TYPE_SELECT, updated $fillable, batches relationship
+- `app/Models/TeachersPayment.php` - Added amount field, getCalculatedAmountAttribute
 
 ### Controllers
-- `app/Http/Controllers/Admin/TeacherController.php`
-- `app/Http/Controllers/Admin/BatchController.php`
-- `app/Http/Controllers/Admin/TeachersPaymentController.php`
+- `app/Http/Controllers/Admin/BatchController.php` - Updated storeAssignedTeacher to save salary_amount_type
+- `app/Http/Controllers/Admin/TeachersPaymentController.php` - Added generate, calculate methods
 
 ### Services
 - `app/Services/TeacherSalaryCalculationService.php` (new)
 
 ### Views
-- `resources/views/admin/teachers/create.blade.php`
-- `resources/views/admin/teachers/edit.blade.php`
-- `resources/views/admin/batches/assign_teachers.blade.php`
-- `resources/views/admin/teachersPayments/index.blade.php`
+- `resources/views/admin/teachers/create.blade.php` - Added salary_amount_type dropdown
+- `resources/views/admin/teachers/edit.blade.php` - Added salary_amount_type dropdown
+- `resources/views/admin/batches/assign_teachers.blade.php` - Added salary_amount_type selector
 
 ### Routes
-- Add route for generating monthly salaries
+- `POST /admin/teachers-payments/generate` - Generate monthly salaries
+- `POST /admin/teachers-payments/calculate` - Calculate teacher salary
+
+### Migrations
+- `2026_03_24_000001_add_salary_amount_type_to_teachers_and_batch_teacher.php` (new)
+- `2026_03_24_000002_add_amount_to_teachers_payments_table.php` (new)
+
+---
+
+## Usage
+
+### 1. Set Teacher Salary Type
+When creating/editing a teacher:
+- Select `salary_type`: 'fixed' or 'variable'
+- If 'fixed': Set `salary_amount` and `salary_amount_type` (used for base salary)
+
+### 2. Assign Teacher to Batch
+In batch management → Assign Teachers:
+- Set `salary_amount`: Fixed amount or percentage
+- Set `salary_amount_type`: 'fixed' (BDT) or 'percentage' (%)
+
+### 3. Generate Monthly Salaries
+Go to Teachers Payments → Generate Salaries:
+- Select month and year
+- Click Generate
+- System calculates all teachers' salaries based on their settings
+
+### 4. View Salary Breakdown
+In Teachers Payment show page, view:
+- Fixed salary component
+- Per-batch breakdown with revenue and calculated amount
 
 ---
 

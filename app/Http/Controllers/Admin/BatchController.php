@@ -769,15 +769,27 @@ class BatchController extends Controller
             ->with('status', "Copied previous month enrollments for all batches. Total students enrolled: {$totalInserted}.");
     }
 
-    public function assignTeachers(Batch $batch)
+    public function assignTeachers(Batch $batch, Request $request)
     {
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $batch->load(['subject', 'subjects', 'class', 'teachers']);
+        $month = (int) $request->query('month', now()->month);
+        $year = (int) $request->query('year', now()->year);
+
+        $batch->load(['subject', 'subjects', 'class']);
+
+        // Get teachers assigned for this specific month/year
+        $assignedTeachers = DB::table('batch_teacher')
+            ->where('batch_id', $batch->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->get();
+
+        $assignedTeacherIds = $assignedTeachers->pluck('teacher_id')->toArray();
 
         $teachers = Teacher::orderBy('name')->get();
 
-        return view('admin.batches.assign_teachers', compact('batch', 'teachers'));
+        return view('admin.batches.assign_teachers', compact('batch', 'teachers', 'month', 'year', 'assignedTeachers', 'assignedTeacherIds'));
     }
 
     public function storeAssignedTeacher(Request $request, Batch $batch)
@@ -787,26 +799,66 @@ class BatchController extends Controller
         $data = $request->validate([
             'teacher_id'    => ['required', 'integer', 'exists:teachers,id'],
             'salary_amount' => ['required', 'numeric', 'min:0'],
+            'salary_amount_type' => ['required', 'string', 'in:fixed,percentage'],
             'role'          => ['nullable', 'string', 'in:primary,assistant'],
+            'month'         => ['required', 'integer', 'min:1', 'max:12'],
+            'year'          => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
-        $batch->teachers()->syncWithoutDetaching([
-            $data['teacher_id'] => [
+        // Check if assignment exists for this month/year
+        $exists = DB::table('batch_teacher')
+            ->where('batch_id', $batch->id)
+            ->where('teacher_id', $data['teacher_id'])
+            ->where('month', $data['month'])
+            ->where('year', $data['year'])
+            ->exists();
+
+        if ($exists) {
+            // Update existing
+            DB::table('batch_teacher')
+                ->where('batch_id', $batch->id)
+                ->where('teacher_id', $data['teacher_id'])
+                ->where('month', $data['month'])
+                ->where('year', $data['year'])
+                ->update([
+                    'salary_amount' => $data['salary_amount'],
+                    'salary_amount_type' => $data['salary_amount_type'],
+                    'role' => $data['role'] ?? null,
+                    'updated_at' => now(),
+                ]);
+        } else {
+            // Insert new
+            DB::table('batch_teacher')->insert([
+                'batch_id' => $batch->id,
+                'teacher_id' => $data['teacher_id'],
                 'salary_amount' => $data['salary_amount'],
-                'role'          => $data['role'] ?? null,
-            ],
-        ]);
+                'salary_amount_type' => $data['salary_amount_type'],
+                'role' => $data['role'] ?? null,
+                'month' => $data['month'],
+                'year' => $data['year'],
+                'created_at' => now(),
+                'updated_at' => now(),
+            ]);
+        }
 
         return redirect()
-            ->route('admin.batches.assignTeachers', $batch->id)
+            ->route('admin.batches.assignTeachers', [$batch->id, 'month' => $data['month'], 'year' => $data['year']])
             ->with('status', 'Teacher assignment saved.');
     }
 
-    public function removeAssignedTeacher(Batch $batch, Teacher $teacher)
+    public function removeAssignedTeacher(Request $request, Batch $batch, Teacher $teacher)
     {
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $batch->teachers()->detach($teacher->id);
+        $month = (int) $request->query('month', now()->month);
+        $year = (int) $request->query('year', now()->year);
+
+        DB::table('batch_teacher')
+            ->where('batch_id', $batch->id)
+            ->where('teacher_id', $teacher->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->delete();
 
         return back()->with('status', 'Teacher removed from batch.');
     }
