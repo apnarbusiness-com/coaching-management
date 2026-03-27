@@ -7,6 +7,7 @@ use App\Models\Expense;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
 use Carbon\Carbon;
+use App\Models\TeachersPayment;
 use Illuminate\Http\Request;
 
 class HomeController
@@ -137,7 +138,7 @@ class HomeController
 
         $dueService = new DueCalculationService();
         $dueInfo = $dueService->calculateStudentTotalDue($student->id);
-        
+
         $unpaidDues = StudentMonthlyDue::where('student_id', $student->id)
             ->whereIn('status', ['unpaid', 'partial'])
             ->with(['batch', 'academicClass'])
@@ -162,6 +163,57 @@ class HomeController
             ->get();
 
         return view('student.home', compact('latestPayment', 'paymentHistory', 'dueInfo', 'unpaidDues', 'myBatches'));
+    }
+
+    public function loadTeacherDashboard()
+    {
+        $teacher = auth()->user()->teacher;
+
+        if (!$teacher) {
+            return view('teacher.home', [
+                'teacher' => null,
+                'myBatches' => collect(),
+                'paymentHistory' => collect(),
+            ]);
+        }
+
+        $teacher->load('subjects', 'batches');
+
+        $myBatches = $teacher->batches()
+            ->with(['subjects', 'class', 'students'])
+            ->get();
+
+        $paymentHistory = TeachersPayment::with('teacher')
+            ->where('teacher_id', $teacher->id)
+            // ->orderByDesc('payment_date')
+            ->orderByDesc('id')
+            ->take(20)
+            ->get();
+
+        return view('teacher.home', compact('teacher', 'myBatches', 'paymentHistory'));
+    }
+    public function teacherProfile()
+    {
+        $teacher = auth()->user()->teacher;
+
+        if (!$teacher) {
+            return redirect()->route('admin.home')->with('error', 'Teacher profile not found.');
+        }
+
+        $teacher->load('user', 'subjects', 'batches');
+
+        return view('teacher.profile', compact('teacher'));
+    }
+
+    public function myIdCard()
+    {
+        $teacher = auth()->user()->teacher;
+
+        if (!$teacher) {
+            return redirect()->route('admin.home')->with('error', 'Teacher profile not found.');
+        }
+
+        return view('teacher.id_card', compact('teacher'));
     }
 
     public function studentProfile()
@@ -197,9 +249,12 @@ class HomeController
     {
         $isStudent = auth()->check()
             && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['student'])->exists();
-
+        $isTeacher = auth()->check()
+            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists();
         // $homeView = $isStudent ? 'student.home' : 'home';
-        if ($isStudent) {
+        if ($isTeacher) {
+            return $this->loadTeacherDashboard();
+        } elseif ($isStudent) {
             return $this->loadStudentDashboard();
         } else {
             return $this->loadAdminDashboard();
