@@ -1,9 +1,5 @@
-ok now i want teachers payment system explaining to you.
-1. when teacher create or edit their was a salary type (fixed/variable) . 
-2. if fixed then fixed-type amount of money will charge/pay for every month
-3. if variable-type then when teacher assign to batch with salary-amount. 
-	salary-amount can be 2 types 
-	3.1. if salary-amount type fixed. then took number amount
-	3.2. if salary-amount type percentage. then it will calculate by student's monthly fees of that batch. lets say, in march 10 student enrolled to 'ICT batch' (5 students give 1000BDT & 5 students give 500BDT total 7500BDT ). if teacher percentage 30% then teacher will get 30% of that 7500BDT.
+D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\PROJECT.md 
+D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\teacher-payment-plan.md
 
-keep in your mind that. a techer can get 5k in january and can get 3k in febrary and can get 10k in march, so teacher-salary calculate monthly. 
+read those files and 
+D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\resources\views\teacher\home.blade.php make this dynamic and make ccolor theme modern ceative and consistent to the theme
