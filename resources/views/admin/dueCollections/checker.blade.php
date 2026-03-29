@@ -400,6 +400,7 @@
                                         <th>Disc.</th>
                                         <th>Rem.</th>
                                         <th>Status</th>
+                                        <th>Action</th>
                                     </tr>
                                 </thead>
                                 <tbody></tbody>
@@ -461,6 +462,38 @@
         <i class="fa fa-user-search"></i>
         <h4>Search for a Student</h4>
         <p>Enter name, ID, admission number, father's name or mother's name to view due history</p>
+    </div>
+
+    <!-- Payment Modal -->
+    <div class="modal fade" id="payDueModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pay Due</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="pay-due-form">
+                    <div class="modal-body">
+                        <input type="hidden" id="pay-due-id">
+                        <div class="form-group">
+                            <label>Due Amount</label>
+                            <input type="text" class="form-control" id="pay-due-amount" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Remaining</label>
+                            <input type="text" class="form-control" id="pay-due-remaining" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Pay Amount</label>
+                            <input type="number" class="form-control" id="pay-amount" step="0.01" min="1" required>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-primary">Submit Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
     </div>
 </div>
 
@@ -549,10 +582,11 @@ function loadStudentData() {
         const dueHistoryBody = $('#dueHistoryTable tbody');
         dueHistoryBody.empty();
         if (response.due_history.length === 0) {
-            dueHistoryBody.html('<tr><td colspan="7" class="text-center text-muted">No due records found</td></tr>');
+            dueHistoryBody.html('<tr><td colspan="8" class="text-center text-muted">No due records found</td></tr>');
         } else {
             response.due_history.forEach(function(due) {
                 let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status === 'partial' ? 'badge-warning' : 'badge-danger');
+                let payButton = due.due_remaining > 0 ? `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-remaining="${due.due_remaining}">Pay Now</button>` : '-';
                 dueHistoryBody.append(`
                     <tr>
                         <td>${due.month_name} ${due.year}</td>
@@ -562,6 +596,7 @@ function loadStudentData() {
                         <td>${parseFloat(due.discount_amount).toFixed(2)}</td>
                         <td>${parseFloat(due.due_remaining).toFixed(2)}</td>
                         <td><span class="badge ${badgeClass}">${due.status}</span></td>
+                        <td>${payButton}</td>
                     </tr>
                 `);
             });
@@ -646,5 +681,41 @@ function loadStudentData() {
         alert('Failed to load student data');
     });
 }
+
+$(document).on('click', '.pay-btn', function() {
+    let dueId = $(this).data('id');
+    let dueAmount = $(this).data('due-amount');
+    let remaining = $(this).data('remaining');
+    
+    $('#pay-due-id').val(dueId);
+    $('#pay-due-amount').val(dueAmount);
+    $('#pay-due-remaining').val(remaining);
+    $('#pay-amount').attr('max', remaining);
+    $('#payDueModal').modal('show');
+});
+
+$('#pay-due-form').on('submit', function(e) {
+    e.preventDefault();
+    let dueId = $('#pay-due-id').val();
+    let amount = $('#pay-amount').val();
+
+    $.post("{{ route('admin.due-collections.pay') }}", {
+        _token: '{{ csrf_token() }}',
+        due_id: dueId,
+        amount: amount
+    }, function(response) {
+        $('#payDueModal').modal('hide');
+        loadStudentData();
+        alert('Payment recorded successfully!');
+    }).fail(function(xhr) {
+        let msg = 'Payment failed. Please try again.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            msg = xhr.responseJSON.message;
+        } else if (xhr.status === 403) {
+            msg = 'You do not have permission to make payments.';
+        }
+        alert(msg);
+    });
+});
 </script>
 @endsection

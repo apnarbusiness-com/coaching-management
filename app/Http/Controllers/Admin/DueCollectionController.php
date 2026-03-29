@@ -116,7 +116,10 @@ class DueCollectionController extends Controller
 
     public function payDue(Request $request)
     {
-        abort_if(Gate::denies('due_collection_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+        // Allow if user has either due_collection_access or due_collection_create
+        if (Gate::denies('due_collection_access') && Gate::denies('due_collection_create')) {
+            abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
+        }
 
         $request->validate([
             'due_id' => 'required|exists:student_monthly_dues,id',
@@ -297,6 +300,7 @@ class DueCollectionController extends Controller
 
         $dueHistory = $dues->map(function ($due) {
             return [
+                'id' => $due->id,
                 'month' => $due->month,
                 'year' => $due->year,
                 'month_name' => $this->getMonthName($due->month),
