@@ -78,7 +78,8 @@
     .summary-card.due .value { color: #dc2626; }
     .summary-card.paid .value { color: #16a34a; }
     .summary-card.discount .value { color: #f59e0b; }
-    .summary-card.remaining .value { color: #8b5cf6; }
+    .summary-card.remaining { background: linear-gradient(135deg, #fee2e2 0%, #fecaca 100%); border-color: #f87171; }
+    .summary-card.remaining .value { color: #dc2626; }
     .info-card {
         background: white;
         border-radius: 12px;
@@ -376,7 +377,7 @@
                 <div class="value" id="totalDiscount">0.00</div>
             </div>
             <div class="summary-card remaining">
-                <div class="label">Total Remaining</div>
+                <div class="label">Total Remaining/Unpaid</div>
                 <div class="value" id="totalRemaining">0.00</div>
             </div>
         </div>

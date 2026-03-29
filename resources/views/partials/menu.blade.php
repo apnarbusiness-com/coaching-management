@@ -197,7 +197,7 @@
                     @can('due_collection_access')
                         <li class="c-sidebar-nav-item">
                             <a href="{{ route("admin.due-collections.index") }}"
-                                class="c-sidebar-nav-link {{ request()->is("admin/due-collections") || request()->is("admin/due-collections/*") ? "c-active" : "" }}">
+                                class="c-sidebar-nav-link {{ request()->is("admin/due-collections")  ? "c-active" : "" }}">
                                 <i class="fa-fw fas fa-dollar-sign c-sidebar-nav-icon">
 
                                 </i>
@@ -206,7 +206,7 @@
                         </li>
                         <li class="c-sidebar-nav-item">
                             <a href="{{ route("admin.due-collections.checker") }}"
-                                class="c-sidebar-nav-link {{ request()->is("admin/due-collections/checker") ? "c-active" : "" }}">
+                                class="c-sidebar-nav-link {{ request()->is('admin/due-collections/checker') ? 'c-active' : '' }}">
                                 <i class="fa-fw fas fa-search-dollar c-sidebar-nav-icon">
 
                                 </i>
