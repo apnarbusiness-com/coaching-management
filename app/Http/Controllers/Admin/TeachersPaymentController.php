@@ -121,6 +121,8 @@ class TeachersPaymentController extends Controller
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
+
+
         $month = (int) $request->month;
         $year = (int) $request->year;
 
@@ -128,6 +130,14 @@ class TeachersPaymentController extends Controller
             ->where('year', $year)
             ->pluck('teacher_id')
             ->toArray();
+
+        return response()->json([
+            'status'    => 'success',
+            'data'      => $request->all(),
+            'month'     => $month,
+            'year'      => $year,
+            'existingPayments' => $existingPayments
+        ]);
 
         $salaries = $this->salaryService->calculateAllTeachersForMonth($month, $year);
         $created = 0;

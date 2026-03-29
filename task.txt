@@ -1,5 +1,1 @@
-D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\PROJECT.md 
-D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\teacher-payment-plan.md
-
-read those files and 
-D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\resources\views\teacher\home.blade.php make this dynamic and make ccolor theme modern ceative and consistent to the theme
+'teacher_payment_transactions' has all partial payments show them all. to the teacher

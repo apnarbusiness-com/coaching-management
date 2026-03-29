@@ -174,6 +174,7 @@ class HomeController
                 'teacher' => null,
                 'myBatches' => collect(),
                 'paymentHistory' => collect(),
+                'partialPayments' => collect(),
             ]);
         }
 
@@ -183,14 +184,17 @@ class HomeController
             ->with(['subjects', 'class', 'students'])
             ->get();
 
-        $paymentHistory = TeachersPayment::with('teacher')
+        $paymentHistory = TeachersPayment::with(['teacher', 'transactions'])
             ->where('teacher_id', $teacher->id)
-            // ->orderByDesc('payment_date')
             ->orderByDesc('id')
             ->take(20)
             ->get();
 
-        return view('teacher.home', compact('teacher', 'myBatches', 'paymentHistory'));
+        $partialPayments = $paymentHistory->filter(function($p) {
+            return in_array($p->payment_status, ['partial', 'pending']);
+        });
+
+        return view('teacher.home', compact('teacher', 'myBatches', 'paymentHistory', 'partialPayments'));
     }
     public function teacherProfile()
     {

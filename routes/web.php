@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
 use App\Http\Controllers\Admin\TeacherController;
+use App\Http\Controllers\Admin\TeachersPaymentController;
 use App\Http\Controllers\AdmissionApplicationController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
@@ -155,7 +156,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Teachers Payment
     Route::delete('teachers-payments/destroy', 'TeachersPaymentController@massDestroy')->name('teachers-payments.massDestroy');
-    Route::post('teachers-payments/generate', 'TeachersPaymentController@generate')->name('teachers-payments.generate');
+    Route::post('teachers-payments/generate', [TeachersPaymentController::class, 'generate'])->name('teachers-payments.generate');
     Route::post('teachers-payments/calculate', 'TeachersPaymentController@calculate')->name('teachers-payments.calculate');
     Route::post('teachers-payments/{teachersPayment}/transactions', 'TeachersPaymentController@storeTransaction')->name('teachers-payments.transactions.store');
     Route::delete('teachers-payments/{teachersPayment}/transactions/{transaction}', 'TeachersPaymentController@destroyTransaction')->name('teachers-payments.transactions.destroy');
