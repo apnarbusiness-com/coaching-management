@@ -5,11 +5,13 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\AcademicClass;
 use App\Models\Batch;
+use App\Models\BatchAttendance;
 use App\Models\Earning;
 use App\Models\EarningCategory;
 use App\Models\Section;
 use App\Models\Shift;
 use App\Models\StudentBasicInfo;
+use App\Models\StudentDetailsInformation;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
 use Carbon\Carbon;
@@ -204,5 +206,192 @@ class DueCollectionController extends Controller
             'unpaid' => '<span class="badge bg-danger">Unpaid</span>',
             default => $status,
         };
+    }
+
+    public function checker(Request $request)
+    {
+        abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $currentYear = Carbon::now()->year;
+        $years = range($currentYear - 2, $currentYear + 1);
+
+        return view('admin.dueCollections.checker', compact('years', 'currentYear'));
+    }
+
+    public function searchStudentsForChecker(Request $request)
+    {
+        abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $search = $request->term;
+
+        $students = StudentBasicInfo::leftJoin('student_details_informations', 'student_basic_infos.id', '=', 'student_details_informations.student_id')
+            ->leftJoin('users', 'student_basic_infos.user_id', '=', 'users.id')
+            ->where(function ($query) use ($search) {
+                $query->where('student_basic_infos.first_name', 'LIKE', "%$search%")
+                    ->orWhere('student_basic_infos.last_name', 'LIKE', "%$search%")
+                    ->orWhere('student_basic_infos.id_no', 'LIKE', "%$search%")
+                    ->orWhere('users.admission_id', 'LIKE', "%$search%")
+                    ->orWhere('student_details_informations.fathers_name', 'LIKE', "%$search%")
+                    ->orWhere('student_details_informations.mothers_name', 'LIKE', "%$search%");
+            })
+            ->select([
+                'student_basic_infos.id',
+                'student_basic_infos.first_name',
+                'student_basic_infos.last_name',
+                'student_basic_infos.id_no',
+                'users.admission_id',
+                'student_details_informations.fathers_name',
+                'student_details_informations.mothers_name',
+            ])
+            ->limit(20)
+            ->get();
+
+        $formatted = [];
+        foreach ($students as $student) {
+            $formatted[] = [
+                'id' => $student->id,
+                'text' => ($student->first_name ?? '') . ' ' . ($student->last_name ?? '') . ' - ' . ($student->id_no ?? $student->admission_id ?? 'N/A'),
+                'first_name' => $student->first_name,
+                'last_name' => $student->last_name,
+                'id_no' => $student->id_no,
+                'admission_id' => $student->admission_id,
+                'fathers_name' => $student->fathers_name,
+                'mothers_name' => $student->mothers_name,
+            ];
+        }
+
+        return response()->json($formatted);
+    }
+
+    public function getStudentFullHistory(Request $request, $studentId)
+    {
+        abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $year = $request->input('year', Carbon::now()->year);
+
+        $student = StudentBasicInfo::with(['studentDetails', 'class', 'media'])
+            ->leftJoin('users', 'student_basic_infos.user_id', '=', 'users.id')
+            ->where('student_basic_infos.id', $studentId)
+            ->select([
+                'student_basic_infos.*',
+                'users.admission_id',
+            ])
+            ->first();
+
+        if (!$student) {
+            return response()->json(['error' => 'Student not found'], 404);
+        }
+
+        $query = StudentMonthlyDue::where('student_id', $studentId);
+        if ($year !== 'all') {
+            $query->where('year', $year);
+        }
+        $dues = $query->with('batch')->orderBy('year')->orderBy('month')->get();
+
+        $dueSummary = [
+            'total_due' => (float) $dues->sum('due_amount'),
+            'total_paid' => (float) $dues->sum('paid_amount'),
+            'total_discount' => (float) $dues->sum('discount_amount'),
+            'total_remaining' => (float) $dues->sum('due_remaining'),
+        ];
+
+        $dueHistory = $dues->map(function ($due) {
+            return [
+                'month' => $due->month,
+                'year' => $due->year,
+                'month_name' => $this->getMonthName($due->month),
+                'batch_name' => $due->batch->batch_name ?? 'N/A',
+                'due_amount' => (float) $due->due_amount,
+                'paid_amount' => (float) $due->paid_amount,
+                'discount_amount' => (float) $due->discount_amount,
+                'due_remaining' => (float) $due->due_remaining,
+                'status' => $due->status,
+            ];
+        })->values();
+
+        $earningQuery = Earning::where('student_id', $studentId);
+        if ($year !== 'all') {
+            $earningQuery->where('earning_year', $year);
+        }
+        $earnings = $earningQuery->orderBy('earning_date', 'desc')->get();
+
+        $paymentHistory = $earnings->map(function ($earning) {
+            return [
+                'date' => $earning->earning_date,
+                'batch_name' => $earning->batch->batch_name ?? 'N/A',
+                'amount' => (float) $earning->amount,
+                'received_by' => $earning->recieved_by,
+                'reference' => $earning->earning_reference,
+                'title' => $earning->title,
+            ];
+        })->values();
+
+        $batches = Batch::whereHas('students', function ($query) use ($studentId) {
+            $query->where('student_basic_infos.id', $studentId);
+        })->with(['subject', 'class'])->get();
+
+        $activeBatches = $batches->map(function ($batch) use ($studentId) {
+            $pivot = DB::table('batch_student_basic_info')
+                ->where('batch_id', $batch->id)
+                ->where('student_basic_info_id', $studentId)
+                ->first();
+
+            return [
+                'id' => $batch->id,
+                'batch_name' => $batch->batch_name,
+                'subject_name' => $batch->subject->name ?? 'N/A',
+                'class_name' => $batch->class->class_name ?? 'N/A',
+                'enrolled_at' => $pivot->enrolled_at ?? null,
+                'fee_type' => $batch->fee_type,
+                'fee_amount' => (float) $batch->fee_amount,
+            ];
+        })->values();
+
+        $attendanceData = [];
+        foreach ($batches as $batch) {
+            $attendances = BatchAttendance::where('batch_id', $batch->id)
+                ->where('student_id', $studentId);
+
+            if ($year !== 'all') {
+                $attendances->whereYear('attendance_date', $year);
+            }
+
+            $attendances = $attendances->get();
+
+            $present = $attendances->where('status', 'present')->count();
+            $absent = $attendances->where('status', 'absent')->count();
+            $late = $attendances->where('status', 'late')->count();
+            $total = $present + $absent + $late;
+            $percentage = $total > 0 ? round((($present + $late) / $total) * 100, 1) : 0;
+
+            $attendanceData[] = [
+                'batch_id' => $batch->id,
+                'batch_name' => $batch->batch_name,
+                'total_days' => $total,
+                'present' => $present,
+                'absent' => $absent,
+                'late' => $late,
+                'percentage' => $percentage,
+            ];
+        }
+
+        return response()->json([
+            'student' => [
+                'id' => $student->id,
+                'name' => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                'id_no' => $student->id_no,
+                'admission_id' => $student->admission_id,
+                'class_name' => $student->class->class_name ?? 'N/A',
+                'fathers_name' => $student->studentDetails->fathers_name ?? 'N/A',
+                'mothers_name' => $student->studentDetails->mothers_name ?? 'N/A',
+                'contact_number' => $student->contact_number,
+                'image' => $student->image?->thumbnail ?? null,
+            ],
+            'due_summary' => $dueSummary,
+            'due_history' => $dueHistory,
+            'payment_history' => $paymentHistory,
+            'active_batches' => $activeBatches,
+            'attendance_analysis' => $attendanceData,
+        ]);
     }
 }

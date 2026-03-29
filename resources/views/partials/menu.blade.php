@@ -204,6 +204,15 @@
                                 {{ trans('cruds.dueCollection.title') }}
                             </a>
                         </li>
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route("admin.due-collections.checker") }}"
+                                class="c-sidebar-nav-link {{ request()->is("admin/due-collections/checker") ? "c-active" : "" }}">
+                                <i class="fa-fw fas fa-search-dollar c-sidebar-nav-icon">
+
+                                </i>
+                                Due Checker
+                            </a>
+                        </li>
                     @endcan
                     @can('batch_attendance_access')
                         <li class="c-sidebar-nav-item">
