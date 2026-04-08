@@ -318,10 +318,11 @@
                                 <input
                                     class="block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-50 dark:bg-slate-700 text-slate-900 dark:text-white pl-7 shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
                                     id="id_no" name="id_no" readonly="" type="text"
-                                    value="    {{ \App\Models\StudentBasicInfo::count() + 1 + 100 }}" />
+                                    value="    {{ $latest_id_no }}" />
                                 {{-- value=" ST-{{ date('Y') }}-{{ date('m') }}-{{ \App\Models\StudentBasicInfo::count() + 1
                                 }}" /> --}}
                             </div>
+                            <small class="text-xs text-slate-500 dark:text-slate-400">{{ trans('cruds.studentBasicInfo.fields.id_no_helper') }}</small>
                         </div>
 
                         {{-- class_id --}}
@@ -411,7 +412,7 @@
                             <input
                                 class=" {{ $errors->has('roll') ? 'is-invalid' : '' }} mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
                                 id="roll" name="roll" placeholder="e.g. 15" type="number"
-                                value="{{ old('roll', '') }}" />
+                                value="{{ old('roll', $latest_id_no) }}" />
                             @if ($errors->has('roll'))
                                 <div class="invalid-feedback">
                                     {{ $errors->first('roll') }}

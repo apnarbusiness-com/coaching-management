@@ -30,6 +30,7 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use SpreadsheetReader;
 use Symfony\Component\HttpFoundation\Response;
+use Symfony\Polyfill\Uuid\Uuid;
 use Yajra\DataTables\Facades\DataTables;
 
 class StudentBasicInfoController extends Controller
@@ -128,7 +129,7 @@ class StudentBasicInfoController extends Controller
             ->pluck('source_file');
 
         $query = StudentImportRaw::query()
-        ->orderBy('id');
+            ->orderBy('id');
         // ->orderByDesc('id');
         if (!empty($sourceFile)) {
             $query->where('source_file', $sourceFile);
@@ -207,7 +208,9 @@ class StudentBasicInfoController extends Controller
         $subjects = Subject::pluck('name', 'id');
         $batches = Batch::pluck('batch_name', 'id');
 
-        return view('admin.studentBasicInfos.create', compact('classes', 'sections', 'shifts', 'academicBackgrounds', 'subjects', 'users', 'batches'));
+        $latest_id_no = generateAdmissionID(); // Generate the latest admission ID :: from helpers
+
+        return view('admin.studentBasicInfos.create', compact('classes', 'sections', 'shifts', 'academicBackgrounds', 'subjects', 'users', 'batches', 'latest_id_no'));
     }
 
     public function store(StoreStudentBasicInfoRequest $request)
@@ -225,8 +228,8 @@ class StudentBasicInfoController extends Controller
 
 
         $studentBasicInfo = new StudentBasicInfo();
-        $studentBasicInfo->roll = $request->roll;
-        $studentBasicInfo->id_no = $request->id_no;
+        $studentBasicInfo->roll = $request->roll ? $request->roll : (generateAdmissionID() ?? 000);
+        $studentBasicInfo->id_no = generateAdmissionID() ?? 000;
         $studentBasicInfo->first_name = $request->first_name;
         $studentBasicInfo->last_name = $request->filled('last_name') ? $request->last_name : null;
         $studentBasicInfo->gender = $request->gender;

@@ -198,7 +198,7 @@ return [
             'id'                    => 'ID',
             'id_helper'             => ' ',
             'id_no'                 => 'Admission ID',
-            'id_no_helper'          => ' ',
+            'id_no_helper'          => 'If someone submits before you, the admission ID may change.',
             'first_name'            => 'First Name',
             'first_name_helper'     => ' ',
             'last_name'             => 'Last Name',
