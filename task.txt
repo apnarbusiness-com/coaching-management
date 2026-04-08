@@ -1,1 +1,1 @@
-'teacher_payment_transactions' has all partial payments show them all. to the teacher
+http://dev-coaching-management.test/admin/dashboard-widgets/role/2/edit here if i update and save. it don't update

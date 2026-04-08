@@ -48,6 +48,15 @@
                                 {{ trans('cruds.role.title') }}
                             </a>
                         </li>
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route("admin.dashboard-widgets.index") }}"
+                                class="c-sidebar-nav-link {{ request()->is("admin/dashboard-widgets") ? "c-active" : "" }}">
+                                <i class="fa-fw fas fa-th-large c-sidebar-nav-icon">
+
+                                </i>
+                                Dashboard Widgets
+                            </a>
+                        </li>
                     @endcan
                     @can('user_access')
                         <li class="c-sidebar-nav-item">

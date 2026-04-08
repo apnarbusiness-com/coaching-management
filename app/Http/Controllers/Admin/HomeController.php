@@ -6,6 +6,7 @@ use App\Models\Earning;
 use App\Models\Expense;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
+use App\Services\DashboardWidgetService;
 use Carbon\Carbon;
 use App\Models\TeachersPayment;
 use Illuminate\Http\Request;
@@ -15,111 +16,24 @@ class HomeController
 
     public function loadAdminDashboard()
     {
-        $totalEarnings = Earning::sum('amount');
-        $totalExpenses = Expense::sum('amount');
-        $totalProfit = $totalEarnings - $totalExpenses;
+        $user = auth()->user();
 
-        $thisYearEarnings = Earning::whereYear('earning_date', date('Y'))->sum('amount');
-        $thisYearExpenses = Expense::whereYear('expense_date', date('Y'))->sum('amount');
-        $thisYearProfit = $thisYearEarnings - $thisYearExpenses;
+        
+        $visibleWidgets = DashboardWidgetService::getVisibleWidgetKeys($user);
 
-
-        $thisYearProfitMargin = $thisYearEarnings > 0
-            ? round(($thisYearProfit / $thisYearEarnings) * 100, 2)
-            : 0;
-
-        $thisMonthEarnings = Earning::whereMonth('earning_date', date('m'))->sum('amount');
-        $thisMonthExpenses = Expense::whereMonth('expense_date', date('m'))->sum('amount');
-        $thisMonthProfit = $thisMonthEarnings - $thisMonthExpenses;
-        $thisMonthProfitMargin = $thisMonthEarnings > 0
-            ? round(($thisMonthProfit / $thisMonthEarnings) * 100, 2)
-            : 0;
-
-
-        $transactionData = [
-            'totalEarnings' => $totalEarnings,
-            'totalExpenses' => $totalExpenses,
-            'totalProfit' => $totalProfit,
-
-            'thisYearEarnings' => $thisYearEarnings,
-            'thisYearExpenses' => $thisYearExpenses,
-            'thisYearProfit' => $thisYearProfit,
-            'thisYearProfitMargin' => $thisYearProfitMargin,
-
-            'thisMonthEarnings' => $thisMonthEarnings,
-            'thisMonthExpenses' => $thisMonthExpenses,
-            'thisMonthProfit' => $thisMonthProfit,
-            'thisMonthProfitMargin' => $thisMonthProfitMargin,
+        // return $visibleWidgets;
+        
+        $widgetData = DashboardWidgetService::getWidgetDataForUser($user);
+        
+        $transactionData = $widgetData['transactionData'] ?? [];
+        $lastSixMonthsData = $widgetData['lastSixMonthsData'] ?? [
+            'earnings' => [],
+            'maxEarning' => 1,
+            'growthPercentage' => 0,
+            'growthTrend' => 'flat',
         ];
 
-        // return $transactionData;
-
-        // Step 1: last 6 months range (current month included)
-        $months = collect();
-        $now = Carbon::now()->startOfMonth();
-
-        for ($i = 5; $i >= 0; $i--) {
-            $months->push($now->copy()->subMonths($i));
-        }
-
-        // Step 2: DB query (earning_date based)
-        $data = Earning::selectRaw('
-            YEAR(earning_date) as year,
-            MONTH(earning_date) as month,
-            SUM(amount) as total
-            ')
-            ->where('earning_date', '>=', $months->first())
-            ->groupBy('year', 'month')
-            ->get()
-            ->keyBy(fn($item) => $item->year . '-' . $item->month);
-
-        // Step 3: Format output (zero-fill)
-        $last6MonthsEarnings = [];
-
-        foreach ($months as $month) {
-            $key = $month->year . '-' . $month->month;
-
-            $last6MonthsEarnings[] = [
-                'month' => $month->format('M Y'),
-                'total' => $data[$key]->total ?? 0,
-            ];
-        }
-
-        // return $last6MonthsEarnings;
-
-
-        $maxEarningInLast6MonthsEarnings = collect($last6MonthsEarnings)->max('total') ?: 1;
-
-        $lastMonth = $last6MonthsEarnings[4]['total'] ?? 0;
-        $currentMonth = $last6MonthsEarnings[5]['total'] ?? 0;
-
-        // $growthPercentage = $lastMonth > 0
-        //     ? round((($currentMonth - $lastMonth) / $lastMonth) * 100, 1)
-        //     : 0;
-
-        if ($lastMonth == 0 && $currentMonth == 0) {
-            $trend = 'flat';
-            $growthPercentage = 0;
-        } elseif ($lastMonth == 0) {
-            $trend = 'up';
-            $growthPercentage = 100;
-        } else {
-            $change = (($currentMonth - $lastMonth) / $lastMonth) * 100;
-            $growthPercentage = round(abs($change), 1);
-            $trend = $change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat');
-        }
-
-        $lastSixMonthsData = [
-            'earnings' => $last6MonthsEarnings,
-            'maxEarning' => $maxEarningInLast6MonthsEarnings,
-            'growthPercentage' => $growthPercentage,
-            'growthTrend' => $trend,
-
-        ];
-
-        // return $last6MonthsEarnings;
-
-        return view('home', compact('transactionData', 'lastSixMonthsData'));
+        return view('home', compact('transactionData', 'lastSixMonthsData', 'visibleWidgets'));
     }
 
     public function loadStudentDashboard()

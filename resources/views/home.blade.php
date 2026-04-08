@@ -28,21 +28,20 @@
         <main class="flex-1 overflow-y-auto p-4 md:p-8 bg-slate-50 dark:bg-background-dark transition-colors duration-300">
             {{-- <div class="mx-auto max-w-7xl flex flex-col gap-8"> --}}
             <div class="mx-auto max-w-none flex flex-col gap-8">
+                @php $visibleWidgets = $visibleWidgets ?? []; @endphp
+
                 <!-- Level 1: Hero Cards -->
+                @if(in_array('total_profit', $visibleWidgets))
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-
-
                     <!-- Total Transaction -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
                         <div class="flex justify-between items-start">
                             <div class="flex flex-col gap-1">
-                                {{-- <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Total Transaction</p> --}}
                                 <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Total Profit</p>
                                 <h3 class="text-slate-900 dark:text-white text-2xl font-bold">
-                                    {{-- $ --}}
                                     <strong>৳</strong>
-                                    {{ number_format($transactionData['totalProfit'], 2) }}
+                                    {{ number_format($transactionData['totalProfit'] ?? 0, 2) }}
                                 </h3>
                             </div>
                             <div class="p-2 bg-green-500/10 rounded-lg">
@@ -50,19 +49,11 @@
                             </div>
                         </div>
                         <div class="flex flex-col gap-2">
-                            <!-- Sparkline placeholder using CSS gradients -->
                             <div class="h-8 w-full flex items-end gap-1">
-                                {{-- <div class="w-1/6 bg-green-500/20 rounded-t h-[40%]"></div>
-                                    <div class="w-1/6 bg-green-500/30 rounded-t h-[60%]"></div>
-                                    <div class="w-1/6 bg-green-500/40 rounded-t h-[30%]"></div>
-                                    <div class="w-1/6 bg-green-500/50 rounded-t h-[80%]"></div>
-                                    <div class="w-1/6 bg-green-500/60 rounded-t h-[50%]"></div>
-                                    <div class="w-1/6 bg-green-500 rounded-t h-[90%]"></div> --}}
                                 @foreach ($lastSixMonthsData['earnings'] as $earning)
                                     @php
                                         $height = ($earning['total'] / $lastSixMonthsData['maxEarning']) * 100;
                                     @endphp
-
                                     <div class="w-1/6 bg-green-500 rounded-t transition-all"
                                         style="height: {{ $height }}%"
                                         title="{{ $earning['month'] }} : {{ number_format($earning['total']) }}"></div>
@@ -75,17 +66,12 @@
                                         'down' => 'trending_down',
                                         default => 'trending_flat',
                                     };
-
                                     $color = match ($lastSixMonthsData['growthTrend']) {
                                         'up' => 'text-green-500',
                                         'down' => 'text-red-500',
                                         default => 'text-gray-400',
                                     };
                                 @endphp
-                                {{-- <span class="material-symbols-outlined text-green-500 text-sm">trending_up</span> --}}
-                                {{-- <span class="text-green-500 text-xs font-semibold">+12%</span>
-                                <span class="text-[#9da6b9] text-xs ml-1">vs last month</span> --}}
-
                                 <span class="material-symbols-outlined {{ $color }} text-sm">
                                     {{ $icon }}
                                 </span>
@@ -96,12 +82,14 @@
                             </div>
                         </div>
                     </div>
-
                 </div>
+                @endif
 
 
                 <!-- Yearly Transaction -->
+                @if(in_array('yearly_earnings', $visibleWidgets) || in_array('yearly_expenses', $visibleWidgets) || in_array('yearly_profit', $visibleWidgets))
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @if(in_array('yearly_earnings', $visibleWidgets))
                     <!-- Yearly Earning -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
@@ -128,6 +116,8 @@
                             </div>
                         </div> --}}
                     </div>
+                    @endif
+                    @if(in_array('yearly_expenses', $visibleWidgets))
                     <!-- Yearly Cost -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
@@ -135,25 +125,17 @@
                             <div class="flex flex-col gap-1">
                                 <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Yearly Cost</p>
                                 <h3 class="text-slate-900 dark:text-white text-2xl font-bold">
-                                    {{-- $32,000 --}}
                                     <strong>৳</strong>
-                                    {{ number_format($transactionData['thisYearExpenses'], 2) }}
+                                    {{ number_format($transactionData['thisYearExpenses'] ?? 0, 2) }}
                                 </h3>
                             </div>
                             <div class="p-2 bg-orange-500/10 rounded-lg">
                                 <span class="material-symbols-outlined text-orange-500 text-xl">shopping_cart</span>
                             </div>
                         </div>
-                        {{-- <div class="flex flex-col gap-2">
-                            <div class="w-full bg-slate-100 dark:bg-[#282e39] rounded-full h-2">
-                                <div class="bg-orange-500 h-2 rounded-full" style="width: 60%"></div>
-                            </div>
-                            <div class="flex items-center justify-between">
-                                <span class="text-slate-500 dark:text-[#9da6b9] text-xs">Budget Used</span>
-                                <span class="text-orange-500 text-xs font-semibold">60%</span>
-                            </div>
-                        </div> --}}
                     </div>
+                    @endif
+                    @if(in_array('yearly_profit', $visibleWidgets))
                     <!-- Yearly Profit -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
@@ -161,17 +143,16 @@
                             <div class="flex flex-col gap-1">
                                 <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Yearly Profit</p>
                                 <h3 class="text-slate-900 dark:text-white text-2xl font-bold">
-                                    {{-- $52,000 --}}
                                     <strong>৳</strong>
-                                    {{ number_format($transactionData['thisYearProfit'], 2) }}
+                                    {{ number_format($transactionData['thisYearProfit'] ?? 0, 2) }}
                                 </h3>
-
                                 <div class="flex items-center gap-1">
                                     @php
-                                        if ($transactionData['thisYearProfitMargin'] > 0) {
+                                        $margin = $transactionData['thisYearProfitMargin'] ?? 0;
+                                        if ($margin > 0) {
                                             $marginColor = 'green';
                                             $marginIcon = 'trending_up';
-                                        } elseif ($transactionData['thisYearProfitMargin'] < 0) {
+                                        } elseif ($margin < 0) {
                                             $marginColor = 'red';
                                             $marginIcon = 'trending_down';
                                         } else {
@@ -183,33 +164,23 @@
                                         {{ $marginIcon }}
                                     </span>
                                     <span class="text-{{ $marginColor }}-500 text-xs font-semibold">
-                                        {{ $transactionData['thisYearProfitMargin'] }}% margin
+                                        {{ $margin }}% margin
                                     </span>
                                 </div>
-                                {{-- <div class="flex items-center gap-1">
-                                    <span class="material-symbols-outlined text-green-500 text-sm">trending_up</span>
-                                    <span class="text-green-500 text-xs font-semibold">+18% margin</span>
-                                </div> --}}
                             </div>
                             <div class="p-2 bg-green-500/10 rounded-lg">
                                 <span class="material-symbols-outlined text-green-500 text-xl">savings</span>
                             </div>
                         </div>
-                        {{-- <div class="flex flex-col gap-2 mt-auto">
-                            <div class="flex items-center gap-2 mt-2">
-                                <span
-                                    class="px-2 py-0.5 rounded-full bg-green-500/20 text-green-500 text-xs font-medium">Healthy</span>
-                            </div>
-                            <div class="flex items-center gap-1">
-                                <span class="material-symbols-outlined text-green-500 text-sm">trending_up</span>
-                                <span class="text-green-500 text-xs font-semibold">+18% margin</span>
-                            </div>
-                        </div> --}}
                     </div>
+                    @endif
                 </div>
+                @endif
 
                 <!-- Monthly Transaction -->
+                @if(in_array('monthly_earnings', $visibleWidgets) || in_array('monthly_expenses', $visibleWidgets) || in_array('monthly_profit', $visibleWidgets))
                 <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
+                    @if(in_array('monthly_earnings', $visibleWidgets))
                     <!-- Monthly Earning -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
@@ -217,9 +188,8 @@
                             <div class="flex flex-col gap-1">
                                 <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Monthly Earning</p>
                                 <h3 class="text-slate-900 dark:text-white text-2xl font-bold">
-                                    {{-- $85,000 --}}
                                     <strong>৳</strong>
-                                    {{ number_format($transactionData['thisMonthEarnings'], 2) }}
+                                    {{ number_format($transactionData['thisMonthEarnings'] ?? 0, 2) }}
                                 </h3>
                             </div>
                             <div class="p-2 bg-blue-500/10 rounded-lg">
@@ -227,6 +197,8 @@
                             </div>
                         </div>
                     </div>
+                    @endif
+                    @if(in_array('monthly_expenses', $visibleWidgets))
                     <!-- Monthly Cost -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
@@ -234,9 +206,8 @@
                             <div class="flex flex-col gap-1">
                                 <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Monthly Cost</p>
                                 <h3 class="text-slate-900 dark:text-white text-2xl font-bold">
-                                    {{-- $32,000 --}}
                                     <strong>৳</strong>
-                                    {{ number_format($transactionData['thisMonthExpenses'], 2) }}
+                                    {{ number_format($transactionData['thisMonthExpenses'] ?? 0, 2) }}
                                 </h3>
                             </div>
                             <div class="p-2 bg-orange-500/10 rounded-lg">
@@ -244,6 +215,8 @@
                             </div>
                         </div>
                     </div>
+                    @endif
+                    @if(in_array('monthly_profit', $visibleWidgets))
                     <!-- Monthly Profit -->
                     <div
                         class="flex flex-col justify-between gap-4 rounded-xl p-5 bg-white dark:bg-slate-800 border border-slate-200 dark:border-slate-700 hover:border-slate-300 dark:hover:border-slate-600 transition-all shadow-sm">
@@ -251,17 +224,16 @@
                             <div class="flex flex-col gap-1">
                                 <p class="text-slate-500 dark:text-[#9da6b9] text-sm font-medium">Monthly Profit</p>
                                 <h3 class="text-slate-900 dark:text-white text-2xl font-bold">
-                                    {{-- $52,000 --}}
                                     <strong>৳</strong>
-                                    {{ number_format($transactionData['thisMonthProfit'], 2) }}
+                                    {{ number_format($transactionData['thisMonthProfit'] ?? 0, 2) }}
                                 </h3>
-
                                 <div class="flex items-center gap-1">
                                     @php
-                                        if ($transactionData['thisMonthProfitMargin'] > 0) {
+                                        $margin = $transactionData['thisMonthProfitMargin'] ?? 0;
+                                        if ($margin > 0) {
                                             $marginColor = 'green';
                                             $marginIcon = 'trending_up';
-                                        } elseif ($transactionData['thisMonthProfitMargin'] < 0) {
+                                        } elseif ($margin < 0) {
                                             $marginColor = 'red';
                                             $marginIcon = 'trending_down';
                                         } else {
@@ -273,7 +245,7 @@
                                         {{ $marginIcon }}
                                     </span>
                                     <span class="text-{{ $marginColor }}-500 text-xs font-semibold">
-                                        {{ $transactionData['thisMonthProfitMargin'] }}% margin
+                                        {{ $margin }}% margin
                                     </span>
                                 </div>
                             </div>
@@ -282,13 +254,17 @@
                             </div>
                         </div>
                     </div>
+                    @endif
                 </div>
+                @endif
 
 
                 <!-- Level 2: Alert Zone -->
+                @if(in_array('student_due_alert', $visibleWidgets) || in_array('teacher_payment_alert', $visibleWidgets))
                 <div class="flex flex-col gap-4">
                     <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight px-1">Priority Alerts</h3>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                        @if(in_array('student_due_alert', $visibleWidgets))
                         <!-- Student Due Alert -->
                         <div
                             class="flex items-center gap-4 p-4 rounded-xl bg-red-500/10 border border-red-500/20 relative overflow-hidden group">
@@ -299,13 +275,15 @@
                             <div class="flex-1">
                                 <h4 class="text-slate-900 dark:text-white font-semibold">Student Due Alert</h4>
                                 <p class="text-slate-600 dark:text-[#9da6b9] text-sm">
-                                    0 Students have overdue payments &gt; 30 days.
+                                    {{ $studentAlerts['overdueCount'] ?? 0 }} Students have overdue payments &gt; 30 days.
                                 </p>
                             </div>
                             <button
                                 class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">View
                                 List</button>
                         </div>
+                        @endif
+                        @if(in_array('teacher_payment_alert', $visibleWidgets))
                         <!-- Teacher Payment Pending -->
                         <div
                             class="flex items-center gap-4 p-4 rounded-xl bg-orange-500/10 border border-orange-500/20 relative overflow-hidden group">
@@ -316,13 +294,15 @@
                             <div class="flex-1">
                                 <h4 class="text-slate-900 dark:text-white font-semibold">Teacher Payment Pending</h4>
                                 <p class="text-slate-600 dark:text-[#9da6b9] text-sm">
-                                    0 Teachers pending payment for October.</p>
+                                    {{ $teacherPaymentAlerts['pendingCount'] ?? 0 }} Teachers pending payment.</p>
                             </div>
                             <button
                                 class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">Review</button>
                         </div>
+                        @endif
                     </div>
                 </div>
+                @endif
 
 
 
@@ -331,9 +311,76 @@
 
 
                 <!-- Level 3: Charts & Financial Overview -->
+                @if(in_array('monthly_revenue_chart', $visibleWidgets) || in_array('financial_overview', $visibleWidgets))
                 <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
-                    <!-- Left Column: Revenue Breakdown Chart -->
-                    <div
+                    @if(in_array('monthly_revenue_chart', $visibleWidgets))
+                    <div class="lg:col-span-2 flex flex-col gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <div class="flex justify-between items-center mb-2">
+                            <h3 class="text-slate-900 dark:text-white text-lg font-bold">Monthly Revenue Breakdown</h3>
+                            <select id="revenueRange" class="bg-slate-50 dark:bg-[#282e39] border border-slate-200 dark:border-none text-slate-700 dark:text-white text-sm rounded-lg py-1 px-3 focus:ring-0 cursor-pointer">
+                                <option value="6">Last 6 Months</option>
+                                <option value="12">This Year</option>
+                            </select>
+                        </div>
+                        <div class="relative h-64 w-full">
+                            <canvas id="earningChart"></canvas>
+                        </div>
+                    </div>
+                    @endif
+
+                    @if(in_array('financial_overview', $visibleWidgets))
+                    <div class="flex flex-col gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
+                        <h3 class="text-slate-900 dark:text-white text-lg font-bold mb-2">Financial Overview</h3>
+                        <div class="flex items-center justify-center py-4 relative">
+                            <div class="size-40 rounded-full" style="background: conic-gradient(#135bec 0% 65%, #10b981 65% 85%, #f59e0b 85% 100%);"></div>
+                            <div class="absolute inset-0 flex items-center justify-center">
+                                <div class="size-28 rounded-full bg-white dark:bg-slate-800 flex flex-col items-center justify-center">
+                                    <span class="text-slate-500 dark:text-[#9da6b9] text-xs">Total Assets</span>
+                                    <span class="text-slate-900 dark:text-white font-bold text-lg">$47k</span>
+                                </div>
+                            </div>
+                        </div>
+                        <div class="flex flex-col gap-3 mt-2">
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-[#282e39]/50 hover:bg-[#282e39] transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded bg-blue-500/20 text-blue-500"><span class="material-symbols-outlined text-sm">account_balance</span></div>
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-900 dark:text-white text-sm font-medium">Bank</span>
+                                        <span class="text-slate-500 dark:text-[#9da6b9] text-xs">City Bank Ltd.</span>
+                                    </div>
+                                </div>
+                                <span class="text-slate-900 dark:text-white font-bold text-sm">$40,000</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-[#282e39]/50 hover:bg-[#282e39] transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded bg-pink-500/20 text-pink-500"><span class="material-symbols-outlined text-sm">qr_code_2</span></div>
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-900 dark:text-white text-sm font-medium">bKash</span>
+                                        <span class="text-slate-500 dark:text-[#9da6b9] text-xs">Merchant Acc</span>
+                                    </div>
+                                </div>
+                                <span class="text-slate-900 dark:text-white font-bold text-sm">$5,000</span>
+                            </div>
+                            <div class="flex items-center justify-between p-3 rounded-lg bg-slate-50 dark:bg-[#282e39]/50 hover:bg-slate-100 dark:hover:bg-[#282e39] transition-colors">
+                                <div class="flex items-center gap-3">
+                                    <div class="p-2 rounded bg-yellow-500/20 text-yellow-500"><span class="material-symbols-outlined text-sm">point_of_sale</span></div>
+                                    <div class="flex flex-col">
+                                        <span class="text-slate-900 dark:text-white text-sm font-medium">Office</span>
+                                        <span class="text-slate-500 dark:text-[#9da6b9] text-xs">Petty Cash</span>
+                                    </div>
+                                </div>
+                                <span class="text-slate-900 dark:text-white font-bold text-sm">$2,000</span>
+                            </div>
+                        </div>
+                    </div>
+                    @endif
+                </div>
+                @endif
+
+
+
+                <!-- Level 4: Subject-wise Earning Table -->
+                @if(in_array('subject_earnings_table', $visibleWidgets))
                         class="lg:col-span-2 flex flex-col gap-4 bg-white dark:bg-slate-800 p-6 rounded-xl border border-slate-200 dark:border-slate-700 shadow-sm">
                         <div class="flex justify-between items-center mb-2">
                             <h3 class="text-slate-900 dark:text-white text-lg font-bold">Monthly Revenue Breakdown</h3>
@@ -567,6 +614,7 @@
                         </table>
                     </div>
                 </div>
+                @endif
             </div>
         </main>
     </div>

@@ -36,6 +36,11 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     Route::get('/monthly-revenue/{months}', [HomeController::class, 'getMonthLyRevenueBreakdown'])->name('monthly.revenue');
 
+    // Dashboard Widget Configuration
+    Route::get('dashboard-widgets', 'DashboardWidgetConfigController@index')->name('dashboard-widgets.index');
+    Route::get('dashboard-widgets/role/{role}/edit', 'DashboardWidgetConfigController@edit')->name('dashboard-widgets.edit');
+    Route::put('dashboard-widgets/role/{role}', 'DashboardWidgetConfigController@update')->name('dashboard-widgets.update');
+
 
 
     // Permissions
