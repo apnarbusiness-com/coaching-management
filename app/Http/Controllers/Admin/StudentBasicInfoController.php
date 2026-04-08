@@ -445,6 +445,12 @@ class StudentBasicInfoController extends Controller
     {
         abort_if(Gate::denies('student_basic_info_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $studentBasicInfo->studentDetails()->delete();
+
+        if ($studentBasicInfo->user_id) {
+            User::where('id', $studentBasicInfo->user_id)->delete();
+        }
+
         $studentBasicInfo->delete();
 
         return back();
@@ -455,6 +461,12 @@ class StudentBasicInfoController extends Controller
         $studentBasicInfos = StudentBasicInfo::find(request('ids'));
 
         foreach ($studentBasicInfos as $studentBasicInfo) {
+            $studentBasicInfo->studentDetails()->delete();
+
+            if ($studentBasicInfo->user_id) {
+                User::where('id', $studentBasicInfo->user_id)->delete();
+            }
+
             $studentBasicInfo->delete();
         }
 
