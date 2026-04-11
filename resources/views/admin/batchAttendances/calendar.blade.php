@@ -259,13 +259,68 @@
                 flex-direction: column;
             }
 
-            .filter-group select {
+            .filter-group {
                 width: 100%;
             }
 
+            .filter-group select,
+            .filter-group input {
+                width: 100%;
+            }
+
+            .month-nav-btns {
+                justify-content: space-between;
+                width: 100%;
+            }
+
+            .legend {
+                flex-wrap: wrap;
+                gap: 8px;
+            }
+
+            .summary-stats {
+                flex-wrap: wrap;
+                gap: 12px;
+            }
+
+            .summary-stat {
+                min-width: 45%;
+            }
+
+            .calendar-header {
+                padding: 8px 4px;
+                font-size: 10px;
+            }
+
+            .calendar-grid {
+                gap: 1px;
+            }
+
             .calendar-cell {
-                min-height: 60px;
-                padding: 6px;
+                min-height: 50px;
+                padding: 4px;
+            }
+
+            .calendar-cell .day-number {
+                font-size: 12px;
+            }
+
+            .calendar-cell .day-name {
+                font-size: 9px;
+            }
+
+            .stats-row {
+                display: none;
+            }
+
+            .percentage-badge {
+                font-size: 10px;
+                padding: 2px 4px;
+            }
+
+            .stat-pill {
+                font-size: 9px;
+                padding: 1px 4px;
             }
         }
     </style>
