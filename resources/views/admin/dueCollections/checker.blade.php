@@ -308,6 +308,21 @@
         font-size: 12px;
         color: #64748b;
     }
+    .paid-row-animation {
+        animation: pulseGreen 0.5s ease-in-out;
+    }
+    @keyframes pulseGreen {
+        0% { background-color: transparent; }
+        50% { background-color: #dcfce7; transform: scale(1.02); }
+        100% { background-color: #dcfce7; }
+    }
+    .paid-check-icon {
+        animation: fadeIn 0.3s ease-in;
+    }
+    @keyframes fadeIn {
+        from { opacity: 0; transform: scale(0.5); }
+        to { opacity: 1; transform: scale(1); }
+    }
 </style>
 
 <div class="checker-container">
@@ -801,35 +816,52 @@ $('#pay-all-due-form').on('submit', function(e) {
     let studentId = $('#studentSearch').val();
     let amount = $('#payAllAmount').val();
 
+    let submitBtn = $(this).find('button[type="submit"]');
+    let originalText = submitBtn.text();
+    submitBtn.prop('disabled', true).text('Processing...');
+
     $.post("{{ route('admin.due-collections.payAll') }}", {
         _token: '{{ csrf_token() }}',
         student_id: studentId,
         amount: amount
     }, function(response) {
-        $('#payAllDueModal').modal('hide');
-        
-        let msg = 'Payment processed successfully!\n\n';
-        msg += 'Total Paid: ' + parseFloat(response.total_paid).toFixed(2) + '\n';
-        if (response.remaining_to_pay > 0) {
-            msg += 'Remaining (unpaid): ' + parseFloat(response.remaining_to_pay).toFixed(2) + '\n';
-        }
-        msg += '\nPaid Dues:\n';
-        response.paid_dues.forEach(function(due) {
-            msg += '- ' + due.month_name + ' (' + due.batch_name + '): ' + parseFloat(due.paid_amount).toFixed(2);
-            if (due.status === 'partial') {
-                msg += ' (partial - remaining: ' + parseFloat(due.remaining).toFixed(2) + ')';
+        let paidDues = response.paid_dues;
+        let currentIndex = 0;
+
+        function processNextDue() {
+            if (currentIndex >= paidDues.length) {
+                setTimeout(function() {
+                    $('#payAllDueModal').modal('hide');
+                    submitBtn.prop('disabled', false).text(originalText);
+                    loadStudentData();
+                }, 500);
+                return;
             }
-            msg += '\n';
-        });
-        
-        alert(msg);
-        loadStudentData();
+
+            let due = paidDues[currentIndex];
+            let row = $('#payAllDueList').find('tr').eq(currentIndex);
+            
+            row.addClass('bg-success');
+            row.find('td:last').html('<span class="badge badge-success"><i class="fa fa-check"></i> Paid</span>');
+            
+            if (due.status === 'partial') {
+                row.find('td').eq(4).text(parseFloat(due.remaining).toFixed(2));
+                row.find('td').eq(5).html('<span class="badge badge-warning">Partial</span>');
+            }
+
+            currentIndex++;
+            setTimeout(processNextDue, 600);
+        }
+
+        processNextDue();
+
     }).fail(function(xhr) {
         let msg = 'Payment failed. Please try again.';
         if (xhr.responseJSON && xhr.responseJSON.message) {
             msg = xhr.responseJSON.message;
         }
         alert(msg);
+        submitBtn.prop('disabled', false).text(originalText);
     });
 });
 
