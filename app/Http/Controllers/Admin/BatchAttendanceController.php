@@ -30,7 +30,7 @@ class BatchAttendanceController extends Controller
                 }
             ]);
 
-        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+        if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
             if ($teacher) {
                 $batches = $batches->whereHas('teachers', function ($query) use ($teacher) {
@@ -67,7 +67,7 @@ class BatchAttendanceController extends Controller
 
         $batch = Batch::with('subject')->findOrFail($batchId);
 
-        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+        if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
             if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -144,7 +144,7 @@ class BatchAttendanceController extends Controller
 
         $batch = Batch::findOrFail($batchId);
 
-        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+        if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
             if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -194,7 +194,7 @@ class BatchAttendanceController extends Controller
 
         $batch = Batch::with('subject')->findOrFail($batchId);
 
-        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+        if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
             if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -251,7 +251,7 @@ class BatchAttendanceController extends Controller
 
         $batch = Batch::findOrFail($batchId);
 
-        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+        if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
             if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');

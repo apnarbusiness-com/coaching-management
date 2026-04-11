@@ -134,9 +134,9 @@ class HomeController
         //     'roles' => $roles,
         // ]);
         $isStudent = auth()->check()
-            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['student'])->exists();
+            && auth()->user()->isStudent();
         $isTeacher = auth()->check()
-            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists();
+            && auth()->user()->isTeacher();
         // $homeView = $isStudent ? 'student.home' : 'home';
         if ($isTeacher) {
             return $this->loadTeacherDashboard();

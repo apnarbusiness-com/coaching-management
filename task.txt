@@ -1,1 +1,2 @@
-http://dev-coaching-management.test/admin/batch-attendances here teacher only can view & access their own batches
+auth()->user()->roles()->whereRaw('LOWER(title)  ami dekhlam emon kore onek jaygay teacher naki student naki egulo check kora hoccche. 
+so eita better na j eigulo niye ekta trait or helper banaye neya. jeno 1 jaygay theke reusable code hoy?
