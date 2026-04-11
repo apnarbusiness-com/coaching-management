@@ -1,5 +1,5 @@
 Batch: Batch 007
 Batch ID: 4
-Raw: '{"monday": {"time": "18:02", "class_room_id": "1"}, "tuesday": {"time": "21:02", "class_room_id": "1"}, "saturday": {"time": "18:36", "class_room_id": "1"}, "thursday": {"time": "18:02", "class_room_id": "1"}, "wednesday": {"time": "21:02", "class_room_id": "1"}}'
-Decoded: {"monday":{"time":"18:02","class_room_id":"1"},"tuesday":{"time":"21:02","class_room_id":"1"},"saturday":{"time":"18:36","class_room_id":"1"},"thursday":{"time":"18:02","class_room_id":"1"},"wednesday":{"time":"21:02","class_room_id":"1"}}
+Raw: '{"monday": {"time": "18:02", "class_room_id": "1"}, "tuesday": {"time": "21:02", "class_room_id": "1"}, "saturday": {"time": "18:36", "class_room_id": "1"}, "thursday": {"time": "18:02", "class_room_id": "1"}}'
+Decoded: {"monday":{"time":"18:02","class_room_id":"1"},"tuesday":{"time":"21:02","class_room_id":"1"},"saturday":{"time":"18:36","class_room_id":"1"},"thursday":{"time":"18:02","class_room_id":"1"}}
 Month: 4/2026

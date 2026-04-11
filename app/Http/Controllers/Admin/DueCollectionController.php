@@ -63,7 +63,7 @@ class DueCollectionController extends Controller
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
-                return '<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="'.$row->id.'" data-due-amount="'.$row->due_amount.'" data-remaining="'.$row->due_remaining.'">Pay</button>';
+                return '<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="' . $row->id . '" data-due-amount="' . $row->due_amount . '" data-remaining="' . $row->due_remaining . '">Pay</button>';
             });
 
             $table->addColumn('student_name', fn($row) => $row->student->first_name . ' ' . $row->student->last_name);
@@ -88,7 +88,12 @@ class DueCollectionController extends Controller
         $sections = Section::pluck('section_name', 'id');
 
         return view('admin.dueCollections.index', compact(
-            'stats', 'month', 'year', 'batches', 'classes', 'sections'
+            'stats',
+            'month',
+            'year',
+            'batches',
+            'classes',
+            'sections'
         ));
     }
 
@@ -127,7 +132,7 @@ class DueCollectionController extends Controller
         ]);
 
         $due = StudentMonthlyDue::with('batch')->findOrFail($request->input('due_id'));
-        
+
         $amount = (float) $request->input('amount');
 
         if ($amount > $due->due_remaining) {
@@ -137,17 +142,27 @@ class DueCollectionController extends Controller
         $this->dueService->allocatePayment($due, $amount);
 
         $due->refresh();
-        
-        
-        $earningCategory = EarningCategory::where('is_student_connected', 1)->first();
-        
+
+
+        // $earningCategory = EarningCategory::where('is_student_connected', 1)->first();
+        $earningCategory = EarningCategory::where('is_student_connected', 1)
+            ->where('name', 'Coaching Fees')
+            ->first();
+
+        if (!$earningCategory) {
+            $earningCategory = EarningCategory::create([
+                'name' => 'Coaching Fees',
+                'is_student_connected' => 1,
+            ]);
+        }
+
         $receiptNumber = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
-        
+
         $batchName = $due->batch->batch_name ?? 'N/A';
         $isPartial = $due->due_remaining > 0;
         $monthName = $this->getMonthName($due->month) . ' ' . $due->year;
         $title = $isPartial ? "Due Payment (partial) - $batchName - $monthName" : "Due Payment - $batchName - $monthName";
-        
+
         $details = "Batch: $batchName | Due Amount: " . number_format($due->due_amount, 2) . " | Month: $monthName | Paid: " . number_format($amount, 2) . " | Remaining: " . number_format($due->due_remaining, 2);
 
         // return response()->json(['success' => true, 'due' => $due]);
@@ -209,14 +224,24 @@ class DueCollectionController extends Controller
             $this->dueService->allocatePayment($due, $payAmount);
             $due->refresh();
 
-            $earningCategory = EarningCategory::where('is_student_connected', 1)->first();
+            $earningCategory = EarningCategory::where('is_student_connected', 1)
+                ->where('name', 'Coaching Fees')
+                ->first();
+
+            if (!$earningCategory) {
+                $earningCategory = EarningCategory::create([
+                    'name' => 'Coaching Fees',
+                    'is_student_connected' => 1,
+                ]);
+            }
+
             $receiptNumber = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
-            
+
             $batchName = $due->batch->batch_name ?? 'N/A';
             $isPartial = $due->due_remaining > 0;
             $monthName = $this->getMonthName($due->month) . ' ' . $due->year;
             $title = $isPartial ? "Due Payment (partial) - $batchName - $monthName" : "Due Payment - $batchName - $monthName";
-            
+
             $details = "Batch: $batchName | Due Amount: " . number_format($due->due_amount, 2) . " | Month: $monthName | Paid: " . number_format($payAmount, 2) . " | Remaining: " . number_format($due->due_remaining, 2);
 
             $earning = Earning::create([
@@ -250,7 +275,7 @@ class DueCollectionController extends Controller
         }
 
         return response()->json([
-            'success' => true, 
+            'success' => true,
             'message' => 'Payment processed successfully',
             'total_paid' => $totalAmount - $remainingAmount,
             'remaining_to_pay' => $remainingAmount,
@@ -290,7 +315,7 @@ class DueCollectionController extends Controller
 
     protected function getStatusBadge($status)
     {
-        return match($status) {
+        return match ($status) {
             'paid' => '<span class="badge bg-success">Paid</span>',
             'partial' => '<span class="badge bg-warning">Partial</span>',
             'unpaid' => '<span class="badge bg-danger">Unpaid</span>',

@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdmissionApplicationsController;
 use App\Http\Controllers\Admin\BatchAttendanceController;
 use App\Http\Controllers\Admin\BatchController;
+use App\Http\Controllers\Admin\DueCollectionController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
 use App\Http\Controllers\Admin\TeacherController;
@@ -181,7 +182,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections', 'DueCollectionController@index')->name('due-collections.index');
     Route::post('due-collections/generate', 'DueCollectionController@generateDues')->name('due-collections.generate');
     Route::get('due-collections/students', 'DueCollectionController@getStudentList')->name('due-collections.students');
-    Route::get('due-collections/student-dues/{studentId}', 'DueCollectionController@getStudentDues')->name('due-collections.student-dues');
+    Route::get('due-collections/student-dues/{studentId}',[DueCollectionController::class, 'getStudentDues'])->name('due-collections.student-dues');
     Route::post('due-collections/pay', 'DueCollectionController@payDue')->name('due-collections.pay');
     Route::post('due-collections/pay-all', 'DueCollectionController@payAllDues')->name('due-collections.payAll');
 
