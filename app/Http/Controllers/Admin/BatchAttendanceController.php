@@ -28,9 +28,18 @@ class BatchAttendanceController extends Controller
                     $query->whereMonth('batch_student_basic_info.enrolled_at', $attendanceMonth)
                         ->whereYear('batch_student_basic_info.enrolled_at', $attendanceYear);
                 }
-            ])
-            ->orderBy('batch_name')
-            ->get();
+            ]);
+
+        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+            $teacher = auth()->user()->teacher;
+            if ($teacher) {
+                $batches = $batches->whereHas('teachers', function ($query) use ($teacher) {
+                    $query->where('teachers.id', $teacher->id);
+                });
+            }
+        }
+
+        $batches = $batches->orderBy('batch_name')->get();
             // ->map(function ($batch) {
             //     return [
             //         'id' => $batch->id,
@@ -57,6 +66,14 @@ class BatchAttendanceController extends Controller
         abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $batch = Batch::with('subject')->findOrFail($batchId);
+
+        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+            $teacher = auth()->user()->teacher;
+            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+                abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
+            }
+        }
+
         $date = $request->input('date', Carbon::today()->format('Y-m-d'));
         $attendanceMonth = Carbon::parse($date)->month;
         $attendanceYear = Carbon::parse($date)->year;
@@ -125,13 +142,21 @@ class BatchAttendanceController extends Controller
     {
         abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        $batch = Batch::findOrFail($batchId);
+
+        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+            $teacher = auth()->user()->teacher;
+            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+                abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
+            }
+        }
+
         $request->validate([
             'date' => 'required|date',
             'attendance' => 'required|array',
             'attendance.*' => 'required|in:present,absent,late',
         ]);
 
-        $batch = Batch::findOrFail($batchId);
         $date = $request->input('date');
         $attendanceData = $request->input('attendance', []);
         $remarks = $request->input('remarks', []);
@@ -168,6 +193,14 @@ class BatchAttendanceController extends Controller
         abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $batch = Batch::with('subject')->findOrFail($batchId);
+
+        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+            $teacher = auth()->user()->teacher;
+            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+                abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
+            }
+        }
+
         $startDate = $request->input('start_date', Carbon::now()->startOfMonth()->format('Y-m-d'));
         $endDate = $request->input('end_date', Carbon::now()->endOfMonth()->format('Y-m-d'));
 
@@ -217,6 +250,14 @@ class BatchAttendanceController extends Controller
         abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $batch = Batch::findOrFail($batchId);
+
+        if (auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists()) {
+            $teacher = auth()->user()->teacher;
+            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+                abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
+            }
+        }
+
         $student = StudentBasicInfo::findOrFail($studentId);
 
         $isEnrolled = $batch->students()

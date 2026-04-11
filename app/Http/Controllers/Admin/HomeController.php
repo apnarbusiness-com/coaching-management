@@ -18,13 +18,13 @@ class HomeController
     {
         $user = auth()->user();
 
-        
+
         $visibleWidgets = DashboardWidgetService::getVisibleWidgetKeys($user);
 
         // return $visibleWidgets;
-        
+
         $widgetData = DashboardWidgetService::getWidgetDataForUser($user);
-        
+
         $transactionData = $widgetData['transactionData'] ?? [];
         $lastSixMonthsData = $widgetData['lastSixMonthsData'] ?? [
             'earnings' => [],
@@ -104,7 +104,7 @@ class HomeController
             ->take(20)
             ->get();
 
-        $partialPayments = $paymentHistory->filter(function($p) {
+        $partialPayments = $paymentHistory->filter(function ($p) {
             return in_array($p->payment_status, ['partial', 'pending']);
         });
 
@@ -121,6 +121,30 @@ class HomeController
         $teacher->load('user', 'subjects', 'batches');
 
         return view('teacher.profile', compact('teacher'));
+    }
+
+    public function index()
+    {
+        // $user = auth()->user();
+        // $permissions = [];
+        // $roles = $user->roles;
+
+        // return response()->json([
+        //     'permissions' => $permissions,
+        //     'roles' => $roles,
+        // ]);
+        $isStudent = auth()->check()
+            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['student'])->exists();
+        $isTeacher = auth()->check()
+            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists();
+        // $homeView = $isStudent ? 'student.home' : 'home';
+        if ($isTeacher) {
+            return $this->loadTeacherDashboard();
+        } elseif ($isStudent) {
+            return $this->loadStudentDashboard();
+        } else {
+            return $this->loadAdminDashboard();
+        }
     }
 
     public function myIdCard()
@@ -163,21 +187,7 @@ class HomeController
         return view('student.my-batches', compact('batches'));
     }
 
-    public function index()
-    {
-        $isStudent = auth()->check()
-            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['student'])->exists();
-        $isTeacher = auth()->check()
-            && auth()->user()->roles()->whereRaw('LOWER(title) = ?', ['teacher'])->exists();
-        // $homeView = $isStudent ? 'student.home' : 'home';
-        if ($isTeacher) {
-            return $this->loadTeacherDashboard();
-        } elseif ($isStudent) {
-            return $this->loadStudentDashboard();
-        } else {
-            return $this->loadAdminDashboard();
-        }
-    }
+
 
 
 

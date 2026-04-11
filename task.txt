@@ -1,1 +1,1 @@
-http://dev-coaching-management.test/admin/dashboard-widgets/role/2/edit here if i update and save. it don't update
+http://dev-coaching-management.test/admin/batch-attendances here teacher only can view & access their own batches
