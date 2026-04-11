@@ -171,6 +171,93 @@ class DueCollectionController extends Controller
         return response()->json(['success' => true, 'message' => 'Payment recorded successfully']);
     }
 
+    public function payAllDues(Request $request)
+    {
+        if (Gate::denies('due_collection_access') && Gate::denies('due_collection_create')) {
+            abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
+        }
+
+        $request->validate([
+            'student_id' => 'required|exists:student_basic_infos,id',
+            'amount' => 'required|numeric|min:1',
+        ]);
+
+        $studentId = $request->input('student_id');
+        $totalAmount = (float) $request->input('amount');
+
+        $dues = StudentMonthlyDue::where('student_id', $studentId)
+            ->whereIn('status', ['unpaid', 'partial'])
+            ->orderBy('year')
+            ->orderBy('month')
+            ->get();
+
+        if ($dues->isEmpty()) {
+            return response()->json(['success' => false, 'message' => 'No unpaid dues found for this student'], 400);
+        }
+
+        $remainingAmount = $totalAmount;
+        $paidDues = [];
+        $createdEarnings = [];
+
+        foreach ($dues as $due) {
+            if ($remainingAmount <= 0) {
+                break;
+            }
+
+            $payAmount = min($remainingAmount, $due->due_remaining);
+
+            $this->dueService->allocatePayment($due, $payAmount);
+            $due->refresh();
+
+            $earningCategory = EarningCategory::where('is_student_connected', 1)->first();
+            $receiptNumber = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
+            
+            $batchName = $due->batch->batch_name ?? 'N/A';
+            $isPartial = $due->due_remaining > 0;
+            $monthName = $this->getMonthName($due->month) . ' ' . $due->year;
+            $title = $isPartial ? "Due Payment (partial) - $batchName - $monthName" : "Due Payment - $batchName - $monthName";
+            
+            $details = "Batch: $batchName | Due Amount: " . number_format($due->due_amount, 2) . " | Month: $monthName | Paid: " . number_format($payAmount, 2) . " | Remaining: " . number_format($due->due_remaining, 2);
+
+            $earning = Earning::create([
+                'earning_category_id' => $earningCategory?->id,
+                'student_id' => $due->student_id,
+                'batch_id' => $due->batch_id,
+                'title' => $title,
+                'amount' => $payAmount,
+                'details' => $details,
+                'earning_date' => now(),
+                'earning_month' => $due->month,
+                'earning_year' => $due->year,
+                'paid_by' => $due->student->first_name . ' ' . $due->student->last_name,
+                'recieved_by' => auth()->user()->name,
+                'created_by_id' => auth()->id(),
+                'student_monthly_due_id' => $due->id,
+                'earning_reference' => $receiptNumber,
+            ]);
+
+            $paidDues[] = [
+                'due_id' => $due->id,
+                'month_name' => $monthName,
+                'batch_name' => $batchName,
+                'paid_amount' => $payAmount,
+                'remaining' => $due->due_remaining,
+                'status' => $due->status,
+            ];
+
+            $createdEarnings[] = $earning->id;
+            $remainingAmount -= $payAmount;
+        }
+
+        return response()->json([
+            'success' => true, 
+            'message' => 'Payment processed successfully',
+            'total_paid' => $totalAmount - $remainingAmount,
+            'remaining_to_pay' => $remainingAmount,
+            'paid_dues' => $paidDues,
+        ]);
+    }
+
     public function getStudentList(Request $request)
     {
         $search = $request->term;

@@ -183,6 +183,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections/students', 'DueCollectionController@getStudentList')->name('due-collections.students');
     Route::get('due-collections/student-dues/{studentId}', 'DueCollectionController@getStudentDues')->name('due-collections.student-dues');
     Route::post('due-collections/pay', 'DueCollectionController@payDue')->name('due-collections.pay');
+    Route::post('due-collections/pay-all', 'DueCollectionController@payAllDues')->name('due-collections.payAll');
 
     // Due Checker
     Route::get('due-collections/checker', 'DueCollectionController@checker')->name('due-collections.checker');

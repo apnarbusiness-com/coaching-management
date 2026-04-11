@@ -1,2 +1,23 @@
-great its working. 
-1. can you add prev & next button in top-right corner of calender
+1. In Due Checker page need a single pay-now button and when a student pay an amount it will try to paid 1 by 1 due (month/batch)  and last 1 should get partial payments 
+https://excellentors.com/admin/due-collections/checker
+
+so 1st analyse https://excellentors.com/admin/due-collections/checker this page &  pay now button & in modal submit payment actions then 
+try to understad what i want
+example
+for: id_no/addmission id: 465 (Firoza Islam Chhoya) below is the due history.
+
+Due History by Month
+Month	Batch	Due	Paid	Disc.	Rem.	Status	Action
+February 2026	ICT- 101	500.00	300.00	0.00	200.00	partial	
+March 2026	ICT- 101	500.00	500.00	0.00	0.00	paid	-
+March 2026	fdf	453.00	453.00	0.00	0.00	paid	-
+March 2026	Batch 007	200.00	0.00	0.00	200.00	unpaid	
+April 2026	ICT- 101	500.00	0.00	0.00	500.00	unpaid	
+April 2026	fdf	453.00	0.00	0.00	453.00	unpaid	
+April 2026	Batch 007	200.00	0.00	0.00	200.00	unpaid	
+
+now Total Due 2806.00 if she pay 1500 then admin/employee click 'that single pay-now button' and it opens a modal 
+with total due, list of dues & pay-amount field. when admin fill 1500 & click 'submit payment'  1st the system will pay 1st due 
+(in that case it is "February 2026	ICT- 101	500.00	300.00	0.00	200.00	partial"	 ) then 
+it will pay "March 2026	Batch 007	200.00	0.00	0.00	200.00	unpaid"	 thats the system pay 1 by 1 and make due history checked or paid with green color 1 by 1 by ajax.
+and lets say in last it had 200 unpaid but rest of the amout is 50 so the system will partially pay 50 and remaining due will be 150.

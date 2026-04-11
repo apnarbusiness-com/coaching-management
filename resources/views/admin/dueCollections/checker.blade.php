@@ -379,6 +379,9 @@
             <div class="summary-card remaining">
                 <div class="label">Total Remaining/Unpaid</div>
                 <div class="value" id="totalRemaining">0.00</div>
+                <button type="button" class="btn btn-success btn-sm mt-2" id="payAllDueBtn" style="display: none;" onclick="openPayAllModal()">
+                    <i class="fa fa-credit-card"></i> Pay Now
+                </button>
             </div>
         </div>
 
@@ -495,6 +498,50 @@
             </div>
         </div>
     </div>
+
+    <!-- Pay All Dues Modal -->
+    <div class="modal fade" id="payAllDueModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Pay All Dues</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="pay-all-due-form">
+                    <div class="modal-body">
+                        <div class="alert alert-info">
+                            <strong>Total Due:</strong> <span id="payAllTotalDue">0.00</span>
+                        </div>
+                        
+                        <div class="due-list mb-3" style="max-height: 200px; overflow-y: auto;">
+                            <table class="table table-sm table-bordered">
+                                <thead>
+                                    <tr>
+                                        <th>Month</th>
+                                        <th>Batch</th>
+                                        <th>Due</th>
+                                        <th>Paid</th>
+                                        <th>Remaining</th>
+                                        <th>Status</th>
+                                    </tr>
+                                </thead>
+                                <tbody id="payAllDueList"></tbody>
+                            </table>
+                        </div>
+
+                        <div class="form-group">
+                            <label>Enter Payment Amount</label>
+                            <input type="number" class="form-control" id="payAllAmount" step="0.01" min="1" required>
+                            <small class="form-text text-muted">System will pay dues in order (oldest first) and apply partial payment to the last one if needed.</small>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-success">Submit Payment</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
 </div>
 
 @endsection
@@ -579,6 +626,8 @@ function loadStudentData() {
         $('#totalDiscount').text(parseFloat(summary.total_discount).toFixed(2));
         $('#totalRemaining').text(parseFloat(summary.total_remaining).toFixed(2));
 
+        showPayAllButton(parseFloat(summary.total_remaining));
+
         const dueHistoryBody = $('#dueHistoryTable tbody');
         dueHistoryBody.empty();
         if (response.due_history.length === 0) {
@@ -600,6 +649,7 @@ function loadStudentData() {
                     </tr>
                 `);
             });
+            storeCurrentDues(response.due_history);
         }
 
         const paymentHistoryBody = $('#paymentHistoryTable tbody');
@@ -717,5 +767,82 @@ $('#pay-due-form').on('submit', function(e) {
         alert(msg);
     });
 });
+
+let currentDues = [];
+
+function openPayAllModal() {
+    const totalRemaining = parseFloat($('#totalRemaining').text().replace(/,/g, '')) || 0;
+    
+    $('#payAllTotalDue').text(totalRemaining.toFixed(2));
+    $('#payAllAmount').attr('max', totalRemaining);
+    $('#payAllAmount').val(totalRemaining);
+    
+    const dueListBody = $('#payAllDueList');
+    dueListBody.empty();
+    currentDues.forEach(function(due) {
+        let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status === 'partial' ? 'badge-warning' : 'badge-danger');
+        dueListBody.append(`
+            <tr>
+                <td>${due.month_name} ${due.year}</td>
+                <td>${due.batch_name}</td>
+                <td>${parseFloat(due.due_amount).toFixed(2)}</td>
+                <td>${parseFloat(due.paid_amount).toFixed(2)}</td>
+                <td>${parseFloat(due.due_remaining).toFixed(2)}</td>
+                <td><span class="badge ${badgeClass}">${due.status}</span></td>
+            </tr>
+        `);
+    });
+    
+    $('#payAllDueModal').modal('show');
+}
+
+$('#pay-all-due-form').on('submit', function(e) {
+    e.preventDefault();
+    let studentId = $('#studentSearch').val();
+    let amount = $('#payAllAmount').val();
+
+    $.post("{{ route('admin.due-collections.payAll') }}", {
+        _token: '{{ csrf_token() }}',
+        student_id: studentId,
+        amount: amount
+    }, function(response) {
+        $('#payAllDueModal').modal('hide');
+        
+        let msg = 'Payment processed successfully!\n\n';
+        msg += 'Total Paid: ' + parseFloat(response.total_paid).toFixed(2) + '\n';
+        if (response.remaining_to_pay > 0) {
+            msg += 'Remaining (unpaid): ' + parseFloat(response.remaining_to_pay).toFixed(2) + '\n';
+        }
+        msg += '\nPaid Dues:\n';
+        response.paid_dues.forEach(function(due) {
+            msg += '- ' + due.month_name + ' (' + due.batch_name + '): ' + parseFloat(due.paid_amount).toFixed(2);
+            if (due.status === 'partial') {
+                msg += ' (partial - remaining: ' + parseFloat(due.remaining).toFixed(2) + ')';
+            }
+            msg += '\n';
+        });
+        
+        alert(msg);
+        loadStudentData();
+    }).fail(function(xhr) {
+        let msg = 'Payment failed. Please try again.';
+        if (xhr.responseJSON && xhr.responseJSON.message) {
+            msg = xhr.responseJSON.message;
+        }
+        alert(msg);
+    });
+});
+
+function showPayAllButton(totalRemaining) {
+    if (totalRemaining > 0) {
+        $('#payAllDueBtn').show();
+    } else {
+        $('#payAllDueBtn').hide();
+    }
+}
+
+function storeCurrentDues(dues) {
+    currentDues = dues.filter(function(due) { return due.due_remaining > 0; });
+}
 </script>
 @endsection
