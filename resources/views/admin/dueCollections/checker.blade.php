@@ -325,7 +325,7 @@
     }
 </style>
 
-<div class="checker-container">
+<div class="checker-container" id="checkerContainer">
     <div class="search-section">
         <div class="d-flex justify-content-between align-items-center flex-wrap">
             <h3><i class="fa fa-search-dollar mr-2"></i>Due Checker</h3>
@@ -357,6 +357,9 @@
         <div class="info-card">
             <div class="card-header">
                 <i class="fa fa-user"></i> Student Information
+                <button type="button" class="btn btn-xs btn-primary ml-auto" onclick="openFlagModal()">
+                    <i class="fa fa-flag"></i> Manage Flags
+                </button>
             </div>
             <div class="card-body">
                 <div class="student-info">
@@ -373,6 +376,7 @@
                             <strong>Mother:</strong> <span id="studentMother">-</span> | 
                             <strong>Contact:</strong> <span id="studentContact">-</span>
                         </p>
+                        <div id="flagBadges" class="mt-2"></div>
                     </div>
                 </div>
             </div>
@@ -559,6 +563,39 @@
     </div>
 </div>
 
+<!-- Flag Assignment Modal -->
+<div class="modal fade" id="flagModal" tabindex="-1" role="dialog">
+    <div class="modal-dialog" role="document">
+        <div class="modal-content">
+            <div class="modal-header">
+                <h5 class="modal-title">Manage Student Flags</h5>
+                <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+            </div>
+            <div class="modal-body">
+                <div class="form-group">
+                    <label>Select Flag</label>
+                    <select class="form-control" id="selectedFlag">
+                        <option value="">Select a flag...</option>
+                    </select>
+                </div>
+                <div class="form-group">
+                    <label>Comment</label>
+                    <textarea class="form-control" id="flagComment" rows="3" placeholder="Add a comment (optional)"></textarea>
+                </div>
+                <div class="form-group">
+                    <button type="button" class="btn btn-primary" onclick="assignFlag()">Assign Flag</button>
+                </div>
+                <hr>
+                <h6>Current Flags</h6>
+                <div id="currentFlagsList"></div>
+            </div>
+            <div class="modal-footer">
+                <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
+            </div>
+        </div>
+    </div>
+</div>
+
 @endsection
 @section('scripts')
 @parent
@@ -624,6 +661,14 @@ function loadStudentData() {
         $('#loader').hide();
         $('#studentData').show();
         $('#emptyState').hide();
+
+        const flags = response.flags || [];
+        if (flags.length > 0) {
+            const bgColor = flags[0].color;
+            $('#checkerContainer').css('background-color', bgColor + 'cc');
+        } else {
+            $('#checkerContainer').css('background-color', 'transparent');
+        }
 
         const s = response.student;
         $('#studentName').text(s.name);
@@ -740,6 +785,9 @@ function loadStudentData() {
                 `);
             });
         }
+
+        currentStudentFlags = response.flags || [];
+        renderCurrentFlags(currentStudentFlags);
 
     }).fail(function() {
         $('#loader').hide();
@@ -875,6 +923,102 @@ function showPayAllButton(totalRemaining) {
 
 function storeCurrentDues(dues) {
     currentDues = dues.filter(function(due) { return due.due_remaining > 0; });
+}
+
+let availableFlags = [];
+let currentStudentFlags = [];
+
+function openFlagModal() {
+    const studentId = $('#studentSearch').val();
+    if (!studentId) {
+        alert('Please select a student first');
+        return;
+    }
+    
+    $.get("{{ route('admin.student-flags.getFlags') }}", function(flags) {
+        availableFlags = flags;
+        const select = $('#selectedFlag');
+        select.empty().append('<option value="">Select a flag...</option>');
+        flags.forEach(function(flag) {
+            select.append('<option value="' + flag.id + '">' + flag.name + '</option>');
+        });
+    });
+    
+    renderCurrentFlags(currentStudentFlags);
+    $('#flagModal').modal('show');
+}
+
+function renderCurrentFlags(flags) {
+    const container = $('#currentFlagsList');
+    container.empty();
+    
+    const badgeContainer = $('#flagBadges');
+    badgeContainer.empty();
+    
+    if (flags.length === 0) {
+        container.html('<p class="text-muted">No flags assigned</p>');
+    } else {
+        flags.forEach(function(flag) {
+            container.append(`
+                <div class="d-flex justify-content-between align-items-center mb-2 p-2" style="background: ${flag.color}20; border-radius: 6px; border-left: 4px solid ${flag.color};">
+                    <div>
+                        <strong>${flag.name}</strong>
+                        ${flag.comment ? '<br><small class="text-muted">' + flag.comment + '</small>' : ''}
+                    </div>
+                    <button type="button" class="btn btn-xs btn-danger" onclick="removeFlag(${flag.id})">
+                        <i class="fa fa-times"></i>
+                    </button>
+                </div>
+            `);
+            
+            badgeContainer.append(`
+                <span style="display: inline-block; padding: 4px 10px; border-radius: 20px; font-size: 12px; font-weight: 500; background: ${flag.color}; color: white;">${flag.name}</span>
+            `);
+        });
+    }
+}
+
+function assignFlag() {
+    const studentId = $('#studentSearch').val();
+    const flagId = $('#selectedFlag').val();
+    const comment = $('#flagComment').val();
+    
+    if (!flagId) {
+        alert('Please select a flag');
+        return;
+    }
+    
+    $.post("{{ route('admin.student-flags.assign') }}", {
+        _token: '{{ csrf_token() }}',
+        student_id: studentId,
+        flag_id: flagId,
+        comment: comment
+    }, function(response) {
+        $('#flagComment').val('');
+        loadStudentData();
+        alert(response.message);
+    }).fail(function(xhr) {
+        alert(xhr.responseJSON?.message || 'Failed to assign flag');
+    });
+}
+
+function removeFlag(flagId) {
+    const studentId = $('#studentSearch').val();
+    
+    if (!confirm('Are you sure you want to remove this flag?')) {
+        return;
+    }
+    
+    $.post("{{ route('admin.student-flags.remove') }}", {
+        _token: '{{ csrf_token() }}',
+        student_id: studentId,
+        flag_id: flagId
+    }, function(response) {
+        loadStudentData();
+        alert(response.message);
+    }).fail(function(xhr) {
+        alert(xhr.responseJSON?.message || 'Failed to remove flag');
+    });
 }
 </script>
 @endsection

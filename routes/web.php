@@ -191,6 +191,19 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections/checker/search', 'DueCollectionController@searchStudentsForChecker')->name('due-collections.checker.search');
     Route::get('due-collections/checker/student/{studentId}', 'DueCollectionController@getStudentFullHistory')->name('due-collections.checker.student');
 
+    // Student Flags CRUD
+    Route::get('student-flags', 'StudentFlagController@index')->name('student-flags.index');
+    Route::post('student-flags', 'StudentFlagController@store')->name('student-flags.store');
+    Route::get('student-flags/get-flags', 'StudentFlagController@getFlags')->name('student-flags.getFlags');
+    Route::get('student-flags/{id}/edit', 'StudentFlagController@edit')->name('student-flags.edit');
+    Route::put('student-flags/{id}', 'StudentFlagController@update')->name('student-flags.update');
+    Route::delete('student-flags/{id}', 'StudentFlagController@destroy')->name('student-flags.destroy');
+
+    // Student Flag Assignment
+    Route::post('student-flags/assign', 'StudentFlagController@assignFlag')->name('student-flags.assign');
+    Route::post('student-flags/remove', 'StudentFlagController@removeFlag')->name('student-flags.remove');
+    Route::get('student-flags/student/{studentId}', 'StudentFlagController@getStudentFlags')->name('student-flags.student');
+
     // Batch Attendance
     Route::get('batch-attendances', [BatchAttendanceController::class, 'index'])->name('batch-attendances.index');
     Route::get('batch-attendances/calendar', [BatchAttendanceController::class, 'calendar'])->name('batch-attendances.calendar');

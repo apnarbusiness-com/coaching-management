@@ -589,6 +589,31 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'batch_attendance_access',
                 'parent_id' => 19,
             ],
+            [
+                'id'    => 106,
+                'title' => 'student_flag_access',
+                'parent_id' => null,
+            ],
+            [
+                'id'    => 107,
+                'title' => 'student_flag_create',
+                'parent_id' => 106,
+            ],
+            [
+                'id'    => 108,
+                'title' => 'student_flag_edit',
+                'parent_id' => 106,
+            ],
+            [
+                'id'    => 109,
+                'title' => 'student_flag_delete',
+                'parent_id' => 106,
+            ],
+            [
+                'id'    => 110,
+                'title' => 'student_flag_assign',
+                'parent_id' => 106,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);

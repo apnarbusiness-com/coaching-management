@@ -226,6 +226,17 @@
                             </a>
                         </li>
                     @endcan
+                    @can('student_flag_access')
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.student-flags.index') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/student-flags*') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-flag c-sidebar-nav-icon">
+
+                                </i>
+                                Student Flags
+                            </a>
+                        </li>
+                    @endcan
                     @can('batch_attendance_access')
                         <li class="c-sidebar-nav-item">
                             <a href="{{ route('admin.batch-attendances.index') }}"

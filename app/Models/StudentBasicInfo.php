@@ -151,4 +151,11 @@ class StudentBasicInfo extends Model implements HasMedia
             ->withPivot(['enrolled_at', 'per_student_discount', 'custom_monthly_fee']);
     }
 
+    public function flags()
+    {
+        return $this->belongsToMany(StudentFlag::class, 'student_flag_assignments')
+            ->withPivot('comment', 'created_by_id')
+            ->withTimestamps();
+    }
+
 }

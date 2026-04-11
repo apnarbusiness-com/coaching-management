@@ -12,6 +12,7 @@ use App\Models\Section;
 use App\Models\Shift;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentDetailsInformation;
+use App\Models\StudentFlag;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
 use Carbon\Carbon;
@@ -491,6 +492,15 @@ class DueCollectionController extends Controller
             ];
         }
 
+        $flagData = $student->flags()->withPivot('comment')->get()->map(function ($flag) {
+            return [
+                'id' => $flag->id,
+                'name' => $flag->name,
+                'color' => $flag->color,
+                'comment' => $flag->pivot->comment,
+            ];
+        })->values();
+
         return response()->json([
             'student' => [
                 'id' => $student->id,
@@ -508,6 +518,7 @@ class DueCollectionController extends Controller
             'payment_history' => $paymentHistory,
             'active_batches' => $activeBatches,
             'attendance_analysis' => $attendanceData,
+            'flags' => $flagData,
         ]);
     }
 }
