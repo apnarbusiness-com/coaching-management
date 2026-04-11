@@ -1,2 +1,120 @@
-auth()->user()->roles()->whereRaw('LOWER(title)  ami dekhlam emon kore onek jaygay teacher naki student naki egulo check kora hoccche. 
-so eita better na j eigulo niye ekta trait or helper banaye neya. jeno 1 jaygay theke reusable code hoy?
+http://dev-coaching-management.test/admin/batch-attendances/calendar?batch_id=1&month=2026-04
+
+Attendance Calendar
+View attendance by batch and month
+Select Batch
+
+ICT- 101 (Tucker Robertson)
+Month
+
+April, 2026
+Present
+Absent
+Late
+No Class
+Total Students
+7
+Total Classes
+0
+Days Marked
+5
+Avg Attendance
+94.3%
+Sat
+Sun
+Mon
+Tue
+Wed
+Thu
+Fri
+1
+wed
+No class
+2
+thu
+No class
+3
+fri
+No class
+4
+sat
+No class
+5
+sun
+No class
+6
+mon
+No class
+7
+tue
+No class
+8
+wed
+No class
+9
+thu
+No class
+10
+fri
+No class
+11
+sat
+No class
+12
+sun
+No class
+13
+mon
+No class
+14
+tue
+No class
+15
+wed
+No class
+16
+thu
+No class
+17
+fri
+No class
+18
+sat
+No class
+19
+sun
+No class
+20
+mon
+No class
+21
+tue
+No class
+22
+wed
+No class
+23
+thu
+No class
+24
+fri
+No class
+25
+sat
+No class
+26
+sun
+No class
+27
+mon
+No class
+28
+tue
+No class
+29
+wed
+No class
+30
+thu
+No class
+© 2026 Excellency. All rights reserved.

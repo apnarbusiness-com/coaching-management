@@ -94,9 +94,16 @@
 
 <div class="attendance-wrap">
     <div class="attendance-hero">
-        <h3>Batch Attendance</h3>
-        <div class="subtitle">
-            Current enrollment month: {{ $attendanceMonthLabel ?? '' }}
+        <div style="display: flex; justify-content: space-between; align-items: flex-start;">
+            <div>
+                <h3>Batch Attendance</h3>
+                <div class="subtitle">
+                    Current enrollment month: {{ $attendanceMonthLabel ?? '' }}
+                </div>
+            </div>
+            <a href="{{ route('admin.batch-attendances.calendar') }}" class="btn btn-info" style="padding: 10px 16px; border-radius: 8px;">
+                <i class="fa fa-calendar"></i> Calendar View
+            </a>
         </div>
     </div>
 

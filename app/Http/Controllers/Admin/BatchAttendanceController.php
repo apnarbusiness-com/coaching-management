@@ -311,4 +311,108 @@ class BatchAttendanceController extends Controller
             'items' => $items,
         ]);
     }
+
+    public function calendar(Request $request)
+    {
+        abort_if(Gate::denies('batch_attendance_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $selectedBatchId = $request->input('batch_id');
+        $monthInput = $request->input('month', Carbon::now()->format('Y-m'));
+        
+        $parsedDate = Carbon::parse($monthInput . '-01');
+        $selectedMonth = $parsedDate->month;
+        $selectedYear = $parsedDate->year;
+
+        $batches = Batch::with('subject')
+            ->withCount([
+                'students as students_count' => function ($query) use ($selectedMonth, $selectedYear) {
+                    $query->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                        ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear);
+                }
+            ]);
+
+        if (auth()->user()->isTeacher()) {
+            $teacher = auth()->user()->teacher;
+            if ($teacher) {
+                $batches = $batches->whereHas('teachers', function ($query) use ($teacher) {
+                    $query->where('teachers.id', $teacher->id);
+                });
+            }
+        }
+
+        $batches = $batches->orderBy('batch_name')->get();
+
+        $calendarData = [];
+        $totalStudents = 0;
+
+        if ($selectedBatchId) {
+            $batch = Batch::with('subject')->find($selectedBatchId);
+
+            if ($batch) {
+                $rawSchedule = $batch->getAttributes()['class_schedule'] ?? null;
+                $decodedSchedule = $rawSchedule ? json_decode($rawSchedule, true) : null;
+
+                file_put_contents(storage_path('debug_calendar.txt'), 
+                    "Batch: {$batch->batch_name}\n" .
+                    "Batch ID: {$selectedBatchId}\n" .
+                    "Raw: " . var_export($rawSchedule, true) . "\n" .
+                    "Decoded: " . json_encode($decodedSchedule) . "\n" .
+                    "Month: {$selectedMonth}/{$selectedYear}\n"
+                );
+                $totalStudents = $batch->students()
+                    ->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                    ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
+                    ->count();
+
+                $startOfMonth = Carbon::createFromDate($selectedYear, $selectedMonth, 1);
+                $endOfMonth = $startOfMonth->copy()->endOfMonth();
+
+                $attendances = BatchAttendance::where('batch_id', $selectedBatchId)
+                    ->whereBetween('attendance_date', [$startOfMonth->format('Y-m-d'), $endOfMonth->format('Y-m-d')])
+                    ->get()
+                    ->groupBy('attendance_date');
+
+                for ($day = 1; $day <= $endOfMonth->daysInMonth; $day++) {
+                    $date = Carbon::createFromDate($selectedYear, $selectedMonth, $day);
+                    $dateStr = $date->format('Y-m-d');
+                    $dayName = strtolower($date->format('l'));
+
+                    // Use decoded schedule directly from raw
+                    $schedule = $decodedSchedule ?? [];
+                    $hasClass = isset($schedule[$dayName]) && !empty($schedule[$dayName]);
+
+                    $dayAttendances = $attendances->get($dateStr, collect());
+                    $present = $dayAttendances->where('status', 'present')->count();
+                    $absent = $dayAttendances->where('status', 'absent')->count();
+                    $late = $dayAttendances->where('status', 'late')->count();
+
+                    $calendarData[] = [
+                        'date' => $dateStr,
+                        'day' => $day,
+                        'day_name' => $dayName,
+                        'has_class' => $hasClass,
+                        'total_marked' => $dayAttendances->count(),
+                        'present' => $present,
+                        'absent' => $absent,
+                        'late' => $late,
+                        'percentage' => $totalStudents > 0 && $dayAttendances->count() > 0 
+                            ? round((($present + $late) / $dayAttendances->count()) * 100, 1) 
+                            : ($hasClass ? 0 : null),
+                    ];
+                }
+            }
+        }
+
+        $monthLabel = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format('F Y');
+
+        return view('admin.batchAttendances.calendar', compact(
+            'batches',
+            'selectedBatchId',
+            'selectedMonth',
+            'selectedYear',
+            'monthLabel',
+            'calendarData',
+            'totalStudents'
+        ));
+    }
 }

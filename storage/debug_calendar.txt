@@ -1,0 +1,5 @@
+Batch: Batch 007
+Batch ID: 4
+Raw: '{"friday": "18:02", "monday": "18:02", "sunday": "18:02", "tuesday": "21:02", "saturday": "18:36", "thursday": "18:02", "wednesday": "21:02"}'
+Decoded: {"friday":"18:02","monday":"18:02","sunday":"18:02","tuesday":"21:02","saturday":"18:36","thursday":"18:02","wednesday":"21:02"}
+Month: 4/2026

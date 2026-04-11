@@ -191,6 +191,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Batch Attendance
     Route::get('batch-attendances', [BatchAttendanceController::class, 'index'])->name('batch-attendances.index');
+    Route::get('batch-attendances/calendar', [BatchAttendanceController::class, 'calendar'])->name('batch-attendances.calendar');
     Route::get('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'showAttendanceForm'])->name('batch-attendances.take');
     Route::post('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'store'])->name('batch-attendances.store');
     Route::get('batch-attendances/{batchId}/report', [BatchAttendanceController::class, 'getReport'])->name('batch-attendances.report');
