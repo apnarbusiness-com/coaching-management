@@ -772,9 +772,19 @@ class BatchController extends Controller
 
         DB::table('batch_student_basic_info')->insert($rows);
 
+        foreach ($rows as $row) {
+            $this->dueService->generateDueForEnrollment(
+                $row['student_basic_info_id'],
+                $row['batch_id'],
+                $month,
+                $year,
+                $row['per_student_discount']
+            );
+        }
+
         return redirect()
             ->route('admin.batches.assignStudents', [$batch->id, 'month' => $month, 'year' => $year])
-            ->with('status', 'Copied previous month enrollments successfully.');
+            ->with('status', 'Copied previous month enrollments and generated dues successfully.');
     }
 
     public function copyPreviousMonthEnrollmentsAll(Request $request)
@@ -831,12 +841,22 @@ class BatchController extends Controller
             if (!empty($insertRows)) {
                 DB::table('batch_student_basic_info')->insert($insertRows);
                 $totalInserted += count($insertRows);
+
+                foreach ($insertRows as $row) {
+                    $this->dueService->generateDueForEnrollment(
+                        $row['student_basic_info_id'],
+                        $row['batch_id'],
+                        $month,
+                        $year,
+                        $row['per_student_discount']
+                    );
+                }
             }
         }
 
         return redirect()
             ->route('admin.batches.index', ['month' => $month, 'year' => $year])
-            ->with('status', "Copied previous month enrollments for all batches. Total students enrolled: {$totalInserted}.");
+            ->with('status', "Copied previous month enrollments and generated dues for all batches. Total students enrolled: {$totalInserted}.");
     }
 
     public function assignTeachers(Batch $batch, Request $request)

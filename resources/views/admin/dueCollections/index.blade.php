@@ -95,9 +95,9 @@
                         Generate Dues
                     </button>
                 </form>
-                <button type="button" class="btn btn-success" data-toggle="modal" data-target="#quickPayModal">
+                {{-- <button type="button" class="btn btn-success" data-toggle="modal" data-target="#quickPayModal">
                     Quick Pay
-                </button>
+                </button> --}}
             </div>
         </div>
     </div>
