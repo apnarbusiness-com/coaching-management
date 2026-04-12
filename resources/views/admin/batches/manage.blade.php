@@ -16,6 +16,8 @@
                 return (float) ($teacher->pivot->salary_amount ?? 0);
             });
 
+            $monthYearLabel = \Carbon\Carbon::createFromDate($year, $month, 1)->format('F, Y');
+
             $dayColors = [
                 'saturday' => [
                     'bg' => 'bg-rose-100 dark:bg-rose-900/30',
@@ -45,9 +47,15 @@
 
         <div class="flex flex-col md:flex-row justify-between items-start md:items-center gap-4 mb-8">
             <div class="flex flex-col gap-1">
-                <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
-                    Batch Details: {{ $batch->batch_name }}
-                </h1>
+                <div class="flex items-center gap-3">
+                    <h1 class="text-3xl font-black tracking-tight text-slate-900 dark:text-white">
+                        Batch Details: {{ $batch->batch_name }}
+                    </h1>
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold shadow-lg shadow-blue-500/30 animate-pulse">
+                        {{ $monthYearLabel }}
+                    </span>
+                </div>
                 <div class="flex flex-wrap items-center gap-2 text-sm text-slate-600 dark:text-slate-400">
                     <span
                         class="inline-flex items-center gap-1.5 px-2.5 py-1 rounded-full bg-slate-100 dark:bg-slate-800 text-slate-700 dark:text-slate-200">
@@ -160,7 +168,7 @@
                 <div class="flex-1 min-w-[150px]">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Month</label>
                     <select name="month"
-                        class="form-select w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+                        class="form-select w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary">
                         @for ($m = 1; $m <= 12; $m++)
                             <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }}>
                                 {{ \Carbon\Carbon::createFromDate(null, $m, 1)->format('F') }}
@@ -171,17 +179,28 @@
                 <div class="flex-1 min-w-[100px]">
                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Year</label>
                     <select name="year"
-                        class="form-select w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white">
+                        class="form-select w-full rounded-md border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white focus:ring-2 focus:ring-primary focus:border-primary">
                         @for ($y = now()->year - 2; $y <= now()->year + 1; $y++)
                             <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}
                             </option>
                         @endfor
                     </select>
                 </div>
-                <button type="submit" class="px-4 py-2 bg-primary text-white rounded-md font-medium hover:bg-primary/90">
+                <button type="submit"
+                    class="px-6 py-2.5 bg-gradient-to-r from-primary to-primary/80 text-white rounded-lg font-bold shadow-lg shadow-primary/30 hover:shadow-xl hover:scale-[1.02] transition-all duration-200 flex items-center gap-2">
+                    <span class="material-symbols-outlined text-lg">filter_list</span>
                     Filter
                 </button>
             </form>
+            @if (isset($monthYearLabel))
+                <div class="mt-4 flex items-center gap-2">
+                    <span
+                        class="px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold shadow-lg shadow-blue-500/30">
+                        {{ $monthYearLabel }}
+                    </span>
+                    <span class="text-xs text-slate-500">Currently viewing data for this period</span>
+                </div>
+            @endif
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
@@ -240,7 +259,13 @@
                                 <span class="material-symbols-outlined text-3xl">school</span>
                             </div>
                             <div>
-                                <p class="text-lg font-bold">Assigned Teachers</p>
+                                <p class="text-lg font-bold">
+                                    Assigned Teachers for
+                                    <span
+                                        class="px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold shadow-lg shadow-blue-500/30">
+                                        {{ $monthYearLabel }}
+                                    </span>
+                                </p>
                                 <p class="text-slate-500 dark:text-slate-400 text-sm">{{ $teacherCount }} teacher(s)
                                     assigned</p>
                             </div>
@@ -283,7 +308,13 @@
                                 <span class="material-symbols-outlined text-3xl">group</span>
                             </div>
                             <div>
-                                <p class="text-lg font-bold">Enrolled Students</p>
+                                <p class="text-lg font-bold">
+                                    Enrolled Students for
+                                    <span
+                                        class="px-4 py-1.5 rounded-full bg-gradient-to-r from-blue-500 to-indigo-500 text-white text-sm font-bold shadow-lg shadow-blue-500/30">
+                                        {{ $monthYearLabel }}
+                                    </span>
+                                </p>
                                 <p class="text-slate-500 dark:text-slate-400 text-sm">{{ $capacityText }} students</p>
                             </div>
                         </div>
@@ -446,7 +477,7 @@
                 })
                 .catch((err) => {
                     console.log("Error while Fetch: admin.batches.quickEnrollAjax");
-                    
+
                     console.error(err)
                 });
         }
@@ -476,7 +507,8 @@
 
         function refreshStudentList() {
             fetch(
-                    `{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`)
+                    `{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`
+                )
                 .then(res => res.json())
                 .then(data => {
                     if (data.success) {

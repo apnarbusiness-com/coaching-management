@@ -1,6 +1,2 @@
-http://dev-coaching-management.test/admin/batches/12/manage in that page 'Enrolled Students' part try to understand that when enroll students it generate dues & when un-enroll then it removed dues
-1. access the related controller services and methods and try understand fully.
-2. then http://dev-coaching-management.test/admin/batches in that page look at the button 'Enroll Last Month Students (All Batches)' when clicked on that it took all the students of last/previous month and enroll this month. 1st check when enroll it generate due? if not then try to use that same code and genearate dues too.
-
-so the main concept is when click on that all batches last month's student will be enroll this month and generate dues automatically.
-and obviously try to write reusable code just like a professional developer cause if we need to change any logic we don't want to change many places instead of 1 single place 
+http://dev-coaching-management.test/admin/batches/2/manage?month=2&year=2026 in this url 'Assigned Teachers' & 'Enrolled Students' intead of these text i want 'Assigned Teachers for February,2026' & 'Enrolled Students for February,2026'
+and some how make the year and month more focusabe may be glowing or any better design cause this is important
