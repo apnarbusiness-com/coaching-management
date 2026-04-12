@@ -1,1 +1,3 @@
-http://dev-coaching-management.test/admin/batches/13/manage in that page when try to enroll student it shows error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON
+http://dev-coaching-management.test/admin/due-collections/checker 
+1. in that page weh have 'studentSearch' it is a select box but we want a text field here keep all the functionality same. and when visiting the page this text field needs to be auto focused
+2. 'yearFilter' button designs broke year did not show properly. fixed the design
