@@ -25,7 +25,7 @@
             padding: 20px;
         }
 
-        .search-box select {
+        .search-box input {
             border: 2px solid #e2e8f0;
             border-radius: 8px;
             padding: 12px 16px;
@@ -33,25 +33,85 @@
             width: 100%;
         }
 
-        .search-box select:focus {
+        .search-box input:focus {
             border-color: #667eea;
             outline: none;
             box-shadow: 0 0 0 3px rgba(102, 126, 234, 0.1);
         }
 
+        .search-results {
+            position: absolute;
+            top: 100%;
+            left: 0;
+            right: 0;
+            background: white;
+            border: 2px solid #e2e8f0;
+            border-top: none;
+            border-radius: 0 0 8px 8px;
+            max-height: 300px;
+            overflow-y: auto;
+            z-index: 1000;
+            display: none;
+            box-shadow: 0 4px 12px rgba(0, 0, 0, 0.1);
+        }
+
+        .search-result-item {
+            padding: 12px 16px;
+            cursor: pointer;
+            border-bottom: 1px solid #f1f5f9;
+            transition: background 0.2s;
+        }
+
+        .search-result-item:hover {
+            background: #f8fafc;
+        }
+
+        .search-result-item:last-child {
+            border-bottom: none;
+        }
+
+        .search-result-item .main-text {
+            font-weight: 600;
+            color: #1e293b;
+        }
+
+        .search-result-item .sub-text {
+            font-size: 12px;
+            color: #64748b;
+        }
+
+        .search-box {
+            background: white;
+            border-radius: 12px;
+            padding: 20px;
+            position: relative;
+        }
+
         .year-filter {
             background: white;
             border-radius: 12px;
-            padding: 15px 20px;
-            display: inline-block;
+            padding: 12px 16px;
+            display: inline-flex;
+            align-items: center;
             margin-left: 15px;
+            margin-bottom: 15px;
+            gap: 8px;
+        }
+
+        .year-filter label {
+            margin: 0;
+            font-size: 14px;
+            color: #64748b;
+            white-space: nowrap;
         }
 
         .year-filter select {
             border: 2px solid #e2e8f0;
             border-radius: 8px;
-            padding: 10px 16px;
+            padding: 4px 12px;
             font-size: 14px;
+            background: white;
+            cursor: pointer;
         }
 
         .summary-cards {
@@ -463,6 +523,7 @@
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <h3><i class="fa fa-search-dollar mr-2"></i>Due Checker</h3>
                 <div class="year-filter">
+                    <label for="yearFilter">Year:</label>
                     <select id="yearFilter" class="form-control" onchange="loadStudentData()">
                         <option value="{{ $currentYear }}">{{ $currentYear }}</option>
                         <option value="all">All Years</option>
@@ -475,9 +536,8 @@
                 </div>
             </div>
             <div class="search-box">
-                <select id="studentSearch" class="form-control" style="width: 100%">
-                    <option value="">Search by Name, ID No, Admission ID, Father's Name or Mother's Name...</option>
-                </select>
+                <input type="text" id="studentSearch" class="form-control" placeholder="Search by Name, ID No, Admission ID, Father's Name or Mother's Name..." autofocus>
+                <div id="searchResults" class="search-results"></div>
             </div>
         </div>
 
@@ -738,55 +798,90 @@
 @section('scripts')
     @parent
     <script>
+        let searchTimeout = null;
+        let selectedStudentId = null;
+
         $(function() {
-            $('#studentSearch').select2({
-                ajax: {
-                    url: "{{ route('admin.due-collections.checker.search') }}",
-                    processResults: function(data) {
-                        return {
-                            results: data.map(function(item) {
-                                return {
-                                    id: item.id,
-                                    text: item.first_name + ' ' + (item.last_name || '') +
-                                        ' - ' + (item.id_no || item.admission_id || 'N/A'),
-                                    html: '<div class="student-select-result">' +
-                                        '<div class="main-text">' + item.first_name + ' ' + (
-                                            item.last_name || '') + '</div>' +
-                                        '<div class="sub-text">ID: ' + (item.id_no || item
-                                            .admission_id || 'N/A') +
-                                        ' | Father: ' + (item.fathers_name || 'N/A') +
-                                        ' | Mother: ' + (item.mothers_name || 'N/A') +
-                                        '</div>' +
-                                        '</div>',
-                                    first_name: item.first_name,
-                                    last_name: item.last_name,
-                                    id_no: item.id_no,
-                                    admission_id: item.admission_id
-                                };
-                            })
-                        };
-                    },
-                    templateResult: function(data) {
-                        if (!data.id) return data.text;
-                        return $(data.html);
-                    },
-                    templateSelection: function(data) {
-                        return data.text || data.first_name + ' ' + (data.last_name || '');
-                    }
-                },
-                minimumInputLength: 1,
-                placeholder: 'Search by Name, ID No, Admission ID, Father\'s Name or Mother\'s Name...'
+            $('#studentSearch').on('input', function() {
+                const query = $(this).val();
+                
+                if (searchTimeout) clearTimeout(searchTimeout);
+                
+                if (query.length < 1) {
+                    $('#searchResults').hide();
+                    selectedStudentId = null;
+                    $('#emptyState').show();
+                    $('#studentData').hide();
+                    return;
+                }
+                
+                searchTimeout = setTimeout(function() {
+                    $.get("{{ route('admin.due-collections.checker.search') }}", { term: query }, function(data) {
+                        const resultsContainer = $('#searchResults');
+                        resultsContainer.empty();
+                        
+                        if (data.length === 0) {
+                            resultsContainer.html('<div class="p-3 text-muted">No results found</div>');
+                            resultsContainer.show();
+                            return;
+                        }
+                        
+                        data.forEach(function(item) {
+                            resultsContainer.append(`
+                                <div class="search-result-item" data-id="${item.id}">
+                                    <div class="main-text">${item.first_name} ${item.last_name || ''}</div>
+                                    <div class="sub-text">ID: ${item.id_no || item.admission_id || 'N/A'} | Father: ${item.fathers_name || 'N/A'} | Mother: ${item.mothers_name || 'N/A'}</div>
+                                </div>
+                            `);
+                        });
+                        
+                        resultsContainer.show();
+                    });
+                }, 300);
+            });
+
+            $(document).on('click', '.search-result-item', function() {
+                const studentId = $(this).data('id');
+                selectedStudentId = studentId;
+                $('#studentSearch').val($(this).find('.main-text').text());
+                $('#searchResults').hide();
+                loadStudentData();
+            });
+
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('.search-box').length) {
+                    $('#searchResults').hide();
+                }
             });
 
             $('#studentSearch').on('change', function() {
-                if ($(this).val()) {
-                    loadStudentData();
+                const query = $(this).val();
+                if (!query || query.length < 1) {
+                    selectedStudentId = null;
+                    $('#emptyState').show();
+                    $('#studentData').hide();
+                    return;
+                }
+                if (!selectedStudentId) {
+                    $.get("{{ route('admin.due-collections.checker.search') }}", { term: query }, function(data) {
+                        if (data.length > 0) {
+                            selectedStudentId = data[0].id;
+                            loadStudentData();
+                        } else {
+                            alert('No student found with this search term');
+                        }
+                    });
                 }
             });
+
+            setTimeout(function() {
+                $('#studentSearch').focus();
+            }, 100);
         });
 
         function loadStudentData() {
-            const studentId = $('#studentSearch').val();
+            
+            const studentId = selectedStudentId;
             const year = $('#yearFilter').val();
 
             if (!studentId) {
@@ -816,7 +911,7 @@
 
                 const s = response.student;
                 $('#studentName').text(s.name);
-                $('#studentImage').attr('src', s.image || '{{ asset('img/avatar.png') }}');
+                $('#studentImage').attr("src", s.image || "{{ asset('img/avatar.png') }}");
                 $('#studentIdNo').text('ID: ' + (s.id_no || 'N/A'));
                 $('#studentAdmissionId').text('Adm: ' + (s.admission_id || 'N/A'));
                 $('#studentClass').text(s.class_name);
@@ -1012,7 +1107,7 @@
 
         $('#pay-all-due-form').on('submit', function(e) {
             e.preventDefault();
-            let studentId = $('#studentSearch').val();
+            let studentId = selectedStudentId;
             let amount = $('#payAllAmount').val();
 
             let submitBtn = $(this).find('button[type="submit"]');
@@ -1083,7 +1178,7 @@
         let currentStudentFlags = [];
 
         function openFlagModal() {
-            const studentId = $('#studentSearch').val();
+            const studentId = selectedStudentId;
             if (!studentId) {
                 alert('Please select a student first');
                 return;
@@ -1142,7 +1237,7 @@
         }
 
         function assignFlag() {
-            const studentId = $('#studentSearch').val();
+            const studentId = selectedStudentId;
             const flagId = $('#selectedFlag').val();
             const comment = $('#flagComment').val();
 
@@ -1166,7 +1261,7 @@
         }
 
         function removeFlag(flagId) {
-            const studentId = $('#studentSearch').val();
+            const studentId = selectedStudentId;
 
             if (!confirm('Are you sure you want to remove this flag?')) {
                 return;
