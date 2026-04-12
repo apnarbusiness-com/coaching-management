@@ -323,19 +323,28 @@ class BatchController extends Controller
         $batch->load(['subject', 'subjects', 'class', 'students', 'teachers']);
 
         $teacherCount = $batch->teachers->count();
-        $enrolledStudentIds = DB::table('batch_student_basic_info')
+
+        $enrollments = DB::table('batch_student_basic_info')
             ->where('batch_id', $batch->id)
             ->whereMonth('enrolled_at', $month)
             ->whereYear('enrolled_at', $year)
-            ->pluck('student_basic_info_id')
-            ->unique()
-            ->values();
+            ->get()
+            ->keyBy('student_basic_info_id');
+
+        $enrolledStudentIds = $enrollments->pluck('student_basic_info_id')->unique()->values();
 
         $enrolledStudents = StudentBasicInfo::with('class')
             ->whereIn('id', $enrolledStudentIds)
             ->orderBy('first_name')
             ->orderBy('last_name')
-            ->get();
+            ->get()
+            ->map(function ($student) use ($enrollments, $batch) {
+                $enrollment = $enrollments->get($student->id);
+                $student->pivot_discount = $enrollment->per_student_discount ?? 0;
+                $student->pivot_custom_fee = $enrollment->custom_monthly_fee;
+                $student->batch_fee = (float) $batch->fee_amount;
+                return $student;
+            });
 
         $studentCount = $enrolledStudents->count();
 
@@ -692,19 +701,79 @@ class BatchController extends Controller
         return response()->json(['success' => true, 'message' => 'Student un-enrolled successfully.']);
     }
 
+    public function updateStudentEnrollment(Request $request, Batch $batch, StudentBasicInfo $student)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+            'discount' => ['nullable', 'numeric', 'min:0'],
+            'custom_fee' => ['nullable', 'numeric', 'min:0'],
+        ]);
+
+
+
+        $month = (int) $data['month'];
+        $year = (int) $data['year'];
+        $discount = (float) ($data['discount'] ?? 0);
+        $customFee = isset($data['custom_fee']) ? (float) $data['custom_fee'] : null;
+
+        $updated = DB::table('batch_student_basic_info')
+            ->where('batch_id', $batch->id)
+            ->where('student_basic_info_id', $student->id)
+            ->whereMonth('enrolled_at', $month)
+            ->whereYear('enrolled_at', $year)
+            ->update([
+                'per_student_discount' => $discount,
+                'custom_monthly_fee' => $customFee,
+                // 'updated_at' => now(),
+            ]);
+
+        // return response()->json([
+        //     'success' => true,
+        //     'message' => 'Enrollment updated successfully.',
+        //     'data' => $data,
+        //     'student' => $student,
+        //     'updated' => $updated
+        // ]);
+        if ($updated) {
+            $this->dueService->deleteDuesOnUnenroll($student->id, $batch->id, $month, $year);
+            $this->dueService->generateDueForEnrollment($student->id, $batch->id, $month, $year, $discount, $customFee);
+        }
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Enrollment updated and due regenerated successfully.',
+        ]);
+    }
+
     public function getEnrolledStudentsAjax(Request $request, Batch $batch)
     {
         $month = (int) $request->query('month', now()->month);
         $year = (int) $request->query('year', now()->year);
 
+        $enrollments = DB::table('batch_student_basic_info')
+            ->where('batch_id', $batch->id)
+            ->whereMonth('enrolled_at', $month)
+            ->whereYear('enrolled_at', $year)
+            ->get()
+            ->keyBy('student_basic_info_id');
+
         $enrolledStudents = $batch->students()
             ->whereMonth('enrolled_at', $month)
             ->whereYear('enrolled_at', $year)
-            ->get();
+            ->get()
+            ->map(function ($student) use ($enrollments) {
+                $enrollment = $enrollments->get($student->id);
+                $student->pivot_discount = $enrollment->per_student_discount ?? 0;
+                $student->pivot_custom_fee = $enrollment->custom_monthly_fee;
+                return $student;
+            });
 
         $studentCount = $enrolledStudents->count();
         $capacity = $batch->capacity;
-        $capacityText = $capacity ? $studentCount . '/' . $capacity : $studentCount . '/∞';
+        $capacityText = $capacity ? $studentCount . '/' . $capacity : '∞';
         $capacityPercent = $capacity ? min(100, round(($studentCount / max($capacity, 1)) * 100)) : null;
 
         return response()->json([
@@ -715,6 +784,8 @@ class BatchController extends Controller
                 'last_name' => $s->last_name,
                 'id_no' => $s->id_no,
                 'class_name' => $s->class->class_name ?? 'N/A',
+                'pivot_discount' => $s->pivot_discount,
+                'pivot_custom_fee' => $s->pivot_custom_fee,
             ]),
             'studentCount' => $studentCount,
             'capacityText' => $capacityText,

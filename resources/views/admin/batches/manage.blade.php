@@ -298,9 +298,54 @@
                             <span class="material-symbols-outlined text-lg">person_add</span>
                             <span>Assign Teacher</span>
                         </a>
-                    </div>
+            </div>
+        </div>
+
+        <div id="editEnrollmentModal" class="fixed inset-0 bg-black/50 hidden z-50 flex items-center justify-center">
+            <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4">
+                <div class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
+                    <h3 class="text-lg font-bold text-slate-900 dark:text-white">Edit Enrollment (Discount & Custom Fee)</h3>
+                    <button type="button" onclick="closeEditEnrollmentModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                        <span class="material-symbols-outlined">close</span>
+                    </button>
                 </div>
-                <div
+                <form id="editEnrollmentForm" class="p-6 space-y-4">
+                    @csrf
+                    @method('PATCH')
+                    <input type="hidden" name="month" id="modalMonth" value="{{ $month }}">
+                    <input type="hidden" name="year" id="modalYear" value="{{ $year }}">
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Student</label>
+                        <p id="modalStudentName" class="text-sm font-semibold text-slate-900 dark:text-white bg-slate-50 dark:bg-slate-700 px-3 py-2 rounded-lg"></p>
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Monthly Discount</label>
+                        <input type="number" name="discount" id="modalDiscount" step="0.01" min="0"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            placeholder="0">
+                    </div>
+                    <div>
+                        <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Custom Monthly Fee (Optional)</label>
+                        <input type="number" name="custom_fee" id="modalCustomFee" step="0.01" min="0"
+                            class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                            placeholder="Leave empty to use batch fee">
+                        <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Batch fee: <span id="modalBatchFee"></span></p>
+                    </div>
+                    <div class="flex justify-end gap-3 pt-2">
+                        <button type="button" onclick="closeEditEnrollmentModal()"
+                            class="px-4 py-2 bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 rounded-lg font-medium hover:bg-slate-200 dark:hover:bg-slate-600">
+                            Cancel
+                        </button>
+                        <button type="submit"
+                            class="px-4 py-2 bg-primary text-white rounded-lg font-medium hover:bg-primary/90">
+                            Save Changes
+                        </button>
+                    </div>
+                </form>
+            </div>
+        </div>
+
+        <div
                     class="flex flex-col gap-5 p-6 rounded-xl bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                     <div class="flex items-start justify-between gap-4">
                         <div class="flex gap-4 items-center">
@@ -361,10 +406,20 @@
                                         <p class="text-xs text-slate-500 truncate">
                                             {{ $student->class->class_name ?? 'N/A' }}</p>
                                     </div>
-                                    <div class="flex items-center gap-2">
+                                    <div class="flex items-center gap-1">
+                                        @if(isset($student->pivot_discount) && $student->pivot_discount > 0)
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">-{{ number_format($student->pivot_discount, 0) }}</span>
+                                        @endif
+                                        @if(isset($student->pivot_custom_fee))
+                                            <span class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">₹{{ number_format($student->pivot_custom_fee, 0) }}</span>
+                                        @endif
                                         <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
+                                        <button type="button" onclick="openEditEnrollmentModal({{ $student->id }}, '{{ trim($student->first_name . ' ' . $student->last_name) }}', {{ $student->pivot_discount ?? 0 }}, {{ $student->pivot_custom_fee ?? 'null' }}, {{ $student->batch_fee }})"
+                                            class="text-slate-400 hover:text-primary transition-colors p-1">
+                                            <span class="material-symbols-outlined text-lg">edit</span>
+                                        </button>
                                         <button type="button" onclick="unEnrollStudent({{ $student->id }})"
-                                            class="text-slate-400 hover:text-red-500 transition-colors">
+                                            class="text-slate-400 hover:text-red-500 transition-colors p-1">
                                             <span class="material-symbols-outlined text-lg">delete</span>
                                         </button>
                                     </div>
@@ -561,9 +616,17 @@
                             </p>
                             <p class="text-xs text-slate-500 truncate">${student.class_name}</p>
                         </div>
-                        <div class="flex items-center gap-2">
+                        <div class="flex items-center gap-1">
                             <span class="text-xs text-slate-400">${student.id_no}</span>
-                            <button type="button" onclick="unEnrollStudent(${student.id})" class="text-slate-400 hover:text-red-500 transition-colors">
+                            <button type="button" class="text-slate-400 hover:text-primary transition-colors p-1 edit-enrollment-btn"
+                                data-student-id="${student.id}"
+                                data-student-name="${student.first_name} ${student.last_name}"
+                                data-discount="${student.pivot_discount || 0}"
+                                data-custom-fee="${student.pivot_custom_fee !== null ? student.pivot_custom_fee : ''}"
+                                data-batch-fee="{{ $batch->fee_amount }}">
+                                <span class="material-symbols-outlined text-lg">edit</span>
+                            </button>
+                            <button type="button" onclick="unEnrollStudent(${student.id})" class="text-slate-400 hover:text-red-500 transition-colors p-1">
                                 <span class="material-symbols-outlined text-lg">delete</span>
                             </button>
                         </div>
@@ -572,5 +635,69 @@
             });
             container.innerHTML = html;
         }
+
+        let currentEditStudentId = null;
+
+        function openEditEnrollmentModal(studentId, studentName, discount, customFee, batchFee) {
+            currentEditStudentId = studentId;
+            document.getElementById('modalStudentName').textContent = studentName;
+            document.getElementById('modalDiscount').value = discount;
+            document.getElementById('modalCustomFee').value = customFee || '';
+            document.getElementById('modalBatchFee').textContent = '₹' + parseFloat(batchFee).toFixed(2);
+            document.getElementById('editEnrollmentModal').classList.remove('hidden');
+        }
+
+        function closeEditEnrollmentModal() {
+            document.getElementById('editEnrollmentModal').classList.add('hidden');
+            currentEditStudentId = null;
+        }
+
+        document.getElementById('editEnrollmentForm').addEventListener('submit', function(e) {
+            e.preventDefault();
+            if (!currentEditStudentId) return;
+           
+            
+
+            const formData = {
+                month: document.getElementById('modalMonth').value,
+                year: document.getElementById('modalYear').value,
+                discount: document.getElementById('modalDiscount').value,
+                custom_fee: document.getElementById('modalCustomFee').value || null,
+            };
+
+            fetch(`{{ route('admin.batches.updateStudentEnrollment', [$batch->id, '__student__']) }}`.replace('__student__', currentEditStudentId), {
+                method: 'PATCH',
+                headers: {
+                    'Content-Type': 'application/json',
+                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                },
+                body: JSON.stringify(formData)
+            })
+            .then(res => res.json())
+            .then(data => {
+                console.log(data);
+                
+                if (data.success) {
+                    closeEditEnrollmentModal();
+                    refreshStudentList();
+                } else {
+                    alert(data.message);
+                }
+            })
+            .catch(err => console.error(err));
+        });
+
+        document.addEventListener('click', function(e) {
+            const btn = e.target.closest('.edit-enrollment-btn');
+            if (btn) {
+                openEditEnrollmentModal(
+                    btn.dataset.studentId,
+                    btn.dataset.studentName,
+                    btn.dataset.discount,
+                    btn.dataset.customFee,
+                    btn.dataset.batchFee
+                );
+            }
+        });
     </script>
 @endsection

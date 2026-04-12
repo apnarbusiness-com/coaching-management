@@ -1,2 +1,4 @@
-http://dev-coaching-management.test/admin/batches/2/manage?month=2&year=2026 in this url 'Assigned Teachers' & 'Enrolled Students' intead of these text i want 'Assigned Teachers for February,2026' & 'Enrolled Students for February,2026'
-and some how make the year and month more focusabe may be glowing or any better design cause this is important
+http://dev-coaching-management.test/admin/batches/2/manage?month=3&year=2026 in student enroll
+1st time click edit opens modal click submit then student list reload. then click edit. it shows error:
+Uncaught ReferenceError: student is not defined
+    at HTMLButtonElement.onclick (manage?month=3&year=2026:1:30)

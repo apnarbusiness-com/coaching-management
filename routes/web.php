@@ -84,6 +84,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('batches/{batch}/quick-enroll-ajax', [BatchController::class, 'quickEnrollStudentsAjax'])->name('batches.quickEnrollAjax');
     Route::get('batches/{batch}/enrolled-students-ajax', [BatchController::class, 'getEnrolledStudentsAjax'])->name('batches.getEnrolledStudentsAjax');
     Route::delete('batches/{batch}/un-enroll-ajax/{student}', [BatchController::class, 'unEnrollStudentAjax'])->name('batches.unEnrollAjax');
+    Route::patch('batches/{batch}/students/{student}/enrollment', [BatchController::class, 'updateStudentEnrollment'])->name('batches.updateStudentEnrollment');
     Route::delete('batches/{batch}/un-enroll/{student}', [BatchController::class, 'unEnrollStudent'])->name('batches.unEnroll');
     Route::get('batches/{batch}/assign-students', [BatchController::class, 'assignStudents'])->name('batches.assignStudents');
     Route::post('batches/{batch}/assign-students', [BatchController::class, 'storeAssignedStudents'])->name('batches.assignStudents.store');
