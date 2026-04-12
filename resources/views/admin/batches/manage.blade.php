@@ -85,41 +85,41 @@
         </div>
 
         {{-- <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10"> --}}
-            <div class="flex flex-col gap-2 mb-10">
-                <div class="flex items-center gap-2 text-primary">
-                    <span class="material-symbols-outlined">calendar_month</span>
-                    <p class="text-sm font-medium">Class Schedule</p>
-                </div>
-                @if (!empty($schedule))
-                    <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
-                        @foreach ($schedule as $dayKey => $info)
-                            <div
-                                class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $dayColors[$dayKey]['bg'] ?? 'bg-slate-100 dark:bg-slate-800' }}">
-                                <div class="flex flex-col">
-                                    <span
-                                        class="text-xs font-semibold {{ $dayColors[$dayKey]['text'] ?? 'text-slate-700 dark:text-slate-300' }}">
-                                        {{ $info['day'] }}
-                                    </span>
-                                    <span
-                                        class="text-sm font-bold {{ $dayColors[$dayKey]['text'] ?? 'text-slate-900 dark:text-white' }}">
-                                        {{ $info['time'] }}
-                                    </span>
-                                </div>
+        <div class="flex flex-col gap-2 mb-10">
+            <div class="flex items-center gap-2 text-primary">
+                <span class="material-symbols-outlined">calendar_month</span>
+                <p class="text-sm font-medium">Class Schedule</p>
+            </div>
+            @if (!empty($schedule))
+                <div class="grid grid-cols-2 sm:grid-cols-3 md:grid-cols-4 gap-2">
+                    @foreach ($schedule as $dayKey => $info)
+                        <div
+                            class="flex items-center gap-2 px-3 py-2 rounded-lg {{ $dayColors[$dayKey]['bg'] ?? 'bg-slate-100 dark:bg-slate-800' }}">
+                            <div class="flex flex-col">
                                 <span
-                                    class="material-symbols-outlined text-[20px] ml-auto {{ $dayColors[$dayKey]['text'] ?? 'text-slate-500' }}">
-                                    schedule
+                                    class="text-xs font-semibold {{ $dayColors[$dayKey]['text'] ?? 'text-slate-700 dark:text-slate-300' }}">
+                                    {{ $info['day'] }}
+                                </span>
+                                <span
+                                    class="text-sm font-bold {{ $dayColors[$dayKey]['text'] ?? 'text-slate-900 dark:text-white' }}">
+                                    {{ $info['time'] }}
                                 </span>
                             </div>
-                        @endforeach
-                    </div>
-                @else
-                    <p class="text-sm text-slate-500">No schedule set</p>
-                @endif
-            </div>
+                            <span
+                                class="material-symbols-outlined text-[20px] ml-auto {{ $dayColors[$dayKey]['text'] ?? 'text-slate-500' }}">
+                                schedule
+                            </span>
+                        </div>
+                    @endforeach
+                </div>
+            @else
+                <p class="text-sm text-slate-500">No schedule set</p>
+            @endif
+        </div>
         {{-- </div> --}}
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
-            
+
             <div
                 class="flex flex-col gap-2 rounded-xl p-6 bg-white dark:bg-slate-800/50 border border-slate-200 dark:border-slate-700">
                 <div class="flex items-center gap-2 text-primary">
@@ -292,7 +292,8 @@
                     </div>
                     <div class="space-y-2">
                         <div class="flex items-center gap-2">
-                            <input type="text" name="student_ids" id="studentIdsInput" placeholder="e.g. 417 410 415 380"
+                            <input type="text" name="student_ids" id="studentIdsInput"
+                                placeholder="e.g. 417 410 415 380"
                                 class="flex-1 px-3 py-2 text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-md focus:outline-none focus:ring-2 focus:ring-primary">
                             <button type="button" onclick="formatStudentIds()"
                                 class="px-4 py-2 bg-slate-500 text-white text-sm font-bold rounded-md hover:bg-slate-600">
@@ -309,16 +310,19 @@
                             @if ($capacityPercent !== null)
                                 <div class="flex items-center gap-3">
                                     <div class="flex-1 h-2 rounded-full bg-slate-100 dark:bg-slate-700 overflow-hidden">
-                                        <div class="h-full bg-primary" id="capacityBar" style="width: {{ $capacityPercent }}%"></div>
+                                        <div class="h-full bg-primary" id="capacityBar"
+                                            style="width: {{ $capacityPercent }}%"></div>
                                     </div>
-                                    <span class="text-xs text-slate-500 font-semibold" id="capacityPercent">{{ $capacityPercent }}%</span>
+                                    <span class="text-xs text-slate-500 font-semibold"
+                                        id="capacityPercent">{{ $capacityPercent }}%</span>
                                 </div>
                             @endif
                         </div>
                         <div id="studentListContainer"
                             class="rounded-lg border border-slate-100 dark:border-slate-700 max-h-64 overflow-y-auto divide-y divide-slate-100 dark:divide-slate-700">
                             @forelse ($enrolledStudents as $student)
-                                <div class="flex items-center justify-between gap-2 px-4 py-3 student-row" data-student-id="{{ $student->id }}">
+                                <div class="flex items-center justify-between gap-2 px-4 py-3 student-row"
+                                    data-student-id="{{ $student->id }}">
                                     <div class="min-w-0">
                                         <p class="text-sm font-semibold text-slate-800 dark:text-slate-100 truncate">
                                             {{ trim($student->first_name . ' ' . $student->last_name) }}
@@ -328,13 +332,15 @@
                                     </div>
                                     <div class="flex items-center gap-2">
                                         <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
-                                        <button type="button" onclick="unEnrollStudent({{ $student->id }})" class="text-slate-400 hover:text-red-500 transition-colors">
+                                        <button type="button" onclick="unEnrollStudent({{ $student->id }})"
+                                            class="text-slate-400 hover:text-red-500 transition-colors">
                                             <span class="material-symbols-outlined text-lg">delete</span>
                                         </button>
                                     </div>
                                 </div>
                             @empty
-                                <p class="text-sm text-slate-500 px-4 py-6 text-center" id="emptyMessage">No students enrolled yet.</p>
+                                <p class="text-sm text-slate-500 px-4 py-6 text-center" id="emptyMessage">No students
+                                    enrolled yet.</p>
                             @endforelse
                         </div>
                     </div>
@@ -409,34 +415,40 @@
         function quickEnrollStudents() {
             const input = document.getElementById('studentIdsInput');
             const studentIds = input.value.trim();
-            
+
             if (!studentIds) {
                 alert('Please enter student ID numbers.');
                 return;
             }
 
             fetch(`{{ route('admin.batches.quickEnrollAjax', $batch->id) }}`, {
-                method: 'POST',
-                headers: {
-                    'Content-Type': 'application/json',
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                },
-                body: JSON.stringify({
-                    student_ids: studentIds,
-                    month: currentMonth,
-                    year: currentYear
+                    method: 'POST',
+                    headers: {
+                        'Content-Type': 'application/json',
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    },
+                    body: JSON.stringify({
+                        student_ids: studentIds,
+                        month: currentMonth,
+                        year: currentYear
+                    })
                 })
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    input.value = '';
-                    refreshStudentList();
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(err => console.error(err));
+                .then(res => res.json())
+                .then(data => {
+                    // console.log(data);
+                    // return;
+                    if (data.success) {
+                        input.value = '';
+                        refreshStudentList();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch((err) => {
+                    console.log("Error while Fetch: admin.batches.quickEnrollAjax");
+                    
+                    console.error(err)
+                });
         }
 
         function unEnrollStudent(studentId) {
@@ -444,32 +456,34 @@
                 return;
             }
 
-            fetch(`{{ route('admin.batches.unEnrollAjax', [$batch->id, '__student__']) }}`.replace('__student__', studentId) + `?month=${currentMonth}&year=${currentYear}`, {
-                method: 'DELETE',
-                headers: {
-                    'X-CSRF-TOKEN': '{{ csrf_token() }}'
-                }
-            })
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    refreshStudentList();
-                } else {
-                    alert(data.message);
-                }
-            })
-            .catch(err => console.error(err));
+            fetch(`{{ route('admin.batches.unEnrollAjax', [$batch->id, '__student__']) }}`.replace('__student__',
+                    studentId) + `?month=${currentMonth}&year=${currentYear}`, {
+                    method: 'DELETE',
+                    headers: {
+                        'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                    }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        refreshStudentList();
+                    } else {
+                        alert(data.message);
+                    }
+                })
+                .catch(err => console.error(err));
         }
 
         function refreshStudentList() {
-            fetch(`{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`)
-            .then(res => res.json())
-            .then(data => {
-                if (data.success) {
-                    updateStudentList(data);
-                }
-            })
-            .catch(err => console.error(err));
+            fetch(
+                    `{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStudentList(data);
+                    }
+                })
+                .catch(err => console.error(err));
         }
 
         function updateStudentList(data) {
@@ -478,8 +492,9 @@
             const capacityContainer = document.getElementById('capacityContainer');
 
             if (data.students.length === 0) {
-                container.innerHTML = '<p class="text-sm text-slate-500 px-4 py-6 text-center" id="emptyMessage">No students enrolled yet.</p>';
-                
+                container.innerHTML =
+                    '<p class="text-sm text-slate-500 px-4 py-6 text-center" id="emptyMessage">No students enrolled yet.</p>';
+
                 if (data.capacityPercent !== null) {
                     capacityContainer.innerHTML = `
                         <div class="flex items-center gap-3">

@@ -20,6 +20,7 @@ use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Support\Facades\Log;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
 
@@ -440,7 +441,7 @@ class BatchController extends Controller
             foreach ($studentsToEnroll as $studentId) {
                 $student = StudentBasicInfo::find($studentId);
                 $discount = $student ? $student->monthly_discount : 0;
-                
+
                 $rows[] = [
                     'batch_id' => $batch->id,
                     'student_basic_info_id' => $studentId,
@@ -448,8 +449,8 @@ class BatchController extends Controller
                     'per_student_discount' => $discount,
                     'custom_monthly_fee' => null,
                 ];
-                
-                $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year);
+
+                $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
             }
 
             DB::table('batch_student_basic_info')->insert($rows);
@@ -518,7 +519,7 @@ class BatchController extends Controller
                 foreach ($validStudentIds as $studentId) {
                     $student = StudentBasicInfo::find($studentId);
                     $discount = $student ? $student->monthly_discount : 0;
-                    
+
                     $rows[] = [
                         'batch_id' => $batch->id,
                         'student_basic_info_id' => $studentId,
@@ -526,8 +527,8 @@ class BatchController extends Controller
                         'per_student_discount' => $discount,
                         'custom_monthly_fee' => null,
                     ];
-                    
-                    $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year);
+
+                    $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
                 }
 
                 DB::table('batch_student_basic_info')->insert($rows);
@@ -583,6 +584,8 @@ class BatchController extends Controller
             return response()->json(['success' => false, 'message' => 'No valid student ID numbers provided.']);
         }
 
+
+
         $studentIds = DB::table('student_basic_infos')
             ->whereIn('id_no', $idNos)
             ->pluck('id')
@@ -603,30 +606,49 @@ class BatchController extends Controller
 
         $studentsToEnroll = array_values(array_diff($studentIds, $existingStudentIds));
 
+
+
         if (!empty($studentsToEnroll)) {
             $validStudentIds = DB::table('student_basic_infos')
                 ->whereIn('id', $studentsToEnroll)
                 ->pluck('id')
                 ->all();
 
+
+
             if (!empty($validStudentIds)) {
                 $rows = [];
                 foreach ($validStudentIds as $studentId) {
                     $student = StudentBasicInfo::find($studentId);
                     $discount = $student ? $student->monthly_discount : 0;
-                    
+
                     $rows[] = [
                         'batch_id' => $batch->id,
                         'student_basic_info_id' => $studentId,
                         'enrolled_at' => $enrolledAt,
-                        'per_student_discount' => $discount,
+                        'per_student_discount' => $discount ?? 0,
                         'custom_monthly_fee' => null,
                     ];
-                    
-                    $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year);
+
+                    // return response()->json([
+                    //     'success' => true,
+                    //     // 'message' => 'Students enrolled successfully.',
+                    //     // 'data' => $data,
+                    //     'enrolledAt' => $enrolledAt,
+                    //     'idNos' => $idNos,
+                    //     'studentIds' => $studentIds,
+                    //     'existingStudentIds' => $existingStudentIds,
+                    //     'studentsToEnroll' => $studentsToEnroll,
+                    //     'validStudentIds' => $validStudentIds,
+                    //     'rows' => $rows
+                    // ]);
+
+                    $studentMonthlyDue = $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
                 }
 
+
                 DB::table('batch_student_basic_info')->insert($rows);
+                // dd($rows, $studentMonthlyDue);
             }
         }
 
@@ -640,7 +662,25 @@ class BatchController extends Controller
         $month = (int) $request->query('month', now()->month);
         $year = (int) $request->query('year', now()->year);
 
-        $this->dueService->deleteDuesOnUnenroll($student->id, $batch->id, $month, $year);
+        // dd($month, $year,$student);
+
+        // $this->dueService->deleteDuesOnUnenroll($student->id, $batch->id, $month, $year);
+        try {
+            $this->dueService->deleteDuesOnUnenroll(
+                $student->id,
+                $batch->id,
+                $month,
+                $year
+            );
+        } catch (\Exception $e) {
+            Log::error('Failed to delete dues on unenroll', [
+                'student_id' => $student->id,
+                'batch_id' => $batch->id,
+                'month' => $month,
+                'year' => $year,
+                'error' => $e->getMessage(),
+            ]);
+        }
 
         DB::table('batch_student_basic_info')
             ->where('batch_id', $batch->id)
