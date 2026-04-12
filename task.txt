@@ -1,3 +1,2 @@
 http://dev-coaching-management.test/admin/due-collections/checker 
-1. in that page weh have 'studentSearch' it is a select box but we want a text field here keep all the functionality same. and when visiting the page this text field needs to be auto focused
-2. 'yearFilter' button designs broke year did not show properly. fixed the design
+here if search a student and it flagged then total overlay shows in this whole page. 'flagOverlay' . i also need same color glowing in '#studentData' > '.info-card' need a glowing border

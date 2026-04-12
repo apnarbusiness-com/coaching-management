@@ -178,6 +178,23 @@
             overflow: hidden;
         }
 
+        @keyframes heartbit {
+            0% {
+                box-shadow: 0 0 0 0 var(--flag-color);
+            }
+            70% {
+                box-shadow: 0 0 0 15px transparent;
+            }
+            100% {
+                box-shadow: 0 0 0 0 transparent;
+            }
+        }
+
+        .info-card.flagged {
+            border: 2px solid var(--flag-color);
+            animation: heartbit 2s infinite;
+        }
+
         .info-card .card-header {
             background: #f8fafc;
             padding: 16px 20px;
@@ -516,9 +533,9 @@
     </style>
 
     <div class="checker-container">
-        <div id="flagOverlay"
+        {{-- <div id="flagOverlay"
             style="display: none; position: fixed; top: 0; left: 0; width: 100%; height: 100%; pointer-events: none; z-index: 9999;">
-        </div>
+        </div> --}}
         <div class="search-section">
             <div class="d-flex justify-content-between align-items-center flex-wrap">
                 <h3><i class="fa fa-search-dollar mr-2"></i>Due Checker</h3>
@@ -905,8 +922,10 @@
                 if (flags.length > 0) {
                     const bgColor = flags[0].color;
                     $('#flagOverlay').css('background-color', bgColor + '4D').show();
+                    $('.info-card').first().css('--flag-color', bgColor).addClass('flagged');
                 } else {
                     $('#flagOverlay').hide();
+                    $('.info-card').first().removeClass('flagged');
                 }
 
                 const s = response.student;
@@ -947,7 +966,9 @@
                         <td>${parseFloat(due.paid_amount).toFixed(2)}</td>
                         <td>${parseFloat(due.discount_amount).toFixed(2)}</td>
                         <td>${parseFloat(due.due_remaining).toFixed(2)}</td>
-                        <td><span class="badge ${badgeClass}">${due.status}</span></td>
+                        <td><span class="badge ${badgeClass} text-capitalize"> 
+                            ${due.status}
+                        </span></td>
                         <td>${payButton}</td>
                     </tr>
                 `);
