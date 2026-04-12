@@ -51,6 +51,7 @@ class StudentBasicInfo extends Model implements HasMedia
         'email',
         'dob',
         'status',
+        'monthly_discount',
         'joining_date',
         'class_id',
         'section_id',

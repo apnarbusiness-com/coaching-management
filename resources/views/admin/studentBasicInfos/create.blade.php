@@ -213,7 +213,7 @@
                                 <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.dob_helper') }}</span>
                             </div>
 
-                            {{-- gender --}}
+{{-- gender --}}
                             <div class="col-span-1">
                                 <label
                                     class="{{ $errors->has('gender') ? 'is-invalid' : '' }}  block text-sm font-medium text-slate-700 dark:text-slate-300 required"
@@ -227,14 +227,24 @@
                                             {{ old('gender') == $key ? 'selected' : '' }}>{{ $label }}
                                         </option>
                                     @endforeach
-                                    {{-- <option>Male</option>
-                                    <option>Female</option>
-                                    <option>Other</option> --}}
                                 </select>
                                 @if ($errors->has('gender'))
                                     <div class="invalid-feedback">
                                         {{ $errors->first('gender') }}
                                     </div>
+                                @endif
+                                <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.gender_helper') }}</span>
+                            </div>
+
+                            {{-- monthly_discount --}}
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    for="monthly_discount">Monthly Discount</label>
+                                <input type="number" step="0.01" min="0"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                                    id="monthly_discount" name="monthly_discount"
+                                    value="{{ old('monthly_discount', 0) }}">
+                            </div>
                                 @endif
                                 <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.gender_helper') }}</span>
                             </div>

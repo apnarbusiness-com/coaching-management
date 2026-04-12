@@ -242,6 +242,16 @@
                                     @endforeach
                                 </select>
                             </div>
+
+                            {{-- monthly_discount --}}
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    for="monthly_discount">Monthly Discount</label>
+                                <input type="number" step="0.01" min="0"
+                                    class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                                    id="monthly_discount" name="monthly_discount"
+                                    value="{{ old('monthly_discount', $studentBasicInfo->monthly_discount ?? 0) }}">
+                            </div>
                         </div>
                     </div>
                 </div>

@@ -102,6 +102,11 @@ class StoreStudentBasicInfoRequest extends FormRequest
             'batches' => [
                 'array',
             ],
+            'monthly_discount' => [
+                'nullable',
+                'numeric',
+                'min:0',
+            ],
         ];
     }
 }

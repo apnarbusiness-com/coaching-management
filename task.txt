@@ -1,7 +1,1 @@
-1. need a student-Flag CRUD System. so admin can add variaous types of flags fields name , color (color selector) ex: not-regular: orange, maximum-due: red
-
-http://dev-coaching-management.test/admin/due-collections/checker in this page i want a comment section with 2 fields. 
-1. comments (ckeditor)
-2. flag 
-
-if a student flagged as not-regoular (orange) then when next time search for him total page background will be orange with 80% transparent
+http://dev-coaching-management.test/admin/batches/13/manage in that page when try to enroll student it shows error: SyntaxError: Unexpected token '<', "<!DOCTYPE "... is not valid JSON

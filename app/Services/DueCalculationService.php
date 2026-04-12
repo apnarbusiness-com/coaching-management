@@ -12,6 +12,68 @@ class DueCalculationService
 {
     protected $dueDateDay = 10;
 
+    public function generateDueForEnrollment(int $studentId, int $batchId, int $month, int $year): ?StudentMonthlyDue
+    {
+        $student = StudentBasicInfo::with('studentDetails')->find($studentId);
+        $batch = Batch::find($batchId);
+
+        if (!$student || !$batch) {
+            return null;
+        }
+
+        $existingDue = StudentMonthlyDue::where('student_id', $studentId)
+            ->where('batch_id', $batchId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        if ($existingDue) {
+            return $existingDue;
+        }
+
+        $pivot = DB::table('batch_student_basic_info')
+            ->where('batch_id', $batchId)
+            ->where('student_basic_info_id', $studentId)
+            ->whereMonth('enrolled_at', '<=', $month)
+            ->whereYear('enrolled_at', '<=', $year)
+            ->orderBy('enrolled_at', 'desc')
+            ->first();
+
+        $dueAmount = $this->calculateDueAmount($batch, $pivot, $student);
+        $dueDate = Carbon::createFromDate($year, $month, $this->dueDateDay);
+
+        return StudentMonthlyDue::create([
+            'student_id' => $student->id,
+            'batch_id' => $batch->id,
+            'academic_class_id' => $student->class_id,
+            'section_id' => $student->section_id,
+            'shift_id' => $student->shift_id,
+            'month' => $month,
+            'year' => $year,
+            'due_amount' => $dueAmount,
+            'paid_amount' => 0,
+            'discount_amount' => $pivot->per_student_discount ?? 0,
+            'due_remaining' => $dueAmount,
+            'status' => 'unpaid',
+            'due_date' => $dueDate->format('Y-m-d'),
+        ]);
+    }
+
+    public function deleteDuesOnUnenroll(int $studentId, int $batchId, int $month, int $year): int
+    {
+        return StudentMonthlyDue::where('student_id', $studentId)
+            ->where('batch_id', $batchId)
+            ->where(function ($query) use ($month, $year) {
+                $query->where(function ($q) use ($month, $year) {
+                    $q->where('year', '>', $year)
+                      ->orWhere(function ($q2) use ($month, $year) {
+                          $q2->where('year', $year)->where('month', '>=', $month);
+                      });
+                });
+            })
+            ->delete();
+    }
+
     public function generateMonthlyDues(int $month = null, int $year = null): array
     {
         $month = $month ?? Carbon::now()->month;

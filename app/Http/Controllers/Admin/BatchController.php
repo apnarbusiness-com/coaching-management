@@ -12,6 +12,7 @@ use App\Models\ClassRoom;
 use App\Models\Earning;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
+use App\Services\DueCalculationService;
 use Carbon\Carbon;
 use App\Models\Subject;
 use App\Models\Teacher;
@@ -24,6 +25,13 @@ use Yajra\DataTables\Facades\DataTables;
 
 class BatchController extends Controller
 {
+    protected $dueService;
+
+    public function __construct(DueCalculationService $dueService)
+    {
+        $this->dueService = $dueService;
+    }
+
     public function index(Request $request)
     {
         abort_if(Gate::denies('batch_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -416,6 +424,9 @@ class BatchController extends Controller
         $studentsToRemove = array_values(array_diff($existingStudentIds, $selectedStudentIds));
 
         if (!empty($studentsToRemove)) {
+            foreach ($studentsToRemove as $studentId) {
+                $this->dueService->deleteDuesOnUnenroll($studentId, $batch->id, $month, $year);
+            }
             DB::table('batch_student_basic_info')
                 ->where('batch_id', $batch->id)
                 ->whereMonth('enrolled_at', $month)
@@ -427,13 +438,18 @@ class BatchController extends Controller
         if (!empty($studentsToEnroll)) {
             $rows = [];
             foreach ($studentsToEnroll as $studentId) {
+                $student = StudentBasicInfo::find($studentId);
+                $discount = $student ? $student->monthly_discount : 0;
+                
                 $rows[] = [
                     'batch_id' => $batch->id,
                     'student_basic_info_id' => $studentId,
                     'enrolled_at' => $enrolledAt,
-                    'per_student_discount' => 0,
+                    'per_student_discount' => $discount,
                     'custom_monthly_fee' => null,
                 ];
+                
+                $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year);
             }
 
             DB::table('batch_student_basic_info')->insert($rows);
@@ -500,13 +516,18 @@ class BatchController extends Controller
             if (!empty($validStudentIds)) {
                 $rows = [];
                 foreach ($validStudentIds as $studentId) {
+                    $student = StudentBasicInfo::find($studentId);
+                    $discount = $student ? $student->monthly_discount : 0;
+                    
                     $rows[] = [
                         'batch_id' => $batch->id,
                         'student_basic_info_id' => $studentId,
                         'enrolled_at' => $enrolledAt,
-                        'per_student_discount' => 0,
+                        'per_student_discount' => $discount,
                         'custom_monthly_fee' => null,
                     ];
+                    
+                    $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year);
                 }
 
                 DB::table('batch_student_basic_info')->insert($rows);
@@ -524,6 +545,8 @@ class BatchController extends Controller
 
         $month = (int) $request->query('month', now()->month);
         $year = (int) $request->query('year', now()->year);
+
+        $this->dueService->deleteDuesOnUnenroll($student->id, $batch->id, $month, $year);
 
         DB::table('batch_student_basic_info')
             ->where('batch_id', $batch->id)
@@ -589,13 +612,18 @@ class BatchController extends Controller
             if (!empty($validStudentIds)) {
                 $rows = [];
                 foreach ($validStudentIds as $studentId) {
+                    $student = StudentBasicInfo::find($studentId);
+                    $discount = $student ? $student->monthly_discount : 0;
+                    
                     $rows[] = [
                         'batch_id' => $batch->id,
                         'student_basic_info_id' => $studentId,
                         'enrolled_at' => $enrolledAt,
-                        'per_student_discount' => 0,
+                        'per_student_discount' => $discount,
                         'custom_monthly_fee' => null,
                     ];
+                    
+                    $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year);
                 }
 
                 DB::table('batch_student_basic_info')->insert($rows);
@@ -611,6 +639,8 @@ class BatchController extends Controller
 
         $month = (int) $request->query('month', now()->month);
         $year = (int) $request->query('year', now()->year);
+
+        $this->dueService->deleteDuesOnUnenroll($student->id, $batch->id, $month, $year);
 
         DB::table('batch_student_basic_info')
             ->where('batch_id', $batch->id)
