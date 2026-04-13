@@ -213,7 +213,7 @@
                                 <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.dob_helper') }}</span>
                             </div>
 
-{{-- gender --}}
+                            {{-- gender --}}
                             <div class="col-span-1">
                                 <label
                                     class="{{ $errors->has('gender') ? 'is-invalid' : '' }}  block text-sm font-medium text-slate-700 dark:text-slate-300 required"
@@ -245,9 +245,7 @@
                                     id="monthly_discount" name="monthly_discount"
                                     value="{{ old('monthly_discount', 0) }}">
                             </div>
-                                @endif
-                                <span class="help-block">{{ trans('cruds.studentBasicInfo.fields.gender_helper') }}</span>
-                            </div>
+                            
 
                             {{-- student_blood_group --}}
                             <div class="col-span-1">
@@ -332,7 +330,8 @@
                                 {{-- value=" ST-{{ date('Y') }}-{{ date('m') }}-{{ \App\Models\StudentBasicInfo::count() + 1
                                 }}" /> --}}
                             </div>
-                            <small class="text-xs text-slate-500 dark:text-slate-400">{{ trans('cruds.studentBasicInfo.fields.id_no_helper') }}</small>
+                            <small
+                                class="text-xs text-slate-500 dark:text-slate-400">{{ trans('cruds.studentBasicInfo.fields.id_no_helper') }}</small>
                         </div>
 
                         {{-- class_id --}}
