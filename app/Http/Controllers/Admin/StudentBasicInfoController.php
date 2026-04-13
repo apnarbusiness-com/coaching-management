@@ -86,7 +86,7 @@ class StudentBasicInfoController extends Controller
                 return $row->gender ? StudentBasicInfo::GENDER_RADIO[$row->gender] : '';
             });
             $table->editColumn('status', function ($row) {
-                return $row->status ? StudentBasicInfo::STATUS_SELECT[$row->status] : '';
+                return $row->status ? 1 : 0;
             });
 
             $table->addColumn('user_name', function ($row) {
@@ -439,6 +439,16 @@ class StudentBasicInfoController extends Controller
         $studentBasicInfo->subjects()->sync($request->input('subjects', []));
 
         return response()->json(['message' => 'Subjects updated successfully']);
+    }
+
+    public function toggleStatus(Request $request, StudentBasicInfo $studentBasicInfo)
+    {
+        abort_if(Gate::denies('student_basic_info_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $studentBasicInfo->status = $request->boolean('status');
+        $studentBasicInfo->save();
+
+        return response()->json(['status' => (int) $studentBasicInfo->status]);
     }
 
     public function destroy(StudentBasicInfo $studentBasicInfo)

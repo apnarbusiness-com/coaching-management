@@ -1,4 +1,80 @@
 @extends('layouts.admin')
+@section('styles')
+<style>
+    .status-toggle {
+        display: inline-flex;
+        align-items: center;
+        gap: 10px;
+    }
+    .status-switch {
+        position: relative;
+        display: inline-block;
+        width: 60px;
+        height: 28px;
+    }
+    .status-switch input {
+        opacity: 0;
+        width: 0;
+        height: 0;
+    }
+    .status-slider {
+        position: absolute;
+        cursor: pointer;
+        inset: 0;
+        background: #cbd5e1;
+        border-radius: 999px;
+        transition: all 0.2s ease;
+        box-shadow: inset 0 0 0 1px #b6c2d1;
+    }
+    .status-slider::before {
+        content: '';
+        position: absolute;
+        height: 22px;
+        width: 22px;
+        left: 3px;
+        top: 3px;
+        background: #ffffff;
+        border-radius: 999px;
+        transition: all 0.2s ease;
+        box-shadow: 0 1px 2px rgba(0,0,0,0.15);
+    }
+    .status-slider::after {
+        content: 'OFF';
+        position: absolute;
+        right: 8px;
+        top: 50%;
+        transform: translateY(-50%);
+        font-size: 10px;
+        font-weight: 700;
+        color: #64748b;
+        letter-spacing: 0.4px;
+    }
+    .status-switch input:checked + .status-slider {
+        background: #16a34a;
+        box-shadow: inset 0 0 0 1px #15803d;
+    }
+    .status-switch input:checked + .status-slider::before {
+        transform: translateX(32px);
+    }
+    .status-switch input:checked + .status-slider::after {
+        content: 'ON';
+        left: 8px;
+        right: auto;
+        color: #dcfce7;
+    }
+    .status-label {
+        font-size: 12px;
+        font-weight: 700;
+        text-transform: uppercase;
+        letter-spacing: 0.6px;
+        color: #64748b;
+    }
+    .status-label.is-active {
+        color: #16a34a;
+    }
+</style>
+@endsection
+
 @section('content')
     @can('student_basic_info_create')
         <div style="margin-bottom: 10px;" class="row">
@@ -264,7 +340,26 @@
                     },
                     {
                         data: 'status',
-                        name: 'status'
+                        name: 'status',
+                        render: function(data, type, row) {
+                            if (type === 'display') {
+                                const urlTemplate = "{{ route('admin.student-basic-infos.toggleStatus', ':id') }}";
+                                const toggleUrl = urlTemplate.replace(':id', row.id);
+                                // Return the toggle HTML
+                                var isActive = !!data; // Assuming data is 1/0 or true/false
+                                return `
+                                    <span style="display:none">${isActive ? 1 : 0}</span>
+                                    <div class="status-toggle">
+                                        <label class="status-switch">
+                                            <input type="checkbox" class="student-status-toggle" data-url="${toggleUrl}" ${isActive ? 'checked' : ''}>
+                                            <span class="status-slider"></span>
+                                        </label>
+                                        <span class="status-label ${isActive ? 'is-active' : ''}">${isActive ? 'Active' : 'Inactive'}</span>
+                                    </div>
+                                `;
+                            }
+                            return data;
+                        }
                     },
                     {
                         data: 'joining_date',
@@ -315,6 +410,39 @@
             $('a[data-toggle="tab"]').on('shown.bs.tab click', function(e) {
                 $($.fn.dataTable.tables(true)).DataTable()
                     .columns.adjust();
+            });
+
+            $(document).on('change', '.student-status-toggle', function() {
+                const checkbox = $(this);
+                const url = checkbox.data('url');
+                const nextStatus = checkbox.is(':checked') ? 1 : 0;
+                const label = checkbox.closest('.status-toggle').find('.status-label');
+
+                checkbox.prop('disabled', true);
+
+                $.ajax({
+                        headers: {
+                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                        },
+                        method: 'POST',
+                        url: url,
+                        data: {
+                            status: nextStatus
+                        }
+                    })
+                    .done(function(res) {
+                        const isActive = !!res.status;
+                        checkbox.prop('checked', isActive);
+                        label.text(isActive ? 'Active' : 'Inactive');
+                        label.toggleClass('is-active', isActive);
+                    })
+                    .fail(function() {
+                        checkbox.prop('checked', !nextStatus);
+                        alert('Status update failed. Please try again.');
+                    })
+                    .always(function() {
+                        checkbox.prop('disabled', false);
+                    });
             });
 
         });

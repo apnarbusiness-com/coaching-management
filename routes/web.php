@@ -109,6 +109,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('student-basic-infos/raw-imports/reset', [StudentBasicInfoController::class, 'resetRawImports'])->name('student-basic-infos.rawImports.reset');
     Route::get('student-basic-infos/demo-csv', [StudentBasicInfoController::class, 'downloadDemoCsv'])->name('student-basic-infos.demoCsv');
     Route::get('student-basic-infos/print-id-card/{id}', [StudentBasicInfoController::class, 'printIdCard'])->name('student-basic-infos.printIdCard');
+    Route::post('student-basic-infos/{studentBasicInfo}/toggle-status', [StudentBasicInfoController::class, 'toggleStatus'])->name('student-basic-infos.toggleStatus');
     Route::post('student-basic-infos/{studentBasicInfo}/sync-subjects', 'StudentBasicInfoController@syncSubjects')->name('student-basic-infos.syncSubjects');
     Route::resource('student-basic-infos', 'StudentBasicInfoController');
 
