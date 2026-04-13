@@ -1,0 +1,41 @@
+Now I have a clear picture. Let me create a plan based on my analysis.
+---
+Understanding Summary
+Student Due System (Working):
+Action	What Happens
+Enroll student	BatchController::storeAssignedStudents() calls $this->dueService->generateDueForEnrollment() → Creates StudentMonthlyDue
+Unenroll student	BatchController::unEnrollStudent() calls $this->dueService->deleteDuesOnUnenroll() → Deletes StudentMonthlyDue
+Teacher Payment System (Current - Manual):
+Action	What Happens
+Assign teacher	Only adds to batch_teacher pivot table - NO automatic TeachersPayment
+Remove teacher	Only removes from pivot table - NO deletion of TeachersPayment
+Generate payment	Admin must manually go to /admin/teachers-payments/generate to create TeachersPayment
+Key Difference:
+- Student dues: Auto-generated on enrollment, auto-deleted on unenroll
+- Teacher payments: Manual generation required via separate endpoint
+---
+Implementation Plan
+1. Create TeacherPaymentService
+Similar to DueCalculationService, create a service to handle teacher payment automation:
+- generatePaymentOnAssign(teacherId, batchId, month, year, salaryAmount, salaryType)
+- deletePaymentOnUnassign(teacherId, batchId, month, year)
+2. Modify storeAssignedTeacher() in BatchController
+After saving to batch_teacher pivot, call the new service to create TeachersPayment
+3. Modify removeAssignedTeacher() in BatchController
+Before removing from pivot, call the service to delete related TeachersPayment
+4. Handle Complexity: Fixed vs Percentage
+- Fixed: Direct amount stored in batch_teacher.salary_amount
+- Percentage: Calculated from batch revenue (requires calculation at payment generation time)
+5. Edge Cases to Handle:
+- Teacher assigned to multiple batches (sum all batch salaries)
+- Updating teacher assignment (update existing payment record)
+- Month/year changes when reassigning
+---
+Questions Before Implementation:
+1. Payment Generation: Should TeachersPayment be created immediately when teacher is assigned (with fixed amount), or only when the month arrives (allowing percentage calculation based on actual revenue)?
+2. Percentage Handling: For percentage-based salaries, should we:
+   - Calculate at assignment time based on historical revenue?
+   - Wait until month-end when actual revenue is known?
+3. Existing Data: How to handle existing teacher assignments - generate payments for them or start fresh?
+4. Payment Status: Should auto-generated payments default to due status (same as manual generation)?
+Would you like me to clarify any of these before proceeding?

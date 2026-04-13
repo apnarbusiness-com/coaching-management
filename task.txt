@@ -1,4 +1,4 @@
-http://dev-coaching-management.test/admin/batches/2/manage?month=3&year=2026 in student enroll
-1st time click edit opens modal click submit then student list reload. then click edit. it shows error:
-Uncaught ReferenceError: student is not defined
-    at HTMLButtonElement.onclick (manage?month=3&year=2026:1:30)
+D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\KNOWLEDGE_MAP.md try to understand project specially student due system when student enroll in batch management page it automatically generate due by previous. 1st try to understand that. and make a plan for teacher.
+1. i want same as teacher when assign teacher it will create teacher payments auto when un-assign or remove teacher it will remove teacher payment too just like student due system.
+but you have to remember teacher payment connected with when we assign teacher we say that he/she will get fixed payment or percentage. so analyse that too. then make a plan 1st before implementation.
+ 
