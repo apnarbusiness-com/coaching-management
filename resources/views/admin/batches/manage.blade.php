@@ -424,7 +424,7 @@
                                         @endif
                                         @if (isset($student->pivot_custom_fee))
                                             <span
-                                                class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">₹{{ number_format($student->pivot_custom_fee, 0) }}</span>
+                                                class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"><span class="tk-sign">৳</span>{{ number_format($student->pivot_custom_fee, 0) }}</span>
                                         @endif
                                         <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
                                         <button type="button"
@@ -641,7 +641,7 @@
                             ${student?.pivot_custom_fee != null ? `
                                 <span
                                     class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
-                                    ₹${Number(student.pivot_custom_fee).toLocaleString()}
+                                    <span class="tk-sign">৳</span> ${Number(student.pivot_custom_fee).toLocaleString()}
                                 </span>
                             ` : ''}
 
@@ -671,7 +671,7 @@
             document.getElementById('modalStudentName').textContent = studentName;
             document.getElementById('modalDiscount').value = discount;
             document.getElementById('modalCustomFee').value = customFee || '';
-            document.getElementById('modalBatchFee').textContent = 'BDT ' + parseFloat(batchFee).toFixed(2);
+            document.getElementById('modalBatchFee').textContent = '<span class="tk-sign">৳</span> ' + parseFloat(batchFee).toFixed(2);
             document.getElementById('editEnrollmentModal').classList.remove('hidden');
         }
 

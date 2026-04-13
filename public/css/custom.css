@@ -18,11 +18,11 @@ table.dataTable tbody th.select-checkbox::after {
 .dataTables_filter,
 .dt-buttons {
     margin-bottom: 0.333em;
-    margin-top: .2rem;
+    margin-top: 0.2rem;
 }
 
 .dataTables_filter {
-    margin-right: .2rem;
+    margin-right: 0.2rem;
 }
 
 .dt-buttons .btn {
@@ -79,7 +79,7 @@ table.dataTable thead .sorting_desc {
 
 .btn-default.focus,
 .btn-default:focus {
-    box-shadow: 0 0 0 .2rem rgba(209, 213, 215, .5);
+    box-shadow: 0 0 0 0.2rem rgba(209, 213, 215, 0.5);
 }
 
 .btn-default:hover {
@@ -88,7 +88,7 @@ table.dataTable thead .sorting_desc {
     border-color: #d1dbe1;
 }
 
-.btn-group-xs>.btn,
+.btn-group-xs > .btn,
 .btn-xs {
     padding: 1px 5px;
     font-size: 12px;
@@ -123,7 +123,7 @@ table.dataTable thead .sorting_desc {
     color: red;
 }
 
-.form-check.is-invalid~.invalid-feedback {
+.form-check.is-invalid ~ .invalid-feedback {
     display: block;
 }
 
@@ -134,17 +134,6 @@ table.dataTable thead .sorting_desc {
 .custom-select.form-control-sm {
     padding: 0.25rem 1.5rem;
 }
-
-
-
-
-
-
-
-
-
-
-
 
 /*  : Start*/
 
@@ -196,3 +185,10 @@ html.dark label {
 }
 
 /*  : End*/
+
+.tk-sign {
+    font-family: "Noto Sans Bengali", sans-serif;
+    /* font-size: 18px; */
+    font-weight: bolder;
+    margin: 3px;
+}
