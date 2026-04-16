@@ -1,4 +1,1 @@
-D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\KNOWLEDGE_MAP.md try to understand project specially student due system when student enroll in batch management page it automatically generate due by previous. 1st try to understand that. and make a plan for teacher.
-1. i want same as teacher when assign teacher it will create teacher payments auto when un-assign or remove teacher it will remove teacher payment too just like student due system.
-but you have to remember teacher payment connected with when we assign teacher we say that he/she will get fixed payment or percentage. so analyse that too. then make a plan 1st before implementation.
- 
+http://dev-coaching-management.test/admin/batches/10/manage in this page 'Enrolled Students for' section you find a list of enrolled students i want a search box on that. don';t brak other things. just on top of that list add a search field with ajax and make it sticky. can search with name, id_no, roll, class

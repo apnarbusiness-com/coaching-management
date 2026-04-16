@@ -394,6 +394,14 @@
                         </button>
                     </div>
                     <div class="space-y-3">
+                        <div class="sticky top-0 bg-white dark:bg-slate-800/50 z-10 pb-2 border-b border-slate-100 dark:border-slate-700 -mx-4 px-4">
+                            <div class="relative">
+                                <span class="material-symbols-outlined absolute left-3 top-1/2 -translate-y-1/2 text-slate-400 text-lg">search</span>
+                                <input type="text" id="searchEnrolledStudents" placeholder="Search by name, ID, roll, class..."
+                                    class="w-full pl-10 pr-4 py-2 text-sm border border-slate-300 dark:border-slate-600 dark:bg-slate-700 dark:text-white rounded-lg focus:outline-none focus:ring-2 focus:ring-primary focus:border-primary"
+                                    value="{{ request('student_search', '') }}">
+                            </div>
+                        </div>
                         <div id="capacityContainer">
                             @if ($capacityPercent !== null)
                                 <div class="flex items-center gap-3">
@@ -503,6 +511,27 @@
         const currentMonth = {{ $month }};
         const currentYear = {{ $year }};
 
+        document.getElementById('searchEnrolledStudents').addEventListener('input', function() {
+            const searchTerm = this.value.toLowerCase().trim();
+            const studentRows = document.querySelectorAll('#studentListContainer .student-row');
+            let visibleCount = 0;
+
+            studentRows.forEach(row => {
+                const name = row.querySelector('.font-semibold')?.textContent.toLowerCase() || '';
+                const idNo = row.querySelector('.text-slate-400')?.textContent.toLowerCase() || '';
+                const className = row.querySelector('.text-slate-500')?.textContent.toLowerCase() || '';
+
+                const matches = name.includes(searchTerm) || idNo.includes(searchTerm) || className.includes(searchTerm);
+                row.style.display = matches ? '' : 'none';
+                if (matches) visibleCount++;
+            });
+
+            const emptyMsg = document.getElementById('emptyMessage');
+            if (emptyMsg) {
+                emptyMsg.style.display = visibleCount === 0 && searchTerm ? '' : 'none';
+            }
+        });
+
         function formatStudentIds() {
             const input = document.getElementById('studentIdsInput');
             let value = input.value.trim();
@@ -577,16 +606,7 @@
         }
 
         function refreshStudentList() {
-            fetch(
-                    `{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`
-                )
-                .then(res => res.json())
-                .then(data => {
-                    if (data.success) {
-                        updateStudentList(data);
-                    }
-                })
-                .catch(err => console.error(err));
+            fetchEnrolledStudents();
         }
 
         function updateStudentList(data) {
