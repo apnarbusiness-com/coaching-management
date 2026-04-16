@@ -306,8 +306,9 @@
                     <div class="bg-white dark:bg-slate-800 rounded-xl shadow-2xl w-full max-w-md mx-4">
                         <div
                             class="px-6 py-4 border-b border-slate-200 dark:border-slate-700 flex justify-between items-center">
-                            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Edit Enrollment (Discount & Custom
-                                Fee)</h3>
+                            <h3 class="text-lg font-bold text-slate-900 dark:text-white">
+                                Edit Enrollment (Discount & Custom Fee)
+                            </h3>
                             <button type="button" onclick="closeEditEnrollmentModal()"
                                 class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
                                 <span class="material-symbols-outlined">close</span>
@@ -339,8 +340,8 @@
                                     min="0"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                     placeholder="Leave empty to use batch fee">
-                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">Batch fee: <span
-                                        id="modalBatchFee"></span></p>
+                                <p class="text-xs text-slate-500 dark:text-slate-400 mt-1">
+                                    Batch fee: <span class="tk-sign">৳</span><span id="modalBatchFee"></span></p>
                             </div>
                             <div class="flex justify-end gap-3 pt-2">
                                 <button type="button" onclick="closeEditEnrollmentModal()"
@@ -424,7 +425,8 @@
                                         @endif
                                         @if (isset($student->pivot_custom_fee))
                                             <span
-                                                class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"><span class="tk-sign">৳</span>{{ number_format($student->pivot_custom_fee, 0) }}</span>
+                                                class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"><span
+                                                    class="tk-sign">৳</span>{{ number_format($student->pivot_custom_fee, 0) }}</span>
                                         @endif
                                         <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
                                         <button type="button"
@@ -632,18 +634,18 @@
                         </div>
                         <div class="flex items-center gap-1">
                             ${student?.pivot_discount > 0 ? `
-                                <span
-                                    class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
-                                    -${Number(student.pivot_discount).toLocaleString()}
-                                </span>
-                            ` : ''}
+                                    <span
+                                        class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">
+                                        -${Number(student.pivot_discount).toLocaleString()}
+                                    </span>
+                                ` : ''}
 
                             ${student?.pivot_custom_fee != null ? `
-                                <span
-                                    class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
-                                    <span class="tk-sign">৳</span> ${Number(student.pivot_custom_fee).toLocaleString()}
-                                </span>
-                            ` : ''}
+                                    <span
+                                        class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
+                                        <span class="tk-sign">৳</span> ${Number(student.pivot_custom_fee).toLocaleString()}
+                                    </span>
+                                ` : ''}
 
                             <span class="text-xs text-slate-400">${student.id_no}</span>
                             <button type="button" class="text-slate-400 hover:text-primary transition-colors p-1 edit-enrollment-btn"
@@ -671,7 +673,8 @@
             document.getElementById('modalStudentName').textContent = studentName;
             document.getElementById('modalDiscount').value = discount;
             document.getElementById('modalCustomFee').value = customFee || '';
-            document.getElementById('modalBatchFee').textContent = '<span class="tk-sign">৳</span> ' + parseFloat(batchFee).toFixed(2);
+            document.getElementById('modalBatchFee').textContent = ' ' + parseFloat(batchFee)
+                .toFixed(2);
             document.getElementById('editEnrollmentModal').classList.remove('hidden');
         }
 
