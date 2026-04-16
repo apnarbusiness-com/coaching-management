@@ -17,14 +17,14 @@ Real-time teacher salary calculation with two modes: Fixed and Variable (percent
 
 ### 1. Live Salary Calculation
 - Teacher salary is calculated **automatically**, not manually generated
-- No "Generate Monthly Salaries" button needed
+- "Generate Monthly Salaries" button needed to update accordingly. if any time admin thinks that payemnt needs to be re-calulate then click that button
 
 ### 2. Fixed Salary Teachers
 - At enrollment time: teacher's payment record is automatically added
 - Fixed teachers **cannot see** batch income
 
 ### 3. Variable/Percentage Salary Teachers
-- At enrollment time: salary is calculated
+- At enrollment time: salary is calculated (percentage × batch revenue ( batch revenue = total due - total discount ) for that month)
 - When any student's due is calculated → **re-calculate** all percentage-based teacher payments
 - Percentage teachers **can see** batch's monthly income + any student discounts
 
@@ -41,6 +41,10 @@ Real-time teacher salary calculation with two modes: Fixed and Variable (percent
 ---
 
 ## Implementation Plan
+
+### Phase 0: http://dev-coaching-management.test/admin/batches in that rote/url or page:
+' Enroll Last Month Students (All Batches)' like that i want to add one more button 'Assign Last Month Teacher (All Batches)' when click that button then it will assign last month teacher to this month batch + calculate teachr's salary for this month
+
 
 ### Phase 1: Enrollment-Time Salary Calculation
 
