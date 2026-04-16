@@ -1,1 +1,6 @@
-http://dev-coaching-management.test/admin/batches/10/manage in this page 'Enrolled Students for' section you find a list of enrolled students i want a search box on that. don';t brak other things. just on top of that list add a search field with ajax and make it sticky. can search with name, id_no, roll, class
+3. teacher er salary live calculate hobe. 
+	1.1 fixed hoile enroll er time e payment add hoye jabe	
+	1.2 percentage hoile enroll er time e calculate hobe + jekono student er due calculation er time e Teachers payment re-calculate hobe
+4. teacher er salalry fixed thakle tara batch er income koto dekhte parbe na.
+5. teacher er jara variable/percentage e thakbe sei teacher batch er oi oi month er income + kono student er discount thakle seitao dekhte parbe
+6. Student attendence dite gele teacher 1 ta student er attandence er row te kon kon din asche seita ekhanei dekhte aprbe.

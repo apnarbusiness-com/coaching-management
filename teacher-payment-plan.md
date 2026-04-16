@@ -1,188 +1,181 @@
-# Teacher Payment System Plan
+# Teacher Payment System Plan (Updated)
 
 ## Overview
-Teacher salary calculation with two modes: Fixed and Variable, where variable can be either fixed amount per batch or percentage of batch revenue.
+Real-time teacher salary calculation with two modes: Fixed and Variable (percentage), integrated with student enrollment and due calculation.
 
 ---
 
 ## Current State
 - `Teacher` model has `salary_type` (fixed/variable) and `salary_amount`
 - `batch_teacher` pivot table has `salary_amount` and `role`
-- `TeachersPayment` model records monthly payments manually
-- No automatic calculation exists
+- `TeachersPayment` model records monthly payments
+- Basic `TeacherSalaryCalculationService` exists
 
 ---
 
-## Requirements
+## New Requirements (from task.txt)
 
-### 1. Teacher Salary Type
-- **Fixed**: Fixed amount paid every month
-- **Variable**: Amount based on batch assignments
+### 1. Live Salary Calculation
+- Teacher salary is calculated **automatically**, not manually generated
+- No "Generate Monthly Salaries" button needed
 
-### 2. Variable Salary Calculation
-When teacher is assigned to a batch, `salary_amount` can be:
-- **Fixed type**: Fixed number (e.g., 5000 BDT per month)
-- **Percentage type**: Percentage of batch's total monthly revenue
+### 2. Fixed Salary Teachers
+- At enrollment time: teacher's payment record is automatically added
+- Fixed teachers **cannot see** batch income
 
-### 3. Monthly Calculation Logic
-- Calculate per batch: teacher gets salary based on their batch assignments
-- Example: March 2026
-  - Batch "ICT" has 10 students: 5 × 1000 BDT + 5 × 500 BDT = 7500 BDT total
-  - Teacher assigned to ICT with 30% → gets 30% of 7500 = 2250 BDT
-- Teacher can get different amounts each month based on:
-  - Number of enrolled students
-  - Student fee variations (custom monthly fee per student)
+### 3. Variable/Percentage Salary Teachers
+- At enrollment time: salary is calculated
+- When any student's due is calculated → **re-calculate** all percentage-based teacher payments
+- Percentage teachers **can see** batch's monthly income + any student discounts
+
+### 4. Batch Income Visibility
+| Teacher Type | Can See Batch Income |
+|--------------|---------------------|
+| Fixed salary | No |
+| Variable/Percentage | Yes |
+
+### 5. Attendance Display
+- When taking student attendance, show student's attendance history in the same row
+- Display: which days the student was present in that batch
 
 ---
 
-## Implementation Checklist
+## Implementation Plan
 
-### Database & Model Changes
-- [x] Add `salary_amount_type` column to `teachers` table (fixed/percentage)
-- [x] Add `salary_amount_type` column to `batch_teacher` pivot table (fixed/percentage)
-- [x] Update `Teacher` model with new fields and accessors
-- [x] Add `amount` column to `teachers_payments` table
+### Phase 1: Enrollment-Time Salary Calculation
 
-### Teacher CRUD Updates
-- [x] Update teacher create/edit forms to include salary_type and salary_amount_type
-- [x] Update `TeacherController` store/update logic
+#### When Student Enrolls in Batch
+1. Check if batch has assigned teachers
+2. For each teacher:
+   - **Fixed type (from batch_teacher)**: Add payment record for that batch
+   - **Percentage type**: Calculate percentage × batch revenue for that month
 
-### Batch Teacher Assignment Updates
-- [x] Update batch assign teachers form to include salary_amount_type selector
-- [x] Update `BatchController::storeAssignedTeacher()` to save amount type
+#### Files to Update
+- `BatchController.php` → `storeStudentEnrollment()` or `assignStudent()`
+- Add call to `TeacherSalaryCalculationService::addEnrollmentPayment()`
 
-### Salary Calculation Service
-- [x] Create `TeacherSalaryCalculationService` 
-- [x] Method: `calculateMonthlySalary(teacher_id, month, year)`
-- [x] Method: `calculateBatchTeacherSalary(batch_id, month, year)`
-- [x] Handle fixed salary_type on Teacher model
-- [x] Handle variable with fixed amount from batch
-- [x] Handle variable with percentage from batch revenue
+#### Service Method
+```php
+public function addEnrollmentPayment($batchId, $studentId, $month, $year)
+{
+    // For each teacher in batch:
+    // If fixed: create TeachersPayment record
+    // If percentage: calculate and record
+}
+```
 
-### TeachersPayment Integration
-- [x] Update TeachersPayment creation to auto-calculate salary
-- [x] Add "Generate Monthly Salaries" route/action
-- [x] Bulk create salary records for all teachers
+---
 
-### Dashboard & Reports
-- [ ] Add teacher salary summary on admin dashboard
-- [ ] Show monthly teacher expense breakdown
+### Phase 2: Due Calculation → Re-calculate Percentage Salaries
 
-### Testing
-- [ ] Write tests for fixed salary calculation
-- [ ] Write tests for variable fixed amount calculation
-- [ ] Write tests for variable percentage calculation
-- [ ] Write tests for mixed batch assignments
+#### When Student Monthly Due is Calculated
+1. Trigger re-calculation for all percentage-based teachers in that batch
+2. Update or create their payment records for the affected month/year
+
+#### Files to Update
+- `DueCalculationService.php` → `generateDueForEnrollment()` and related methods
+- Call `TeacherSalaryCalculationService::recalculatePercentageSalaries()`
+
+#### Service Method
+```php
+public function recalculatePercentageSalaries($batchId, $month, $year)
+{
+    // Find all percentage-based teachers for this batch
+    // Calculate batch revenue for month/year
+    // Update their payment records
+}
+```
+
+---
+
+### Phase 3: Batch Income Visibility
+
+#### Update Batch Manage View
+- Check current user's teacher profile
+- If teacher is fixed-type → hide income section
+- If teacher is variable/percentage → show income section
+
+#### Files to Update
+- `resources/views/admin/batches/manage.blade.php`
+- Add permission check for income display
+
+---
+
+### Phase 4: Attendance History Display
+
+#### When Taking Batch Attendance
+- Show student's attendance record in the same attendance row
+- Display dates/times student attended
+
+#### Files to Update
+- `resources/views/admin/batch-attendances/take.blade.php`
+- Update `BatchAttendanceController` to load attendance history
 
 ---
 
 ## Calculation Logic
 
-### Fixed Salary (Teacher.salary_type = 'fixed')
+### Fixed Salary (at enrollment)
 ```
-Monthly Salary = Teacher.salary_amount
-```
-
-### Variable Salary (Teacher.salary_type = 'variable')
-
-#### Option A: Fixed Amount (batch_teacher.salary_amount_type = 'fixed')
-```
-Monthly Salary = Sum of (batch_teacher.salary_amount) for all assigned batches
+For each assigned batch:
+  Payment Amount = batch_teacher.salary_amount
 ```
 
-#### Option B: Percentage (batch_teacher.salary_amount_type = 'percentage')
+### Percentage Salary (at enrollment + recalculate)
 ```
-Batch Revenue = Sum of all student monthly dues for that batch (month/year)
-Teacher Share = (batch_teacher.salary_amount / 100) × Batch Revenue
-Monthly Salary = Sum of Teacher Share for all assigned batches
-```
-
-### Combined Calculation (if teacher has both batch types)
-```
-Monthly Salary = Fixed from Teacher + Sum of (Fixed Batch) + Sum of (% Batch)
+Batch Revenue = Sum of (student monthly fees for batch, month, year)
+Payment Amount = (batch_teacher.salary_amount / 100) × Batch Revenue
 ```
 
 ---
 
-## Data Structure Changes
-
-### teachers table
-```php
-// Current
-$fillable = ['salary_type', 'salary_amount', ...];
-
-// New
-$fillable = ['salary_type', 'salary_amount', 'salary_amount_type', ...];
-```
-
-### batch_teacher pivot table
-```php
-// Current
-$table->decimal('salary_amount', 15, 2)->default(0);
-
-// New
-$table->decimal('salary_amount', 15, 2)->default(0);
-$table->string('salary_amount_type')->default('fixed'); // 'fixed' or 'percentage'
-```
-
-### teachers_payments table
-```php
-// Added
-$table->decimal('amount', 15, 2)->nullable();
-```
-
----
-
-## File Changes
-
-### Models
-- `app/Models/Teacher.php` - Added SALARY_AMOUNT_TYPE_SELECT, updated $fillable, batches relationship
-- `app/Models/TeachersPayment.php` - Added amount field, getCalculatedAmountAttribute
+## File Changes Summary
 
 ### Controllers
-- `app/Http/Controllers/Admin/BatchController.php` - Updated storeAssignedTeacher to save salary_amount_type
-- `app/Http/Controllers/Admin/TeachersPaymentController.php` - Added generate, calculate methods
+- `BatchController.php` - Add enrollment salary calculation
+- `DueCalculationService.php` - Add percentage re-calculation trigger
 
 ### Services
-- `app/Services/TeacherSalaryCalculationService.php` (new)
+- `TeacherSalaryCalculationService.php`
+  - Add: `addEnrollmentPayment($batchId, $studentId, $month, $year)`
+  - Add: `recalculatePercentageSalaries($batchId, $month, $year)`
 
 ### Views
-- `resources/views/admin/teachers/create.blade.php` - Added salary_amount_type dropdown
-- `resources/views/admin/teachers/edit.blade.php` - Added salary_amount_type dropdown
-- `resources/views/admin/batches/assign_teachers.blade.php` - Added salary_amount_type selector
+- `resources/views/admin/batches/manage.blade.php` - Show/hide income based on teacher type
+- `resources/views/admin/batch-attendances/take.blade.php` - Show attendance history
 
-### Routes
-- `POST /admin/teachers-payments/generate` - Generate monthly salaries
-- `POST /admin/teachers-payments/calculate` - Calculate teacher salary
-
-### Migrations
-- `2026_03_24_000001_add_salary_amount_type_to_teachers_and_batch_teacher.php` (new)
-- `2026_03_24_000002_add_amount_to_teachers_payments_table.php` (new)
+### Models
+- `Teacher.php` - Check salary type helpers
+- `TeachersPayment.php` - Store calculated payments
 
 ---
 
-## Usage
+## Checklist
 
-### 1. Set Teacher Salary Type
-When creating/editing a teacher:
-- Select `salary_type`: 'fixed' or 'variable'
-- If 'fixed': Set `salary_amount` and `salary_amount_type` (used for base salary)
+### Database & Models
+- [x] salary_type on teachers table
+- [x] salary_amount_type on batch_teacher pivot
+- [x] TeachersPayment model with amount
 
-### 2. Assign Teacher to Batch
-In batch management → Assign Teachers:
-- Set `salary_amount`: Fixed amount or percentage
-- Set `salary_amount_type`: 'fixed' (BDT) or 'percentage' (%)
+### Phase 1: Enrollment Payment
+- [ ] Add `addEnrollmentPayment()` to service
+- [ ] Call from `BatchController` on student enrollment
+- [ ] Test: enrolling student adds teacher payment
 
-### 3. Generate Monthly Salaries
-Go to Teachers Payments → Generate Salaries:
-- Select month and year
-- Click Generate
-- System calculates all teachers' salaries based on their settings
+### Phase 2: Due Calculation Trigger
+- [ ] Add `recalculatePercentageSalaries()` to service
+- [ ] Call from `DueCalculationService` when due calculated
+- [ ] Test: changing student due updates teacher payment
 
-### 4. View Salary Breakdown
-In Teachers Payment show page, view:
-- Fixed salary component
-- Per-batch breakdown with revenue and calculated amount
+### Phase 3: Income Visibility
+- [ ] Add teacher type check in manage view
+- [ ] Conditionally show/hide batch income
+- [ ] Test: fixed teacher cannot see income
+
+### Phase 4: Attendance History
+- [ ] Load attendance history for students
+- [ ] Display in attendance row
+- [ ] Test: attendance row shows past attendance
 
 ---
 
@@ -190,4 +183,4 @@ In Teachers Payment show page, view:
 - Student monthly fees come from `student_monthly_dues` table
 - Use `batch_id` + `month` + `year` to get batch revenue
 - Custom per-student fees stored in `batch_student_basic_info.custom_monthly_fee`
-- Need to sum both regular dues and custom fees for accurate calculation
+- Discounts affect batch revenue for percentage calculations

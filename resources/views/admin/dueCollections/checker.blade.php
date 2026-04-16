@@ -596,7 +596,7 @@
 
             <div class="summary-cards">
                 <div class="summary-card due">
-                    <div class="label">Total Due</div>
+                    <div class="label">Total Amount</div>
                     <div class="value" id="totalDue">0.00</div>
                 </div>
                 <div class="summary-card paid">
