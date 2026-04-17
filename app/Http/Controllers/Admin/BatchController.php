@@ -1113,14 +1113,15 @@ class BatchController extends Controller
 
             }
 
-            $this->calculateAndCreateTeacherPayment(
+            $paymentCreated = $this->calculateAndCreateTeacherPayment(
                 $prevTeacher->batch_id,
                 $prevTeacher->teacher_id,
                 $month,
                 $year
             );
-            //  dd($existingAssignment);
-            $teacherPaymentsCreated++;
+            if ($paymentCreated) {
+                $teacherPaymentsCreated++;
+            }
         }
 
         $message = "Copied {$totalCopied} teacher assignments and created {$teacherPaymentsCreated} salary records for this month.";
@@ -1134,16 +1135,16 @@ class BatchController extends Controller
             ->with('status', $message);
     }
 
-    private function calculateAndCreateTeacherPayment(int $batchId, int $teacherId, int $month, int $year): void
+    private function calculateAndCreateTeacherPayment(int $batchId, int $teacherId, int $month, int $year): bool
     {
         $batch = Batch::find($batchId);
         if (! $batch) {
-            return;
+            return false;
         }
 
         $teacher = Teacher::find($teacherId);
         if (! $teacher) {
-            return;
+            return false;
         }
 
         $batchTeacherAssignment = DB::table('batch_teacher')
@@ -1154,7 +1155,7 @@ class BatchController extends Controller
             ->first();
 
         if (! $batchTeacherAssignment) {
-            return;
+            return false;
         }
 
         $salary = $this->salaryService->calculateBatchTeacherSalary(
@@ -1183,10 +1184,11 @@ class BatchController extends Controller
                 ]),
             ]);
 
-            return;
+            return true;
         }
 
-        if ($salary > 0) {
+        // if ($salary > 0) {
+        if (True) {
             TeachersPayment::create([
                 'teacher_id' => $teacherId,
                 'batch_id' => $batchId,
@@ -1202,7 +1204,11 @@ class BatchController extends Controller
                 ]),
                 'payment_status' => 'due',
             ]);
+
+            return true;
         }
+
+        return false;
     }
 
     public function assignTeachers(Batch $batch, Request $request)
