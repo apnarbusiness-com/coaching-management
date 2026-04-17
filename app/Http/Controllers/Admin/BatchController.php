@@ -148,7 +148,7 @@ class BatchController extends Controller
                         }
                         $time = \Carbon\Carbon::parse($timeValue)->format('h:i A');
                         $roomLabel = $roomId ? ($roomNames[$roomId] ?? null) : null;
-                        $suffix = $roomLabel ? ' (' . $roomLabel . ')' : '';
+                        $suffix = $roomLabel ? ' ('.$roomLabel.')' : '';
                         $labels[] = sprintf(
                             '<span class="label label-info label-many">%s: %s%s</span>',
                             Batch::CLASS_DAY_SELECT[$day] ?? $day,
@@ -224,10 +224,10 @@ class BatchController extends Controller
         $students = StudentBasicInfo::orderBy('first_name')
             ->get()
             ->mapWithKeys(function ($student) {
-                $name = trim($student->first_name . ' ' . $student->last_name);
-                $idNo = $student->id_no ? ' - ' . $student->id_no : '';
+                $name = trim($student->first_name.' '.$student->last_name);
+                $idNo = $student->id_no ? ' - '.$student->id_no : '';
 
-                return [$student->id => $name . $idNo];
+                return [$student->id => $name.$idNo];
             });
 
         return view('admin.batches.create', compact('subjects', 'classes', 'classRooms', 'students'));
@@ -258,10 +258,10 @@ class BatchController extends Controller
         $students = StudentBasicInfo::orderBy('first_name')
             ->get()
             ->mapWithKeys(function ($student) {
-                $name = trim($student->first_name . ' ' . $student->last_name);
-                $idNo = $student->id_no ? ' - ' . $student->id_no : '';
+                $name = trim($student->first_name.' '.$student->last_name);
+                $idNo = $student->id_no ? ' - '.$student->id_no : '';
 
-                return [$student->id => $name . $idNo];
+                return [$student->id => $name.$idNo];
             });
 
         $batch->load('subject', 'subjects', 'class', 'students');
@@ -507,7 +507,7 @@ class BatchController extends Controller
 
         $idNos = array_filter(
             array_map('intval', preg_split('/[\s,]+/', $data['student_ids'])),
-            fn($id) => $id > 0
+            fn ($id) => $id > 0
         );
 
         if (empty($idNos)) {
@@ -568,7 +568,7 @@ class BatchController extends Controller
 
         return redirect()
             ->route('admin.batches.manage', [$batch->id, 'month' => $month, 'year' => $year])
-            ->with('status', count($studentsToEnroll) . ' student(s) enrolled successfully.');
+            ->with('status', count($studentsToEnroll).' student(s) enrolled successfully.');
     }
 
     public function unEnrollStudent(Request $request, Batch $batch, StudentBasicInfo $student)
@@ -608,7 +608,7 @@ class BatchController extends Controller
 
         $idNos = array_filter(
             array_map('intval', preg_split('/[\s,]+/', $data['student_ids'])),
-            fn($id) => $id > 0
+            fn ($id) => $id > 0
         );
 
         if (empty($idNos)) {
@@ -677,7 +677,7 @@ class BatchController extends Controller
             }
         }
 
-        return response()->json(['success' => true, 'message' => count($studentsToEnroll) . ' student(s) enrolled successfully.']);
+        return response()->json(['success' => true, 'message' => count($studentsToEnroll).' student(s) enrolled successfully.']);
     }
 
     public function unEnrollStudentAjax(Request $request, Batch $batch, StudentBasicInfo $student)
@@ -788,12 +788,12 @@ class BatchController extends Controller
 
         $studentCount = $enrolledStudents->count();
         $capacity = $batch->capacity;
-        $capacityText = $capacity ? $studentCount . '/' . $capacity : '∞';
+        $capacityText = $capacity ? $studentCount.'/'.$capacity : '∞';
         $capacityPercent = $capacity ? min(100, round(($studentCount / max($capacity, 1)) * 100)) : null;
 
         return response()->json([
             'success' => true,
-            'students' => $enrolledStudents->map(fn($s) => [
+            'students' => $enrolledStudents->map(fn ($s) => [
                 'id' => $s->id,
                 'first_name' => $s->first_name,
                 'last_name' => $s->last_name,
@@ -946,6 +946,110 @@ class BatchController extends Controller
             ->with('status', "Copied previous month enrollments and generated dues for all batches. Total students enrolled: {$totalInserted}.");
     }
 
+    public function previewCopyPreviousMonthTeachers(Request $request)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $month = (int) $data['month'];
+        $year = (int) $data['year'];
+
+        $currentMonthStart = Carbon::createFromDate($year, $month, 1);
+        $previousMonthStart = $currentMonthStart->copy()->subMonth();
+
+        $prevMonth = (int) $previousMonthStart->month;
+        $prevYear = (int) $previousMonthStart->year;
+
+        $previousAssignments = DB::table('batch_teacher')
+            ->where('month', $prevMonth)
+            ->where('year', $prevYear)
+            ->get();
+
+            
+
+        if ($previousAssignments->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Previous month has no assigned teachers to copy.',
+                'batches' => [],
+            ]);
+        }
+
+        $batchIds = $previousAssignments->pluck('batch_id')->unique();
+        $batches = Batch::whereIn('id', $batchIds)->with(['subject', 'class'])->get();
+
+        $result = [];
+
+        foreach ($batches as $batch) {
+            $prevTeachers = $previousAssignments->where('batch_id', $batch->id);
+            $prevTeacherIds = $prevTeachers->pluck('teacher_id')->toArray();
+
+            $currentStudentsCount = DB::table('batch_student_basic_info')
+                ->where('batch_id', $batch->id)
+                ->whereMonth('enrolled_at', $month)
+                ->whereYear('enrolled_at', $year)
+                ->count();
+
+            $prevStudentsCount = DB::table('batch_student_basic_info')
+                ->where('batch_id', $batch->id)
+                ->whereMonth('enrolled_at', $prevMonth)
+                ->whereYear('enrolled_at', $prevYear)
+                ->count();
+
+            $currentTeachersCount = DB::table('batch_teacher')
+                ->where('batch_id', $batch->id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->count();
+
+            $currentTeacherIds = DB::table('batch_teacher')
+                ->where('batch_id', $batch->id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->pluck('teacher_id')
+                ->toArray();
+
+            $addedTeacherIds = array_diff($currentTeacherIds, $prevTeacherIds);
+            $removedTeacherIds = array_diff($prevTeacherIds, $currentTeacherIds);
+
+            $teachers = Teacher::whereIn('id', $prevTeacherIds)->get(['id', 'name', 'phone']);
+            $newlyAddedTeachers = Teacher::whereIn('id', $addedTeacherIds)->get(['id', 'name', 'phone']);
+            $removedTeachers = Teacher::whereIn('id', $removedTeacherIds)->get(['id', 'name', 'phone']);
+
+           
+
+            $result[] = [
+                'batch_id' => $batch->id,
+                'batch_name' => $batch->batch_name,
+                'subject_name' => $batch->subject?->name,
+                'class_name' => $batch->class?->name,
+                'current_students_count' => $currentStudentsCount,
+                'prev_students_count' => $prevStudentsCount,
+                'students_enrolled_this_month' => $currentStudentsCount > 0,
+                'prev_teachers_count' => $prevTeachers->count(),
+                'current_teachers_count' => $currentTeachersCount,
+                'teachers_assigned_last_month' => $prevTeachers->count() > 0,
+                'has_teacher_changes' => count($addedTeacherIds) > 0 || count($removedTeacherIds) > 0,
+                'teachers' => $teachers,
+                'newly_added_teachers' => $newlyAddedTeachers,
+                'removed_teachers' => $removedTeachers,
+            ];
+        }
+
+        return response()->json([
+            'success' => true,
+            'current_month' => $month,
+            'current_year' => $year,
+            'prev_month' => $prevMonth,
+            'prev_year' => $prevYear,
+            'batches' => $result,
+        ]);
+    }
+
     public function copyPreviousMonthTeachersAll(Request $request)
     {
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -954,7 +1058,6 @@ class BatchController extends Controller
             'month' => ['required', 'integer', 'min:1', 'max:12'],
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
-        // dd($data);
 
         $month = (int) $data['month'];
         $year = (int) $data['year'];
@@ -970,10 +1073,11 @@ class BatchController extends Controller
             ->where('year', $prevYear)
             ->get();
 
-
-
-
         if ($previousTeachers->isEmpty()) {
+            if ($request->ajax() || $request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'Previous month has no assigned teachers to copy.']);
+            }
+
             return redirect()
                 ->route('admin.batches.index', ['month' => $month, 'year' => $year])
                 ->with('error', 'Previous month has no assigned teachers to copy.');
@@ -981,8 +1085,6 @@ class BatchController extends Controller
 
         $totalCopied = 0;
         $teacherPaymentsCreated = 0;
-
-
 
         foreach ($previousTeachers as $prevTeacher) {
             $existingAssignment = DB::table('batch_teacher')
@@ -992,10 +1094,8 @@ class BatchController extends Controller
                 ->where('year', $year)
                 ->first();
 
-            // dd($previousTeachers, $existingAssignment);
-
             if (! $existingAssignment) {
-                $existingAssignment = DB::table('batch_teacher')->insert([
+                DB::table('batch_teacher')->insert([
                     'batch_id' => $prevTeacher->batch_id,
                     'teacher_id' => $prevTeacher->teacher_id,
                     'salary_amount' => $prevTeacher->salary_amount,
@@ -1017,9 +1117,15 @@ class BatchController extends Controller
             $teacherPaymentsCreated++;
         }
 
+        $message = "Copied {$totalCopied} teacher assignments and created {$teacherPaymentsCreated} salary records for this month.";
+
+        if ($request->ajax() || $request->expectsJson()) {
+            return response()->json(['success' => true, 'status' => $message]);
+        }
+
         return redirect()
             ->route('admin.batches.index', ['month' => $month, 'year' => $year])
-            ->with('status', "Copied {$totalCopied} teacher assignments and created {$teacherPaymentsCreated} salary records for this month.");
+            ->with('status', $message);
     }
 
     private function calculateAndCreateTeacherPayment(int $teacherId, int $month, int $year): void
@@ -1060,7 +1166,7 @@ class BatchController extends Controller
                 ]),
                 'payment_status' => 'due',
             ]);
-        }else{
+        } else {
             dd([
                 'success' => false,
                 'message' => "Calculated salary for teacher ID {$teacherId} is zero. No payment record created.",

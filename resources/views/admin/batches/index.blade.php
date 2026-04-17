@@ -56,16 +56,11 @@
                         Enroll Last Month Students (All Batches)
                     </button>
                 </form>
-                <form method="POST" action="{{ route('admin.batches.assignTeachers.copyPreviousAll') }}" id="copy-last-month-teachers-form" class="inline-flex">
-                    @csrf
-                    <input type="hidden" name="month" id="copy-teachers-month" value="{{ $selectedMonth }}">
-                    <input type="hidden" name="year" id="copy-teachers-year" value="{{ $selectedYear }}">
-                    <button type="submit"
+                <button type="button"
                         class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-teal-500 border border-transparent rounded-lg shadow-sm hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
-                        onclick="return confirm('Copy last month\'s assigned teachers into this month for all batches? This will create salary records for this month.')">
+                        id="open-teacher-modal-btn">
                         Assign Last Month Teachers (All Batches)
                     </button>
-                </form>
             </div>
         </div>
     </div>
@@ -94,6 +89,27 @@
         </div>
     </div>
 
+    <div class="teacher-modal-overlay" id="teacherModalOverlay">
+        <div class="teacher-modal">
+            <div class="teacher-modal-header">
+                <h3 class="text-lg font-semibold" id="teacherModalTitle">Assign Last Month Teachers</h3>
+                <p class="text-teal-100 text-sm mt-1" id="teacherModalSubtitle">Review and confirm teacher assignments</p>
+            </div>
+            <div class="teacher-modal-body" id="teacherModalBody">
+                <div class="text-center py-8">
+                    <div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-4"></div>
+                    <p class="text-slate-500">Loading preview data...</p>
+                </div>
+            </div>
+            <div class="teacher-modal-footer">
+                <button type="button" class="px-5 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200" id="teacherModalClose">Cancel</button>
+                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-teal-500 rounded-lg hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed" id="teacherModalSubmit" disabled>
+                    Assign Teachers
+                </button>
+            </div>
+        </div>
+    </div>
+
     <div class="card">
         <div class="card-header">
             {{ trans('cruds.batch.title_singular') }} {{ trans('global.list') }}
@@ -107,6 +123,122 @@
 @endsection
 @section('scripts')
     @parent
+    <style>
+        .teacher-modal-overlay {
+            position: fixed;
+            inset: 0;
+            background: rgba(0, 0, 0, 0.5);
+            backdrop-filter: blur(4px);
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 9999;
+            opacity: 0;
+            visibility: hidden;
+            transition: all 0.3s ease;
+        }
+        .teacher-modal-overlay.show {
+            opacity: 1;
+            visibility: visible;
+        }
+        .teacher-modal {
+            background: white;
+            border-radius: 16px;
+            width: 90%;
+            max-width: 700px;
+            max-height: 85vh;
+            overflow: hidden;
+            transform: scale(0.95) translateY(20px);
+            transition: all 0.3s ease;
+            box-shadow: 0 25px 50px -12px rgba(0, 0, 0, 0.25);
+        }
+        .teacher-modal-overlay.show .teacher-modal {
+            transform: scale(1) translateY(0);
+        }
+        .teacher-modal-header {
+            background: linear-gradient(135deg, #14b8a6 0%, #0d9488 100%);
+            padding: 20px 24px;
+            color: white;
+        }
+        .teacher-modal-body {
+            padding: 24px;
+            max-height: 60vh;
+            overflow-y: auto;
+        }
+        .teacher-modal-footer {
+            padding: 16px 24px;
+            border-top: 1px solid #e2e8f0;
+            display: flex;
+            justify-content: flex-end;
+            gap: 12px;
+        }
+        .batch-info-card {
+            background: #f8fafc;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+            padding: 16px;
+            margin-bottom: 16px;
+        }
+        .batch-info-card h4 {
+            font-size: 16px;
+            font-weight: 600;
+            color: #1e293b;
+            margin-bottom: 12px;
+        }
+        .batch-stats {
+            display: flex;
+            gap: 16px;
+            margin-bottom: 12px;
+        }
+        .batch-stat {
+            background: white;
+            padding: 8px 12px;
+            border-radius: 8px;
+            font-size: 13px;
+        }
+        .batch-stat-label {
+            color: #64748b;
+            font-size: 11px;
+            text-transform: uppercase;
+        }
+        .batch-stat-value {
+            font-weight: 600;
+            color: #1e293b;
+        }
+        .teacher-list {
+            margin-top: 12px;
+        }
+        .teacher-item {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 8px;
+            background: white;
+            border-radius: 6px;
+            margin-bottom: 6px;
+            font-size: 14px;
+        }
+        .checkbox-wrapper {
+            display: flex;
+            align-items: center;
+            gap: 8px;
+            padding: 12px 16px;
+            background: #f1f5f9;
+            border-radius: 8px;
+            margin-bottom: 16px;
+            cursor: pointer;
+        }
+        .checkbox-wrapper input {
+            width: 18px;
+            height: 18px;
+            accent-color: #14b8a6;
+        }
+        .checkbox-wrapper label {
+            font-size: 14px;
+            color: #334155;
+            cursor: pointer;
+        }
+    </style>
     <script>
         $(function() {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
@@ -278,10 +410,155 @@
                 $('#copy-year').val($('#filter-year').val());
             });
 
-            $('#copy-last-month-teachers-form').on('submit', function() {
-                $('#copy-teachers-month').val($('#filter-month').val());
-                $('#copy-teachers-year').val($('#filter-year').val());
-            });
+            // Teacher Modal Logic
+            const modalOverlay = document.getElementById('teacherModalOverlay');
+            const modalClose = document.getElementById('teacherModalClose');
+            const modalSubmit = document.getElementById('teacherModalSubmit');
+            const openModalBtn = document.getElementById('open-teacher-modal-btn');
+            let modalData = null;
+
+            if (openModalBtn && modalOverlay) {
+                openModalBtn.addEventListener('click', function() {
+                    const month = $('#filter-month').val();
+                    const year = $('#filter-year').val();
+
+                    document.getElementById('teacherModalBody').innerHTML = '<div class="text-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-teal-500 mx-auto mb-4"></div><p class="text-slate-500">Loading preview data...</p></div>';
+                    modalOverlay.classList.add('show');
+                    modalSubmit.disabled = true;
+
+                    fetch("{{ route('admin.batches.assignTeachers.previewCopyPreviousAll') }}?month=" + month + "&year=" + year)
+                        .then(response => response.json())
+                        .then(data => {
+                            modalData = data;
+                            if (!data.success) {
+                                document.getElementById('teacherModalBody').innerHTML = '<div class="text-center py-8 text-red-500">' + data.message + '</div>';
+                                return;
+                            }
+                            renderTeacherModalContent(data);
+                        })
+                        .catch(error => {
+                            document.getElementById('teacherModalBody').innerHTML = '<div class="text-center py-8 text-red-500">Error loading data</div>';
+                        });
+                });
+
+                function renderTeacherModalContent(data) {
+                    const monthNames = ['January', 'February', 'March', 'April', 'May', 'June', 'July', 'August', 'September', 'October', 'November', 'December'];
+                    document.getElementById('teacherModalTitle').textContent = 'Assign Last Month Teachers';
+                    document.getElementById('teacherModalSubtitle').textContent = 'Copy teachers from ' + monthNames[data.prev_month - 1] + ' ' + data.prev_year + ' to ' + monthNames[data.current_month - 1] + ' ' + data.current_year;
+
+                    let html = '';
+                    html += '<div class="checkbox-wrapper">';
+                    html += '<input type="checkbox" id="check-students-enrolled" checked>';
+                    html += '<label for="check-students-enrolled">This month students enrolled in each batch</label>';
+                    html += '</div>';
+                    html += '<div class="checkbox-wrapper">';
+                    html += '<input type="checkbox" id="check-last-month-teachers" checked>';
+                    html += '<label for="check-last-month-teachers">Last month teachers assigned</label>';
+                    html += '</div>';
+                    html += '<div class="checkbox-wrapper">';
+                    html += '<input type="checkbox" id="check-teacher-changes" checked>';
+                    html += '<label for="check-teacher-changes">Teacher changes (new/removed)</label>';
+                    html += '</div>';
+
+                    data.batches.forEach(function(batch) {
+                        html += '<div class="batch-info-card">';
+                        html += '<h4>' + batch.batch_name + '</h4>';
+                        html += '<div class="batch-stats">';
+                        html += '<div class="batch-stat"><div class="batch-stat-label">Students This Month</div><div class="batch-stat-value">' + batch.current_students_count + '</div></div>';
+                        html += '<div class="batch-stat"><div class="batch-stat-label">Last Month</div><div class="batch-stat-value">' + batch.prev_students_count + '</div></div>';
+                        html += '<div class="batch-stat"><div class="batch-stat-label">Teachers</div><div class="batch-stat-value">' + batch.teachers.length + '</div></div>';
+                        html += '</div>';
+
+                        if (batch.teachers && batch.teachers.length > 0) {
+                            html += '<div class="teacher-list">';
+                            html += '<div class="text-xs font-semibold text-slate-500 mb-2">Teachers from last month:</div>';
+                            batch.teachers.forEach(function(teacher) {
+                                html += '<div class="teacher-item"><span class="text-slate-500">👤</span> ' + teacher.name + (teacher.phone ? ' - ' + teacher.phone : '') + '</div>';
+                            });
+                            html += '</div>';
+                        }
+
+                        if (batch.newly_added_teachers && batch.newly_added_teachers.length > 0) {
+                            html += '<div class="teacher-list mt-2">';
+                            html += '<div class="text-xs font-semibold text-amber-600 mb-2">⚠️ Newly added teachers:</div>';
+                            batch.newly_added_teachers.forEach(function(teacher) {
+                                html += '<div class="teacher-item bg-amber-50"><span class="text-amber-500">➕</span> ' + teacher.name + '</div>';
+                            });
+                            html += '</div>';
+                        }
+
+                        if (batch.removed_teachers && batch.removed_teachers.length > 0) {
+                            html += '<div class="teacher-list mt-2">';
+                            html += '<div class="text-xs font-semibold text-red-600 mb-2">⚠️ Removed teachers:</div>';
+                            batch.removed_teachers.forEach(function(teacher) {
+                                html += '<div class="teacher-item bg-red-50"><span class="text-red-500">➖</span> ' + teacher.name + '</div>';
+                            });
+                            html += '</div>';
+                        }
+
+                        html += '</div>';
+                    });
+
+                    html += '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">';
+                    html += '<p class="text-sm text-blue-700"><strong>Note:</strong> After confirming, teacher salary records will be created for ' + monthNames[data.current_month - 1] + ' ' + data.current_year + '</p>';
+                    html += '</div>';
+
+                    document.getElementById('teacherModalBody').innerHTML = html;
+                    modalSubmit.disabled = false;
+                }
+
+                $('#check-students-enrolled, #check-last-month-teachers, #check-teacher-changes').on('change', function() {
+                    const studentsEnrolled = $('#check-students-enrolled').is(':checked');
+                    const lastMonthTeachers = $('#check-last-month-teachers').is(':checked');
+                    const teacherChanges = $('#check-teacher-changes').is(':checked');
+                    modalSubmit.disabled = !(studentsEnrolled && lastMonthTeachers && teacherChanges);
+                });
+
+                if (modalClose) {
+                    modalClose.addEventListener('click', function() {
+                        modalOverlay.classList.remove('show');
+                    });
+                }
+
+                if (modalOverlay) {
+                    modalOverlay.addEventListener('click', function(e) {
+                        if (e.target === modalOverlay) {
+                            modalOverlay.classList.remove('show');
+                        }
+                    });
+                }
+
+                if (modalSubmit) {
+                    modalSubmit.addEventListener('click', function() {
+                        if (!modalData || !modalData.success) return;
+
+                        const month = modalData.current_month;
+                        const year = modalData.current_year;
+
+                        fetch("{{ route('admin.batches.assignTeachers.copyPreviousAll') }}", {
+                            method: 'POST',
+                            headers: {
+                                'Content-Type': 'application/json',
+                                'X-CSRF-TOKEN': '{{ csrf_token() }}'
+                            },
+                            body: JSON.stringify({ month: month, year: year })
+                        })
+                        .then(response => response.json())
+                        .then(data => {
+                            modalOverlay.classList.remove('show');
+                            if (data.status) {
+                                alert(data.status);
+                            } else if (data.message) {
+                                alert(data.message);
+                            }
+                            location.reload();
+                        })
+                        .catch(error => {
+                            alert('Error processing request');
+                        });
+                    });
+                }
+            }
         });
     </script>
 @endsection
