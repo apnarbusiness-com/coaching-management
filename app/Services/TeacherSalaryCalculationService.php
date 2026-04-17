@@ -55,22 +55,24 @@ class TeacherSalaryCalculationService
         $monthlyDues = StudentMonthlyDue::where('batch_id', $batchId)
             ->where('month', $month)
             ->where('year', $year)
-            ->whereIn('status', ['paid', 'partial'])
+            // ->whereIn('status', ['paid', 'partial'])
             ->get();
 
         $totalRevenue = 0;
         foreach ($monthlyDues as $due) {
-            $totalRevenue += (float) $due->paid_amount;
+            $totalRevenue += (float) $due->due_amount;
         }
 
-        $customFees = DB::table('batch_student_basic_info')
-            ->where('batch_id', $batchId)
-            ->whereMonth('enrolled_at', $month)
-            ->whereYear('enrolled_at', $year)
-            ->whereNotNull('custom_monthly_fee')
-            ->sum('custom_monthly_fee');
+        // $customFees = DB::table('batch_student_basic_info')
+        //     ->where('batch_id', $batchId)
+        //     ->whereMonth('enrolled_at', $month)
+        //     ->whereYear('enrolled_at', $year)
+        //     ->whereNotNull('custom_monthly_fee')
+        //     ->sum('custom_monthly_fee');
 
-        return $totalRevenue + (float) $customFees;
+        // return $totalRevenue + (float) $customFees;
+
+        return $totalRevenue;
     }
 
     public function calculateAllTeachersForMonth(int $month, int $year): array
