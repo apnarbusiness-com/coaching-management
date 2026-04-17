@@ -9,7 +9,7 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 
 class TeachersPayment extends Model
 {
-    use SoftDeletes, HasFactory;
+    use HasFactory, SoftDeletes;
 
     public $table = 'teachers_payments';
 
@@ -20,15 +20,16 @@ class TeachersPayment extends Model
     ];
 
     public const PAYMENT_STATUS_SELECT = [
-        'due'         => 'Due',
-        'partial'     => 'Partial',
-        'pending'     => 'Pending',
-        'processing'  => 'Processing',
-        'paid'        => 'Paid',
+        'due' => 'Due',
+        'partial' => 'Partial',
+        'pending' => 'Pending',
+        'processing' => 'Processing',
+        'paid' => 'Paid',
     ];
 
     protected $fillable = [
         'teacher_id',
+        'batch_id',
         'payment_details',
         'amount',
         'month',
@@ -49,6 +50,11 @@ class TeachersPayment extends Model
         return $this->belongsTo(Teacher::class, 'teacher_id');
     }
 
+    public function batch()
+    {
+        return $this->belongsTo(Batch::class, 'batch_id');
+    }
+
     public function transactions()
     {
         return $this->hasMany(TeacherPaymentTransaction::class, 'teachers_payment_id');
@@ -60,8 +66,8 @@ class TeachersPayment extends Model
             return (float) $this->amount;
         }
 
-        $details = is_string($this->payment_details) 
-            ? json_decode($this->payment_details, true) 
+        $details = is_string($this->payment_details)
+            ? json_decode($this->payment_details, true)
             : $this->payment_details;
 
         return $details['calculated_amount'] ?? 0;
@@ -96,9 +102,10 @@ class TeachersPayment extends Model
         $months = [
             1 => 'January', 2 => 'February', 3 => 'March', 4 => 'April',
             5 => 'May', 6 => 'June', 7 => 'July', 8 => 'August',
-            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December'
+            9 => 'September', 10 => 'October', 11 => 'November', 12 => 'December',
         ];
-        return ($months[$this->month] ?? '') . ' ' . $this->year;
+
+        return ($months[$this->month] ?? '').' '.$this->year;
     }
 
     public function scopePaid($query)
