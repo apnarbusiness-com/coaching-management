@@ -1,3 +1,2 @@
-http://dev-coaching-management.test/admin/batches ei page e 'Assign Last Month Teachers (All Batches)' e click korle 1st e ekta apert modal open koro sundor dekhe modern design.
-modal er body te kichu checkbox diba . 1. seki ei month er student enroll koreche ? 2. se ki last month e teacher enroll korchilo? 3. new kono teacher kono batch e assign or remove korte caile seita jeno age kore ase
-ei 3 ta check kore dile tobei niche  "Assign Teacher" namok button enable kore diba and then oita te click korle teacher assign hobe + teacher er salary calculate hobe
+http://dev-coaching-management.test/admin/teachers-payments ei url e table e batch-name , salary type diye dao.
+and table e ekta filter dao. batch,teacher, month & year er

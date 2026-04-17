@@ -7,11 +7,11 @@ use App\Http\Requests\MassDestroyTeachersPaymentRequest;
 use App\Http\Requests\StoreTeachersPaymentRequest;
 use App\Http\Requests\UpdateTeachersPaymentRequest;
 use App\Models\Teacher;
-use App\Models\TeachersPayment;
 use App\Models\TeacherPaymentTransaction;
+use App\Models\TeachersPayment;
 use App\Services\TeacherSalaryCalculationService;
-use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
 class TeachersPaymentController extends Controller
@@ -20,24 +20,36 @@ class TeachersPaymentController extends Controller
 
     public function __construct()
     {
-        $this->salaryService = new TeacherSalaryCalculationService();
+        $this->salaryService = new TeacherSalaryCalculationService;
     }
 
     public function index(Request $request)
     {
         abort_if(Gate::denies('teachers_payment_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $query = TeachersPayment::with(['teacher', 'transactions']);
+        $query = TeachersPayment::with(['teacher', 'batch', 'transactions']);
 
-        if ($request->filled('month') && $request->filled('year')) {
-            $query->where('month', $request->month)->where('year', $request->year);
+        if ($request->filled('month')) {
+            $query->where('month', $request->month);
+        }
+        if ($request->filled('year')) {
+            $query->where('year', $request->year);
+        }
+        if ($request->filled('teacher_id')) {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+        if ($request->filled('batch_id')) {
+            $query->where('batch_id', $request->batch_id);
         }
 
         $teachersPayments = $query->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
             ->get();
 
-        return view('admin.teachersPayments.index', compact('teachersPayments'));
+        $teachers = Teacher::where('status', 1)->pluck('name', 'id');
+        $batches = \App\Models\Batch::pluck('batch_name', 'id');
+
+        return view('admin.teachersPayments.index', compact('teachersPayments', 'teachers', 'batches'));
     }
 
     public function create()
@@ -121,8 +133,6 @@ class TeachersPaymentController extends Controller
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
-
-
         $month = (int) $request->month;
         $year = (int) $request->year;
 
@@ -132,11 +142,11 @@ class TeachersPaymentController extends Controller
             ->toArray();
 
         return response()->json([
-            'status'    => 'success',
-            'data'      => $request->all(),
-            'month'     => $month,
-            'year'      => $year,
-            'existingPayments' => $existingPayments
+            'status' => 'success',
+            'data' => $request->all(),
+            'month' => $month,
+            'year' => $year,
+            'existingPayments' => $existingPayments,
         ]);
 
         $salaries = $this->salaryService->calculateAllTeachersForMonth($month, $year);
@@ -146,11 +156,13 @@ class TeachersPaymentController extends Controller
         foreach ($salaries as $salaryData) {
             if (in_array($salaryData['teacher_id'], $existingPayments)) {
                 $skipped++;
+
                 continue;
             }
 
             if ($salaryData['calculated_salary'] <= 0) {
                 $skipped++;
+
                 continue;
             }
 

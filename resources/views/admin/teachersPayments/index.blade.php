@@ -67,13 +67,27 @@
                 {{ trans('cruds.teachersPayment.title_singular') }} {{ trans('global.list') }}
             </div>
             <!-- Filter by Month/Year -->
-            <form method="GET" action="{{ route('admin.teachers-payments.index') }}" class="flex items-center gap-2">
+            <form method="GET" action="{{ route('admin.teachers-payments.index') }}" class="flex flex-wrap items-center gap-2">
+                <select name="teacher_id" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+                    <option value="">All Teachers</option>
+                    @foreach($teachers as $id => $name)
+                        <option value="{{ $id }}" {{ request('teacher_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                    @endforeach
+                </select>
+                <select name="batch_id" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+                    <option value="">All Batches</option>
+                    @foreach($batches as $id => $name)
+                        <option value="{{ $id }}" {{ request('batch_id') == $id ? 'selected' : '' }}>{{ $name }}</option>
+                    @endforeach
+                </select>
                 <select name="month" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+                    <option value="">All Months</option>
                     @foreach($months as $num => $name)
                         <option value="{{ $num }}" {{ $currentMonth == $num ? 'selected' : '' }}>{{ $name }}</option>
                     @endforeach
                 </select>
                 <select name="year" class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+                    <option value="">All Years</option>
                     @foreach($years as $yr)
                         <option value="{{ $yr }}" {{ $currentYear == $yr ? 'selected' : '' }}>{{ $yr }}</option>
                     @endforeach
@@ -81,7 +95,7 @@
                 <button type="submit" class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600">
                     Filter
                 </button>
-                @if(request('month') || request('year'))
+                @if(request('month') || request('year') || request('teacher_id') || request('batch_id'))
                     <a href="{{ route('admin.teachers-payments.index') }}" class="px-3 py-1.5 text-red-600 hover:underline text-sm">
                         Clear
                     </a>
@@ -103,6 +117,12 @@
                         </th>
                         <th>
                             Teacher
+                        </th>
+                        <th>
+                            Batch
+                        </th>
+                        <th>
+                            Salary Type
                         </th>
                         <th>
                             Month/Year
@@ -128,6 +148,9 @@
                             $paidAmount = $teachersPayment->paid_amount;
                             $remaining = $totalAmount - $paidAmount;
                             $status = $teachersPayment->payment_status;
+                            $paymentDetails = is_string($teachersPayment->payment_details) ? json_decode($teachersPayment->payment_details, true) : $teachersPayment->payment_details;
+                            $salaryType = $paymentDetails['salary_type'] ?? 'fixed';
+                            $salaryAmount = $paymentDetails['salary_amount'] ?? 0;
                         @endphp
                         <tr data-entry-id="{{ $teachersPayment->id }}">
                             <td>
@@ -138,6 +161,12 @@
                             </td>
                             <td>
                                 {{ $teachersPayment->teacher->name ?? '' }}
+                            </td>
+                            <td>
+                                {{ $teachersPayment->batch->batch_name ?? '-' }}
+                            </td>
+                            <td>
+                                {{ ucfirst($salaryType) }} ({{ $salaryAmount }})
                             </td>
                             <td>
                                 {{ $teachersPayment->month_year_name ?? '' }}
