@@ -790,9 +790,12 @@ class BatchController extends Controller
             ->get()
             ->keyBy('student_basic_info_id');
 
-        $enrolledStudents = $batch->students()
-            ->whereMonth('enrolled_at', $month)
-            ->whereYear('enrolled_at', $year)
+        $enrolledStudentIds = $enrollments->pluck('student_basic_info_id')->unique()->values();
+
+        $enrolledStudents = StudentBasicInfo::with('class')
+            ->whereIn('id', $enrolledStudentIds)
+            ->orderBy('first_name')
+            ->orderBy('last_name')
             ->get()
             ->map(function ($student) use ($enrollments) {
                 $enrollment = $enrollments->get($student->id);

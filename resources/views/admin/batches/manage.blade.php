@@ -629,7 +629,14 @@
         }
 
         function refreshStudentList() {
-            fetchEnrolledStudents();
+            fetch(`{{ route('admin.batches.getEnrolledStudentsAjax', $batch->id) }}?month=${currentMonth}&year=${currentYear}`)
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        updateStudentList(data);
+                    }
+                })
+                .catch(err => console.error(err));
         }
 
         function updateStudentList(data) {

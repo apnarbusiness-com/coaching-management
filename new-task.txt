@@ -1,2 +1,0 @@
-http://dev-coaching-management.test/admin/batches/13/manage?month=7&year=2026 ei page e
-1. Enrolled Students for e student er custom fee ba discount edit kore dile ba new enroll korle or remove korle student list reload hoito ajax er maddhome. kintu ekhon page relaod kora lagteche keno?
