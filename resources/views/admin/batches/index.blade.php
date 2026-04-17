@@ -103,7 +103,7 @@
             </div>
             <div class="teacher-modal-footer">
                 <button type="button" class="px-5 py-2.5 text-sm font-medium text-slate-700 bg-slate-100 rounded-lg hover:bg-slate-200" id="teacherModalClose">Cancel</button>
-                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-teal-500 rounded-lg hover:bg-teal-600 disabled:opacity-50 disabled:cursor-not-allowed" id="teacherModalSubmit" disabled>
+                <button type="button" class="px-5 py-2.5 text-sm font-semibold text-white bg-red-500 rounded-lg hover:bg-red-600 disabled:opacity-50 disabled:cursor-not-allowed" id="teacherModalSubmit" disabled>
                     Assign Teachers
                 </button>
             </div>
@@ -493,15 +493,15 @@
 
                     let html = '';
                     html += '<div class="checkbox-wrapper">';
-                    html += '<input type="checkbox" id="check-students-enrolled" checked>';
+                    html += '<input type="checkbox" id="check-students-enrolled">';
                     html += '<label for="check-students-enrolled">This month students enrolled in each batch</label>';
                     html += '</div>';
                     html += '<div class="checkbox-wrapper">';
-                    html += '<input type="checkbox" id="check-last-month-teachers" checked>';
+                    html += '<input type="checkbox" id="check-last-month-teachers">';
                     html += '<label for="check-last-month-teachers">Last month teachers assigned</label>';
                     html += '</div>';
                     html += '<div class="checkbox-wrapper">';
-                    html += '<input type="checkbox" id="check-teacher-changes" checked>';
+                    html += '<input type="checkbox" id="check-teacher-changes">';
                     html += '<label for="check-teacher-changes">Teacher changes (new/removed)</label>';
                     html += '</div>';
 
@@ -555,15 +555,26 @@
                     html += '</div>';
 
                     document.getElementById('teacherModalBody').innerHTML = html;
-                    modalSubmit.disabled = false;
-                }
 
-                $('#check-students-enrolled, #check-last-month-teachers, #check-teacher-changes').on('change', function() {
-                    const studentsEnrolled = $('#check-students-enrolled').is(':checked');
-                    const lastMonthTeachers = $('#check-last-month-teachers').is(':checked');
-                    const teacherChanges = $('#check-teacher-changes').is(':checked');
-                    modalSubmit.disabled = !(studentsEnrolled && lastMonthTeachers && teacherChanges);
-                });
+                    function checkAllBoxes() {
+                        const c1 = document.getElementById('check-students-enrolled').checked;
+                        const c2 = document.getElementById('check-last-month-teachers').checked;
+                        const c3 = document.getElementById('check-teacher-changes').checked;
+                        const allChecked = c1 && c2 && c3;
+                        modalSubmit.disabled = !allChecked;
+                        if (allChecked) {
+                            modalSubmit.classList.remove('bg-red-500', 'hover:bg-red-600');
+                            modalSubmit.classList.add('bg-teal-500', 'hover:bg-teal-600');
+                        } else {
+                            modalSubmit.classList.remove('bg-teal-500', 'hover:bg-teal-600');
+                            modalSubmit.classList.add('bg-red-500', 'hover:bg-red-600');
+                        }
+                    }
+
+                    document.getElementById('check-students-enrolled').addEventListener('change', checkAllBoxes);
+                    document.getElementById('check-last-month-teachers').addEventListener('change', checkAllBoxes);
+                    document.getElementById('check-teacher-changes').addEventListener('change', checkAllBoxes);
+                }
 
                 if (modalClose) {
                     modalClose.addEventListener('click', function() {
