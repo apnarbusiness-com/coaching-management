@@ -238,6 +238,51 @@
             color: #334155;
             cursor: pointer;
         }
+        .batch-accordion-container {
+            max-height: 400px;
+            overflow-y: auto;
+            border: 1px solid #e2e8f0;
+            border-radius: 12px;
+        }
+        .batch-accordion-item {
+            border-bottom: 1px solid #e2e8f0;
+        }
+        .batch-accordion-item:last-child {
+            border-bottom: none;
+        }
+        .batch-accordion-header {
+            padding: 14px 16px;
+            background: #f8fafc;
+            cursor: pointer;
+            display: flex;
+            justify-content: space-between;
+            align-items: center;
+            transition: background 0.2s;
+        }
+        .batch-accordion-header:hover {
+            background: #f1f5f9;
+        }
+        .batch-accordion-header h4 {
+            font-size: 15px;
+            font-weight: 600;
+            color: #1e293b;
+            margin: 0;
+        }
+        .batch-accordion-arrow {
+            transition: transform 0.2s;
+            color: #64748b;
+        }
+        .batch-accordion-item.active .batch-accordion-arrow {
+            transform: rotate(180deg);
+        }
+        .batch-accordion-content {
+            display: none;
+            padding: 16px;
+            background: white;
+        }
+        .batch-accordion-item.active .batch-accordion-content {
+            display: block;
+        }
     </style>
     <script>
         $(function() {
@@ -460,13 +505,18 @@
                     html += '<label for="check-teacher-changes">Teacher changes (new/removed)</label>';
                     html += '</div>';
 
-                    data.batches.forEach(function(batch) {
-                        html += '<div class="batch-info-card">';
+                    html += '<div class="batch-accordion-container">';
+                    data.batches.forEach(function(batch, index) {
+                        html += '<div class="batch-accordion-item" data-index="' + index + '">';
+                        html += '<div class="batch-accordion-header" onclick="toggleBatchAccordion(this)">';
                         html += '<h4>' + batch.batch_name + '</h4>';
+                        html += '<span class="batch-accordion-arrow">▼</span>';
+                        html += '</div>';
+                        html += '<div class="batch-accordion-content">';
                         html += '<div class="batch-stats">';
                         html += '<div class="batch-stat"><div class="batch-stat-label">Students This Month</div><div class="batch-stat-value">' + batch.current_students_count + '</div></div>';
                         html += '<div class="batch-stat"><div class="batch-stat-label">Last Month</div><div class="batch-stat-value">' + batch.prev_students_count + '</div></div>';
-                        html += '<div class="batch-stat"><div class="batch-stat-label">Teachers</div><div class="batch-stat-value">' + batch.teachers.length + '</div></div>';
+                        html += '<div class="batch-stat"><div class="batch-stat-label">Teachers</div><div class="batch-stat-value">' + (batch.teachers ? batch.teachers.length : 0) + '</div></div>';
                         html += '</div>';
 
                         if (batch.teachers && batch.teachers.length > 0) {
@@ -487,20 +537,21 @@
                             html += '</div>';
                         }
 
-                        if (batch.removed_teachers && batch.removed_teachers.length > 0) {
-                            html += '<div class="teacher-list mt-2">';
-                            html += '<div class="text-xs font-semibold text-red-600 mb-2">⚠️ Removed teachers:</div>';
-                            batch.removed_teachers.forEach(function(teacher) {
-                                html += '<div class="teacher-item bg-red-50"><span class="text-red-500">➖</span> ' + teacher.name + '</div>';
-                            });
-                            html += '</div>';
-                        }
+                        // if (batch.removed_teachers && batch.removed_teachers.length > 0) {
+                        //     html += '<div class="teacher-list mt-2">';
+                        //     html += '<div class="text-xs font-semibold text-red-600 mb-2">⚠️ Removed teachers:</div>';
+                        //     batch.removed_teachers.forEach(function(teacher) {
+                        //         html += '<div class="teacher-item bg-red-50"><span class="text-red-500">➖</span> ' + teacher.name + '</div>';
+                        //     });
+                        //     html += '</div>';
+                        // }
 
-                        html += '</div>';
+                        html += '</div></div>';
                     });
 
                     html += '<div class="bg-blue-50 border border-blue-200 rounded-lg p-4 mt-4">';
                     html += '<p class="text-sm text-blue-700"><strong>Note:</strong> After confirming, teacher salary records will be created for ' + monthNames[data.current_month - 1] + ' ' + data.current_year + '</p>';
+                    html += '</div>';
                     html += '</div>';
 
                     document.getElementById('teacherModalBody').innerHTML = html;
@@ -558,6 +609,11 @@
                         });
                     });
                 }
+
+                window.toggleBatchAccordion = function(element) {
+                    const item = element.parentElement;
+                    item.classList.toggle('active');
+                };
             }
         });
     </script>
