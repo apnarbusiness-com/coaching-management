@@ -322,9 +322,15 @@ class BatchController extends Controller
         $month = $request->input('month', now()->month);
         $year = $request->input('year', now()->year);
 
-        $batch->load(['subject', 'subjects', 'class', 'students', 'teachers']);
+        $batch->load(['subject', 'subjects', 'class']);
 
-        $teacherCount = $batch->teachers->count();
+        $teacherAssignments = DB::table('batch_teacher')
+            ->where('batch_id', $batch->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->get();
+
+        $teacherCount = $teacherAssignments->count();
 
         $enrollments = DB::table('batch_student_basic_info')
             ->where('batch_id', $batch->id)
@@ -351,7 +357,10 @@ class BatchController extends Controller
 
         $studentCount = $enrolledStudents->count();
 
-        $expectedIncome = $studentCount * (float) $batch->fee_amount;
+        $expectedIncome = StudentMonthlyDue::where('batch_id', $batch->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->sum('due_amount');
 
         $incomeUntilNow = \App\Models\Earning::where('batch_id', $batch->id)
             ->where('earning_month', $month)
@@ -382,6 +391,7 @@ class BatchController extends Controller
         return view('admin.batches.manage', compact(
             'batch',
             'teacherCount',
+            'teacherAssignments',
             'studentCount',
             'expectedIncome',
             'incomeUntilNow',

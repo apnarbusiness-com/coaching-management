@@ -2,6 +2,23 @@
 @section('content')
     <div class="max-w-6xl mx-auto p-6 md:p-10">
         @php
+            $totalExpense = 0;
+            $teacherAssignmentsWithDetails = collect();
+            if (!empty($teacherAssignments)) {
+                $teacherIds = $teacherAssignments->pluck('teacher_id')->toArray();
+                $teachers = \App\Models\Teacher::whereIn('id', $teacherIds)->pluck('name', 'id');
+                foreach ($teacherAssignments as $assignment) {
+                    $totalExpense += (float) ($assignment->salary_amount ?? 0);
+                    $teacherAssignmentsWithDetails->push((object) [
+                        'id' => $assignment->teacher_id,
+                        'name' => $teachers[$assignment->teacher_id] ?? 'Unknown',
+                        'salary_amount' => $assignment->salary_amount,
+                        'salary_amount_type' => $assignment->salary_amount_type,
+                        'role' => $assignment->role,
+                    ]);
+                }
+            }
+
             $subjectNames = $batch->subjects->pluck('name')->filter()->unique();
             if ($subjectNames->isEmpty() && $batch->subject) {
                 $subjectNames = collect([$batch->subject->name]);
@@ -12,9 +29,6 @@
             $capacityPercent = $capacity ? min(100, round(($studentCount / max($capacity, 1)) * 100)) : null;
             $className = $batch->class->class_name ?? 'N/A';
             $subjectLabel = $subjectNames->implode(', ') ?: 'N/A';
-            $totalExpense = (float) $batch->teachers->sum(function ($teacher) {
-                return (float) ($teacher->pivot->salary_amount ?? 0);
-            });
 
             $monthYearLabel = \Carbon\Carbon::createFromDate($year, $month, 1)->format('F, Y');
 
@@ -283,7 +297,7 @@
                             class="px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold uppercase tracking-wider">Active</span>
                     </div>
                     <div class="flex flex-wrap gap-2 py-2">
-                        @forelse ($batch->teachers->take(5) as $teacher)
+                        @forelse ($teacherAssignmentsWithDetails->take(5) as $teacher)
                             @php
                                 $initials = collect(explode(' ', $teacher->name))
                                     ->filter()
