@@ -605,18 +605,26 @@
                             },
                             body: JSON.stringify({ month: month, year: year })
                         })
-                        .then(response => response.json())
+                        .then(response => {
+                            console.log('Response status:', response.status);
+                            console.log('Response ok:', response.ok);
+                            return response.json();
+                        })
                         .then(data => {
+                            console.log('Response data:', data);
                             modalOverlay.classList.remove('show');
                             if (data.status) {
                                 alert(data.status);
                             } else if (data.message) {
                                 alert(data.message);
+                            } else if (data.error) {
+                                alert('Error: ' + data.error);
                             }
                             location.reload();
                         })
                         .catch(error => {
-                            alert('Error processing request');
+                            console.error('Error:', error);
+                            alert('Error processing request: ' + error.message);
                         });
                     });
                 }
