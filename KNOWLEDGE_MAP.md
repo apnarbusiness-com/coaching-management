@@ -18,6 +18,9 @@
 | `/admin` | Admin dashboard |
 | `/admin/student-basic-infos` | Student CRUD |
 | `/admin/batches` | Batch management |
+| `/admin/batches/{batch}/assign-teachers` | Assign teacher to batch (with salary config) |
+| `/admin/batches/{batch}/manage` | Batch management (students, teachers) |
+| `/admin/teacher-batch` | View teacher-batch assignments |
 | `/admin/due-collections` | Due collection |
 | `/admin/earnings` | Payment records |
 | `/admin/expenses` | Expense records |
@@ -78,6 +81,32 @@ StudentBasicInfo >----< StudentMonthlyDue >----< Earning
 - `StudentImportService` - CSV/Excel import with duplicate handling
 - `TeacherSalaryCalculationService` - Calculate teacher salaries
 - `DashboardWidgetService` - Dashboard widgets data
+
+---
+
+## Teacher Salary System
+
+### Flow
+1. **Assign Teacher to Batch** (`/admin/batches/{batch}/assign-teachers`) → `batch_teacher` table
+2. **Salary Types**: `fixed` (fixed amount) or `percentage` (% of batch revenue)
+3. **Student Enrollment** → triggers `TeacherSalaryCalculationService::addEnrollmentPayment()`
+4. **Fixed**: Creates `TeachersPayment` with fixed amount per batch
+5. **Percentage**: Recalculates based on batch revenue (sum of `StudentMonthlyDue.due_amount`)
+6. **Record Payment**: `TeacherPaymentTransaction` for actual payment
+
+### Key Tables
+- `batch_teacher` - teacher assignment per month/year with salary config
+- `teachers_payments` - salary records (month/year/teacher)
+- `teacher_payment_transactions` - actual payment transactions
+
+### Salary Calculation
+- **Fixed**: `salary_amount` (direct amount per batch)
+- **Percentage**: `batch_revenue × salary_amount / 100`
+
+### Payment Status
+- `due` - salary calculated, not paid
+- `partial` - partially paid
+- `paid` - fully paid
 
 ---
 
