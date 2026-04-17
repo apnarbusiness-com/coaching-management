@@ -463,6 +463,8 @@ class BatchController extends Controller
                 ->whereYear('enrolled_at', $year)
                 ->whereIn('student_basic_info_id', $studentsToRemove)
                 ->delete();
+
+            $this->salaryService->recalculatePercentageSalaries($batch->id, $month, $year);
         }
 
         if (! empty($studentsToEnroll)) {
@@ -586,6 +588,8 @@ class BatchController extends Controller
             ->whereMonth('enrolled_at', $month)
             ->whereYear('enrolled_at', $year)
             ->delete();
+
+        $this->salaryService->recalculatePercentageSalaries($batch->id, $month, $year);
 
         return redirect()
             ->route('admin.batches.manage', [$batch->id, 'month' => $month, 'year' => $year])
@@ -713,6 +717,8 @@ class BatchController extends Controller
             ->whereMonth('enrolled_at', $month)
             ->whereYear('enrolled_at', $year)
             ->delete();
+
+        $this->salaryService->recalculatePercentageSalaries($batch->id, $month, $year);
 
         return response()->json(['success' => true, 'message' => 'Student un-enrolled successfully.']);
     }

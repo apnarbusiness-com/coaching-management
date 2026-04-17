@@ -1,2 +1,3 @@
-http://dev-coaching-management.test/admin/teachers-payments ei url e table e batch-name , salary type diye dao.
-and table e ekta filter dao. batch,teacher, month & year er
+http://dev-coaching-management.test/admin/batches/13/manage?month=7&year=2026 ei page e
+1. Expected Income calculation fixed korte hobe. karon eita age calculate kora chilo pore student e discount + custom fee add kora hoiche. so oi batch er oi month e students er monthly due theke dekhano better jehetu due calcuate kortechiee
+2.Assigned Teachers o age kora. pore ekhon teacher batch wise every month e new assign hoy i mean batch teachers table e new row every month e insert hoy so oi hisebe dekhao. + filter korle ei list o update hobe month wise
