@@ -204,6 +204,7 @@
         </div>
 
         <div class="grid grid-cols-1 sm:grid-cols-2 lg:grid-cols-4 gap-4 mb-10">
+            @if($canViewIncome)
             <div
                 class="rounded-xl border border-slate-200 dark:border-slate-700 bg-gradient-to-br from-blue-50 via-white to-white dark:from-blue-900/20 dark:via-slate-800/60 dark:to-slate-900/60 p-6">
                 <div class="flex items-center gap-2 text-blue-700 dark:text-blue-300">
@@ -246,6 +247,14 @@
                 </p>
                 <p class="text-xs text-slate-500 mt-1">Teachers salary</p>
             </div>
+            @else
+            <div class="col-span-4 rounded-xl border border-slate-200 dark:border-slate-700 bg-slate-50 dark:bg-slate-800/50 p-6 text-center">
+                <p class="text-sm text-slate-500 dark:text-slate-400">
+                    <span class="material-symbols-outlined align-middle mr-1">lock</span>
+                    Batch income details are hidden for fixed-salary teachers.
+                </p>
+            </div>
+            @endif
         </div>
 
         <div class="space-y-6">

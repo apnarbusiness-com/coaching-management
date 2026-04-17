@@ -402,6 +402,15 @@
                         <i class="fa fa-exclamation-triangle"></i> Due: {{ number_format($student['due_amount'], 2) }}
                     </button>
                     @endif
+                    @if($student['attendance_history']->count() > 0)
+                    <div class="attendance-history mt-2 flex flex-wrap gap-1">
+                        @foreach($student['attendance_history'] as $record)
+                        <span class="text-xs px-1.5 py-0.5 rounded {{ $record['status'] === 'present' ? 'bg-green-100 text-green-700' : ($record['status'] === 'late' ? 'bg-yellow-100 text-yellow-700' : 'bg-red-100 text-red-700') }}">
+                            {{ $record['date'] }}
+                        </span>
+                        @endforeach
+                    </div>
+                    @endif
                 </div>
                 <div class="attendance-buttons">
                     <button type="button" class="btn-attend present {{ $student['status'] === 'present' ? 'active' : '' }}"

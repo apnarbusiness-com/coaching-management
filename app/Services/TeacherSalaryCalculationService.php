@@ -5,6 +5,7 @@ namespace App\Services;
 use App\Models\Batch;
 use App\Models\StudentMonthlyDue;
 use App\Models\Teacher;
+use App\Models\TeachersPayment;
 use Illuminate\Support\Facades\DB;
 
 class TeacherSalaryCalculationService
@@ -27,7 +28,9 @@ class TeacherSalaryCalculationService
 
         foreach ($batchTeachers as $bt) {
             $batch = Batch::find($bt->batch_id);
-            if (!$batch) continue;
+            if (! $batch) {
+                continue;
+            }
 
             $batchSalary = $this->calculateBatchTeacherSalary($batch, $month, $year, $bt->salary_amount, $bt->salary_amount_type);
             $totalSalary += $batchSalary;
@@ -43,6 +46,7 @@ class TeacherSalaryCalculationService
         }
 
         $batchRevenue = $this->getBatchRevenue($batch->id, $month, $year);
+
         return ($batchRevenue * $salaryAmount) / 100;
     }
 
@@ -113,7 +117,9 @@ class TeacherSalaryCalculationService
 
         foreach ($batchTeachers as $bt) {
             $batch = Batch::find($bt->batch_id);
-            if (!$batch) continue;
+            if (! $batch) {
+                continue;
+            }
 
             $batchRevenue = $this->getBatchRevenue($batch->id, $month, $year);
             $salary = $this->calculateBatchTeacherSalary($batch, $month, $year, $bt->salary_amount, $bt->salary_amount_type);
@@ -150,5 +156,126 @@ class TeacherSalaryCalculationService
             ->where('year', $year)
             ->get()
             ->toArray();
+    }
+
+    public function addEnrollmentPayment(int $batchId, int $studentId, int $month, int $year): void
+    {
+        $batchTeachers = DB::table('batch_teacher')
+            ->where('batch_id', $batchId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->get();
+
+        foreach ($batchTeachers as $bt) {
+            $teacher = Teacher::find($bt->teacher_id);
+            if (! $teacher) {
+                continue;
+            }
+
+            if ($bt->salary_amount_type === 'fixed') {
+                $this->createOrUpdateTeacherPayment($bt->teacher_id, $month, $year);
+            } else {
+                $this->recalculatePercentageSalaries($batchId, $month, $year);
+            }
+        }
+    }
+
+    public function recalculatePercentageSalaries(int $batchId, int $month, int $year): void
+    {
+        $batchTeachers = DB::table('batch_teacher')
+            ->where('batch_id', $batchId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->where('salary_amount_type', 'percentage')
+            ->get();
+
+        foreach ($batchTeachers as $bt) {
+            $teacher = Teacher::find($bt->teacher_id);
+            if (! $teacher) {
+                continue;
+            }
+
+            $batch = Batch::find($batchId);
+            if (! $batch) {
+                continue;
+            }
+
+            $batchRevenue = $this->getBatchRevenue($batchId, $month, $year);
+            $salary = ($batchRevenue * $bt->salary_amount) / 100;
+
+            $existingPayment = TeachersPayment::where('teacher_id', $bt->teacher_id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->first();
+
+            if ($existingPayment) {
+                $breakdown = is_string($existingPayment->payment_details)
+                    ? json_decode($existingPayment->payment_details, true)
+                    : ($existingPayment->payment_details ?? []);
+
+                $breakdown['batch_recalculation'] = [
+                    'batch_id' => $batchId,
+                    'batch_name' => $batch->batch_name,
+                    'batch_revenue' => $batchRevenue,
+                    'percentage' => $bt->salary_amount,
+                    'calculated' => $salary,
+                ];
+
+                $existingPayment->update([
+                    'amount' => $salary,
+                    'payment_details' => json_encode($breakdown),
+                ]);
+            } else {
+                TeachersPayment::create([
+                    'teacher_id' => $bt->teacher_id,
+                    'month' => $month,
+                    'year' => $year,
+                    'amount' => $salary,
+                    'payment_details' => json_encode([
+                        'salary_type' => 'variable',
+                        'calculated_from' => 'percentage_recalculation',
+                        'batch_id' => $batchId,
+                        'batch_name' => $batch->batch_name,
+                        'batch_revenue' => $batchRevenue,
+                        'percentage' => $bt->salary_amount,
+                    ]),
+                    'payment_status' => 'due',
+                ]);
+            }
+        }
+    }
+
+    private function createOrUpdateTeacherPayment(int $teacherId, int $month, int $year): void
+    {
+        $teacher = Teacher::find($teacherId);
+        if (! $teacher) {
+            return;
+        }
+
+        $existingPayment = TeachersPayment::where('teacher_id', $teacherId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        $salary = $this->calculateMonthlySalary($teacherId, $month, $year);
+
+        if ($existingPayment) {
+            $existingPayment->update([
+                'amount' => $salary,
+                'payment_status' => 'due',
+            ]);
+        } else {
+            TeachersPayment::create([
+                'teacher_id' => $teacherId,
+                'month' => $month,
+                'year' => $year,
+                'amount' => $salary,
+                'payment_details' => json_encode([
+                    'salary_type' => $teacher->salary_type,
+                    'calculated_from' => 'auto_enrollment',
+                ]),
+                'payment_status' => 'due',
+            ]);
+        }
     }
 }

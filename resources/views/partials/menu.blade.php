@@ -219,7 +219,7 @@
                         <li class="c-sidebar-nav-item">
                             <a href="{{ route('admin.due-collections.checker') }}"
                                 class="c-sidebar-nav-link {{ request()->is('admin/due-collections/checker') ? 'c-active' : '' }}">
-                                <i class="fa-fw fas fa-search-dollar c-sidebar-nav-icon">
+                                <i class="fa-fw fas fa-search c-sidebar-nav-icon">
 
                                 </i>
                                 Due Checker
@@ -291,6 +291,17 @@
 
                                 </i>
                                 {{ trans('cruds.teachersPayment.title') }}
+                            </a>
+                        </li>
+                    @endcan
+                    @can('teacher_access')
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.teacher-batch.index') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/teacher-batch*') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-chalkboard-teacher c-sidebar-nav-icon">
+
+                                </i>
+                                {{ trans('cruds.teacherBatch.title') }}
                             </a>
                         </li>
                     @endcan

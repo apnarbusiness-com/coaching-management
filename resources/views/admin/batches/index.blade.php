@@ -52,8 +52,18 @@
                     <input type="hidden" name="year" id="copy-year" value="{{ $selectedYear }}">
                     <button type="submit"
                         class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-amber-500 border border-transparent rounded-lg shadow-sm hover:bg-amber-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-amber-500"
-                        onclick="return confirm('Copy last month\\'s enrolled students into this month for all batches? This will replace the current selection for this month across all batches.')">
+                        onclick="return confirm('Copy last month\'s enrolled students into this month for all batches? This will replace the current selection for this month across all batches.')">
                         Enroll Last Month Students (All Batches)
+                    </button>
+                </form>
+                <form method="POST" action="{{ route('admin.batches.assignTeachers.copyPreviousAll') }}" id="copy-last-month-teachers-form" class="inline-flex">
+                    @csrf
+                    <input type="hidden" name="month" id="copy-teachers-month" value="{{ $selectedMonth }}">
+                    <input type="hidden" name="year" id="copy-teachers-year" value="{{ $selectedYear }}">
+                    <button type="submit"
+                        class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-teal-500 border border-transparent rounded-lg shadow-sm hover:bg-teal-600 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-teal-500"
+                        onclick="return confirm('Copy last month\'s assigned teachers into this month for all batches? This will create salary records for this month.')">
+                        Assign Last Month Teachers (All Batches)
                     </button>
                 </form>
             </div>
@@ -266,6 +276,11 @@
             $('#copy-last-month-form').on('submit', function() {
                 $('#copy-month').val($('#filter-month').val());
                 $('#copy-year').val($('#filter-year').val());
+            });
+
+            $('#copy-last-month-teachers-form').on('submit', function() {
+                $('#copy-teachers-month').val($('#filter-month').val());
+                $('#copy-teachers-year').val($('#filter-year').val());
             });
         });
     </script>

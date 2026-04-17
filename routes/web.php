@@ -6,6 +6,7 @@ use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\DueCollectionController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
+use App\Http\Controllers\Admin\TeacherBatchController;
 use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\TeachersPaymentController;
 use App\Http\Controllers\AdmissionApplicationController;
@@ -32,7 +33,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('student/batches', 'HomeController@myBatches')->name('student.myBatches');
     Route::get('teacher/profile', 'HomeController@teacherProfile')->name('teacher.profile');
     Route::get('teacher/my-id-card', 'HomeController@myIdCard')->name('teacher.myIdCard');
-    
+
     // Ajax Route for Monthly Revenue Breakdown
 
     Route::get('/monthly-revenue/{months}', [HomeController::class, 'getMonthLyRevenueBreakdown'])->name('monthly.revenue');
@@ -41,8 +42,6 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('dashboard-widgets', 'DashboardWidgetConfigController@index')->name('dashboard-widgets.index');
     Route::get('dashboard-widgets/role/{role}/edit', 'DashboardWidgetConfigController@edit')->name('dashboard-widgets.edit');
     Route::put('dashboard-widgets/role/{role}', 'DashboardWidgetConfigController@update')->name('dashboard-widgets.update');
-
-
 
     // Permissions
     Route::delete('permissions/destroy', 'PermissionsController@massDestroy')->name('permissions.massDestroy');
@@ -90,6 +89,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('batches/{batch}/assign-students', [BatchController::class, 'storeAssignedStudents'])->name('batches.assignStudents.store');
     Route::post('batches/{batch}/assign-students/copy-previous', [BatchController::class, 'copyPreviousMonthEnrollments'])->name('batches.assignStudents.copyPrevious');
     Route::post('batches/assign-students/copy-previous-all', [BatchController::class, 'copyPreviousMonthEnrollmentsAll'])->name('batches.assignStudents.copyPreviousAll');
+    Route::post('batches/assign-teachers/copy-previous-all', [BatchController::class, 'copyPreviousMonthTeachersAll'])->name('batches.assignTeachers.copyPreviousAll');
     Route::get('batches/{batch}/assign-teachers', [BatchController::class, 'assignTeachers'])->name('batches.assignTeachers');
     Route::post('batches/{batch}/assign-teachers', [BatchController::class, 'storeAssignedTeacher'])->name('batches.assignTeachers.store');
     Route::delete('batches/{batch}/assign-teachers/{teacher}', [BatchController::class, 'removeAssignedTeacher'])->name('batches.assignTeachers.remove');
@@ -143,12 +143,16 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::resource('expenses', 'ExpensesController');
 
     // Teacher
-    Route::get('teachers/{id}/id-card', [TeacherController::class,'idCard'])->name('teachers.idCard');
+    Route::get('teachers/{id}/id-card', [TeacherController::class, 'idCard'])->name('teachers.idCard');
     Route::post('teachers/{teacher}/toggle-status', [TeacherController::class, 'toggleStatus'])->name('teachers.toggleStatus');
     Route::delete('teachers/destroy', 'TeacherController@massDestroy')->name('teachers.massDestroy');
     Route::post('teachers/media', 'TeacherController@storeMedia')->name('teachers.storeMedia');
     Route::post('teachers/ckmedia', 'TeacherController@storeCKEditorImages')->name('teachers.storeCKEditorImages');
     Route::resource('teachers', 'TeacherController');
+
+    // Teacher Batch
+    Route::get('teacher-batch', [TeacherBatchController::class, 'index'])->name('teacher-batch.index');
+    Route::get('teacher-batch/filter', [TeacherBatchController::class, 'filter'])->name('teacher-batch.filter');
 
     // Subjects
     Route::delete('subjects/destroy', 'SubjectsController@massDestroy')->name('subjects.massDestroy');
@@ -184,7 +188,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections', 'DueCollectionController@index')->name('due-collections.index');
     Route::post('due-collections/generate', 'DueCollectionController@generateDues')->name('due-collections.generate');
     Route::get('due-collections/students', 'DueCollectionController@getStudentList')->name('due-collections.students');
-    Route::get('due-collections/student-dues/{studentId}',[DueCollectionController::class, 'getStudentDues'])->name('due-collections.student-dues');
+    Route::get('due-collections/student-dues/{studentId}', [DueCollectionController::class, 'getStudentDues'])->name('due-collections.student-dues');
     Route::post('due-collections/pay', 'DueCollectionController@payDue')->name('due-collections.pay');
     Route::post('due-collections/pay-all', 'DueCollectionController@payAllDues')->name('due-collections.payAll');
 

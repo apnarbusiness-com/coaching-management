@@ -12,13 +12,20 @@ class DueCalculationService
 {
     protected $dueDateDay = 10;
 
+    protected $salaryService;
+
+    public function __construct(TeacherSalaryCalculationService $salaryService)
+    {
+        $this->salaryService = $salaryService;
+    }
+
     public function generateDueForEnrollment(int $studentId, int $batchId, int $month, int $year, ?float $perStudentDiscount = null, ?float $customMonthlyFee = null): ?StudentMonthlyDue
     {
         // dd($studentId, $batchId, $month, $year, $perStudentDiscount, $customMonthlyFee);
         $student = StudentBasicInfo::with('studentDetails')->find($studentId);
         $batch = Batch::find($batchId);
 
-        if (!$student || !$batch) {
+        if (! $student || ! $batch) {
             return null;
         }
 
@@ -32,8 +39,6 @@ class DueCalculationService
             return $existingDue;
         }
 
-
-
         $pivot = DB::table('batch_student_basic_info')
             ->where('batch_id', $batchId)
             ->where('student_basic_info_id', $studentId)
@@ -42,17 +47,13 @@ class DueCalculationService
             ->orderBy('enrolled_at', 'desc')
             ->first();
 
-
-
         $discount = $perStudentDiscount ?? $pivot->per_student_discount ?? 0;
         $customFee = $customMonthlyFee ?? $pivot->custom_monthly_fee ?? null;
 
         $dueAmount = $this->calculateDueAmountDirect($batch, $discount, $customFee);
         $dueDate = Carbon::createFromDate($year, $month, $this->dueDateDay);
 
-
-
-        return StudentMonthlyDue::create([
+        $due = StudentMonthlyDue::create([
             'student_id' => $student->id,
             'batch_id' => $batch->id,
             'academic_class_id' => $student->class_id,
@@ -67,6 +68,10 @@ class DueCalculationService
             'status' => 'unpaid',
             'due_date' => $dueDate->format('Y-m-d'),
         ]);
+
+        $this->salaryService->recalculatePercentageSalaries($batchId, $month, $year);
+
+        return $due;
     }
 
     public function deleteDuesOnUnenroll(int $studentId, int $batchId, int $month, int $year): int
@@ -78,9 +83,7 @@ class DueCalculationService
             ->where('month', $month)
             ->where('year', $year)
             ->forceDelete();
-            // ->delete();
-
-
+        // ->delete();
 
         /**
          * deleting all current + future monthly dues for a specific student in a specific batch starting from a given month/year.
@@ -98,7 +101,7 @@ class DueCalculationService
         //     ->delete();
     }
 
-    public function generateMonthlyDues(int $month = null, int $year = null): array
+    public function generateMonthlyDues(?int $month = null, ?int $year = null): array
     {
         $month = $month ?? Carbon::now()->month;
         $year = $year ?? Carbon::now()->year;
@@ -130,8 +133,9 @@ class DueCalculationService
             foreach ($pivots as $pivot) {
                 $student = $studentsById->get($pivot->student_basic_info_id);
 
-                if (!$student) {
+                if (! $student) {
                     $results['skipped']++;
+
                     continue;
                 }
                 try {
@@ -143,6 +147,7 @@ class DueCalculationService
 
                     if ($existingDue) {
                         $results['skipped']++;
+
                         continue;
                     }
 
@@ -172,7 +177,7 @@ class DueCalculationService
                         $results['monthly_generated']++;
                     }
                 } catch (\Exception $e) {
-                    $results['errors'][] = "Student ID {$student->id}: " . $e->getMessage();
+                    $results['errors'][] = "Student ID {$student->id}: ".$e->getMessage();
                 }
             }
         }
@@ -188,6 +193,7 @@ class DueCalculationService
 
         if ($batch->fee_type === 'course' && $batch->duration_in_months) {
             $monthlyFee = $batch->fee_amount / $batch->duration_in_months;
+
             return max(0, $monthlyFee - $discount);
         }
 
@@ -205,6 +211,7 @@ class DueCalculationService
 
         if ($batch->fee_type === 'course' && $batch->duration_in_months) {
             $monthlyFee = $batch->fee_amount / $batch->duration_in_months;
+
             return max(0, $monthlyFee - $discount);
         }
 
@@ -240,7 +247,7 @@ class DueCalculationService
         $due->save();
     }
 
-    public function getDashboardStats(int $month = null, int $year = null): array
+    public function getDashboardStats(?int $month = null, ?int $year = null): array
     {
         $month = $month ?? Carbon::now()->month;
         $year = $year ?? Carbon::now()->year;

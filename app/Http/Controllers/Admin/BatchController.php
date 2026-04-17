@@ -12,10 +12,12 @@ use App\Models\ClassRoom;
 use App\Models\Earning;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
-use App\Services\DueCalculationService;
-use Carbon\Carbon;
 use App\Models\Subject;
 use App\Models\Teacher;
+use App\Models\TeachersPayment;
+use App\Services\DueCalculationService;
+use App\Services\TeacherSalaryCalculationService;
+use Carbon\Carbon;
 // use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -28,9 +30,12 @@ class BatchController extends Controller
 {
     protected $dueService;
 
-    public function __construct(DueCalculationService $dueService)
+    protected $salaryService;
+
+    public function __construct(DueCalculationService $dueService, TeacherSalaryCalculationService $salaryService)
     {
         $this->dueService = $dueService;
+        $this->salaryService = $salaryService;
     }
 
     public function index(Request $request)
@@ -64,9 +69,9 @@ class BatchController extends Controller
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
-                $viewGate      = 'batch_show';
-                $editGate      = 'batch_edit';
-                $deleteGate    = 'batch_delete';
+                $viewGate = 'batch_show';
+                $editGate = 'batch_edit';
+                $deleteGate = 'batch_delete';
                 $crudRoutePart = 'batches';
 
                 return view('partials.datatablesActions', compact(
@@ -138,7 +143,7 @@ class BatchController extends Controller
                         $entry = $schedule[$day];
                         $timeValue = is_array($entry) ? ($entry['time'] ?? null) : $entry;
                         $roomId = is_array($entry) ? ($entry['class_room_id'] ?? null) : null;
-                        if (!$timeValue) {
+                        if (! $timeValue) {
                             continue;
                         }
                         $time = \Carbon\Carbon::parse($timeValue)->format('h:i A');
@@ -214,7 +219,7 @@ class BatchController extends Controller
         abort_if(Gate::denies('batch_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $subjects = Subject::pluck('name', 'id');
-        $classes  = AcademicClass::pluck('class_name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $classes = AcademicClass::pluck('class_name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $classRooms = ClassRoom::pluck('name', 'id');
         $students = StudentBasicInfo::orderBy('first_name')
             ->get()
@@ -230,7 +235,7 @@ class BatchController extends Controller
 
     public function store(StoreBatchRequest $request)
     {
-        $data       = $request->validated();
+        $data = $request->validated();
         $subjectIds = $request->input('subjects', []);
         $data['subject_id'] = $subjectIds[0];
 
@@ -248,7 +253,7 @@ class BatchController extends Controller
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $subjects = Subject::pluck('name', 'id');
-        $classes  = AcademicClass::pluck('class_name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $classes = AcademicClass::pluck('class_name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $classRooms = ClassRoom::pluck('name', 'id');
         $students = StudentBasicInfo::orderBy('first_name')
             ->get()
@@ -266,7 +271,7 @@ class BatchController extends Controller
 
     public function update(UpdateBatchRequest $request, Batch $batch)
     {
-        $data       = $request->validated();
+        $data = $request->validated();
         $subjectIds = $request->input('subjects', []);
         $data['subject_id'] = $subjectIds[0];
 
@@ -309,9 +314,6 @@ class BatchController extends Controller
         return response(null, Response::HTTP_NO_CONTENT);
     }
 
-
-
-
     // Custom method for batch management
     public function manage(Batch $batch, Request $request)
     {
@@ -343,6 +345,7 @@ class BatchController extends Controller
                 $student->pivot_discount = $enrollment->per_student_discount ?? 0;
                 $student->pivot_custom_fee = $enrollment->custom_monthly_fee;
                 $student->batch_fee = (float) $batch->fee_amount;
+
                 return $student;
             });
 
@@ -360,6 +363,22 @@ class BatchController extends Controller
             ->whereNotNull('student_monthly_due_id')
             ->sum('amount');
 
+        $currentUser = auth()->user();
+        $canViewIncome = true;
+
+        if ($currentUser && $currentUser->teacher) {
+            $teacherAssignment = DB::table('batch_teacher')
+                ->where('batch_id', $batch->id)
+                ->where('teacher_id', $currentUser->teacher->id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->first();
+
+            if ($teacherAssignment && $teacherAssignment->salary_amount_type === 'fixed') {
+                $canViewIncome = false;
+            }
+        }
+
         return view('admin.batches.manage', compact(
             'batch',
             'teacherCount',
@@ -369,7 +388,8 @@ class BatchController extends Controller
             'totalIncome',
             'month',
             'year',
-            'enrolledStudents'
+            'enrolledStudents',
+            'canViewIncome'
         ));
     }
 
@@ -410,10 +430,10 @@ class BatchController extends Controller
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $data = $request->validate([
-            'students'   => ['array'],
+            'students' => ['array'],
             'students.*' => ['integer', 'exists:student_basic_infos,id'],
-            'month'      => ['required', 'integer', 'min:1', 'max:12'],
-            'year'       => ['required', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
         $month = (int) $data['month'];
@@ -433,7 +453,7 @@ class BatchController extends Controller
         $studentsToEnroll = array_values(array_diff($selectedStudentIds, $existingStudentIds));
         $studentsToRemove = array_values(array_diff($existingStudentIds, $selectedStudentIds));
 
-        if (!empty($studentsToRemove)) {
+        if (! empty($studentsToRemove)) {
             foreach ($studentsToRemove as $studentId) {
                 $this->dueService->deleteDuesOnUnenroll($studentId, $batch->id, $month, $year);
             }
@@ -445,7 +465,7 @@ class BatchController extends Controller
                 ->delete();
         }
 
-        if (!empty($studentsToEnroll)) {
+        if (! empty($studentsToEnroll)) {
             $rows = [];
             foreach ($studentsToEnroll as $studentId) {
                 $student = StudentBasicInfo::find($studentId);
@@ -460,6 +480,7 @@ class BatchController extends Controller
                 ];
 
                 $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
+                $this->salaryService->addEnrollmentPayment($batch->id, $studentId, $month, $year);
             }
 
             DB::table('batch_student_basic_info')->insert($rows);
@@ -476,8 +497,8 @@ class BatchController extends Controller
 
         $data = $request->validate([
             'student_ids' => ['required', 'string'],
-            'month'       => ['required', 'integer', 'min:1', 'max:12'],
-            'year'        => ['required', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
         $month = (int) $data['month'];
@@ -517,13 +538,13 @@ class BatchController extends Controller
 
         $studentsToEnroll = array_values(array_diff($studentIds, $existingStudentIds));
 
-        if (!empty($studentsToEnroll)) {
+        if (! empty($studentsToEnroll)) {
             $validStudentIds = DB::table('student_basic_infos')
                 ->whereIn('id', $studentsToEnroll)
                 ->pluck('id')
                 ->all();
 
-            if (!empty($validStudentIds)) {
+            if (! empty($validStudentIds)) {
                 $rows = [];
                 foreach ($validStudentIds as $studentId) {
                     $student = StudentBasicInfo::find($studentId);
@@ -538,6 +559,7 @@ class BatchController extends Controller
                     ];
 
                     $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
+                    $this->salaryService->addEnrollmentPayment($batch->id, $studentId, $month, $year);
                 }
 
                 DB::table('batch_student_basic_info')->insert($rows);
@@ -576,8 +598,8 @@ class BatchController extends Controller
 
         $data = $request->validate([
             'student_ids' => ['required', 'string'],
-            'month'       => ['required', 'integer', 'min:1', 'max:12'],
-            'year'        => ['required', 'integer', 'min:2000', 'max:2100'],
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
         $month = (int) $data['month'];
@@ -592,8 +614,6 @@ class BatchController extends Controller
         if (empty($idNos)) {
             return response()->json(['success' => false, 'message' => 'No valid student ID numbers provided.']);
         }
-
-
 
         $studentIds = DB::table('student_basic_infos')
             ->whereIn('id_no', $idNos)
@@ -615,17 +635,13 @@ class BatchController extends Controller
 
         $studentsToEnroll = array_values(array_diff($studentIds, $existingStudentIds));
 
-
-
-        if (!empty($studentsToEnroll)) {
+        if (! empty($studentsToEnroll)) {
             $validStudentIds = DB::table('student_basic_infos')
                 ->whereIn('id', $studentsToEnroll)
                 ->pluck('id')
                 ->all();
 
-
-
-            if (!empty($validStudentIds)) {
+            if (! empty($validStudentIds)) {
                 $rows = [];
                 foreach ($validStudentIds as $studentId) {
                     $student = StudentBasicInfo::find($studentId);
@@ -653,8 +669,8 @@ class BatchController extends Controller
                     // ]);
 
                     $studentMonthlyDue = $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
+                    $this->salaryService->addEnrollmentPayment($batch->id, $studentId, $month, $year);
                 }
-
 
                 DB::table('batch_student_basic_info')->insert($rows);
                 // dd($rows, $studentMonthlyDue);
@@ -712,8 +728,6 @@ class BatchController extends Controller
             'custom_fee' => ['nullable', 'numeric', 'min:0'],
         ]);
 
-
-
         $month = (int) $data['month'];
         $year = (int) $data['year'];
         $discount = (float) ($data['discount'] ?? 0);
@@ -768,6 +782,7 @@ class BatchController extends Controller
                 $enrollment = $enrollments->get($student->id);
                 $student->pivot_discount = $enrollment->per_student_discount ?? 0;
                 $student->pivot_custom_fee = $enrollment->custom_monthly_fee;
+
                 return $student;
             });
 
@@ -799,7 +814,7 @@ class BatchController extends Controller
 
         $data = $request->validate([
             'month' => ['required', 'integer', 'min:1', 'max:12'],
-            'year'  => ['required', 'integer', 'min:2000', 'max:2100'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
         $month = (int) $data['month'];
@@ -864,7 +879,7 @@ class BatchController extends Controller
 
         $data = $request->validate([
             'month' => ['required', 'integer', 'min:1', 'max:12'],
-            'year'  => ['required', 'integer', 'min:2000', 'max:2100'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
         $month = (int) $data['month'];
@@ -909,7 +924,7 @@ class BatchController extends Controller
                 ];
             }
 
-            if (!empty($insertRows)) {
+            if (! empty($insertRows)) {
                 DB::table('batch_student_basic_info')->insert($insertRows);
                 $totalInserted += count($insertRows);
 
@@ -921,6 +936,7 @@ class BatchController extends Controller
                         $year,
                         $row['per_student_discount']
                     );
+                    $this->salaryService->addEnrollmentPayment($row['batch_id'], $row['student_basic_info_id'], $month, $year);
                 }
             }
         }
@@ -928,6 +944,133 @@ class BatchController extends Controller
         return redirect()
             ->route('admin.batches.index', ['month' => $month, 'year' => $year])
             ->with('status', "Copied previous month enrollments and generated dues for all batches. Total students enrolled: {$totalInserted}.");
+    }
+
+    public function copyPreviousMonthTeachersAll(Request $request)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+        ]);
+        // dd($data);
+
+        $month = (int) $data['month'];
+        $year = (int) $data['year'];
+
+        $currentMonthStart = Carbon::createFromDate($year, $month, 1);
+        $previousMonthStart = $currentMonthStart->copy()->subMonth();
+
+        $prevMonth = (int) $previousMonthStart->month;
+        $prevYear = (int) $previousMonthStart->year;
+
+        $previousTeachers = DB::table('batch_teacher')
+            ->where('month', $prevMonth)
+            ->where('year', $prevYear)
+            ->get();
+
+
+
+
+        if ($previousTeachers->isEmpty()) {
+            return redirect()
+                ->route('admin.batches.index', ['month' => $month, 'year' => $year])
+                ->with('error', 'Previous month has no assigned teachers to copy.');
+        }
+
+        $totalCopied = 0;
+        $teacherPaymentsCreated = 0;
+
+
+
+        foreach ($previousTeachers as $prevTeacher) {
+            $existingAssignment = DB::table('batch_teacher')
+                ->where('batch_id', $prevTeacher->batch_id)
+                ->where('teacher_id', $prevTeacher->teacher_id)
+                ->where('month', $month)
+                ->where('year', $year)
+                ->first();
+
+            // dd($previousTeachers, $existingAssignment);
+
+            if (! $existingAssignment) {
+                $existingAssignment = DB::table('batch_teacher')->insert([
+                    'batch_id' => $prevTeacher->batch_id,
+                    'teacher_id' => $prevTeacher->teacher_id,
+                    'salary_amount' => $prevTeacher->salary_amount,
+                    'salary_amount_type' => $prevTeacher->salary_amount_type,
+                    'role' => $prevTeacher->role,
+                    'month' => $month,
+                    'year' => $year,
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+                $totalCopied++;
+            }
+
+            $this->calculateAndCreateTeacherPayment(
+                $prevTeacher->teacher_id,
+                $month,
+                $year
+            );
+            $teacherPaymentsCreated++;
+        }
+
+        return redirect()
+            ->route('admin.batches.index', ['month' => $month, 'year' => $year])
+            ->with('status', "Copied {$totalCopied} teacher assignments and created {$teacherPaymentsCreated} salary records for this month.");
+    }
+
+    private function calculateAndCreateTeacherPayment(int $teacherId, int $month, int $year): void
+    {
+        $existingPayment = TeachersPayment::where('teacher_id', $teacherId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        if ($existingPayment) {
+            $salary = $this->salaryService->calculateMonthlySalary($teacherId, $month, $year);
+            $existingPayment->update([
+                'amount' => $salary,
+                'payment_status' => 'due',
+            ]);
+
+            return;
+        }
+
+        $teacher = Teacher::find($teacherId);
+        if (! $teacher) {
+            return;
+        }
+
+        $salary = $this->salaryService->calculateMonthlySalary($teacherId, $month, $year);
+
+        // if ($salary > 0) {
+        if (true) {
+            TeachersPayment::create([
+                'teacher_id' => $teacherId,
+                'month' => $month,
+                'year' => $year,
+                'amount' => $salary,
+                'payment_details' => json_encode([
+                    'salary_type' => $teacher->salary_type,
+                    'calculated_from' => 'auto',
+                    'copied_from_previous' => true,
+                ]),
+                'payment_status' => 'due',
+            ]);
+        }else{
+            dd([
+                'success' => false,
+                'message' => "Calculated salary for teacher ID {$teacherId} is zero. No payment record created.",
+            ]);
+            // return response()->json([
+            //     'success' => false,
+            //     'message' => "Calculated salary for teacher ID {$teacherId} is zero. No payment record created.",
+            // ]);
+        }
+
     }
 
     public function assignTeachers(Batch $batch, Request $request)
@@ -958,12 +1101,12 @@ class BatchController extends Controller
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $data = $request->validate([
-            'teacher_id'    => ['required', 'integer', 'exists:teachers,id'],
+            'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
             'salary_amount' => ['required', 'numeric', 'min:0'],
             'salary_amount_type' => ['required', 'string', 'in:fixed,percentage'],
-            'role'          => ['nullable', 'string', 'in:primary,assistant'],
-            'month'         => ['required', 'integer', 'min:1', 'max:12'],
-            'year'          => ['required', 'integer', 'min:2000', 'max:2100'],
+            'role' => ['nullable', 'string', 'in:primary,assistant'],
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
 
         // Check if assignment exists for this month/year

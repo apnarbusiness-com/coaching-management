@@ -27,7 +27,7 @@ class BatchAttendanceController extends Controller
                 'students as students_count' => function ($query) use ($attendanceMonth, $attendanceYear) {
                     $query->whereMonth('batch_student_basic_info.enrolled_at', $attendanceMonth)
                         ->whereYear('batch_student_basic_info.enrolled_at', $attendanceYear);
-                }
+                },
             ]);
 
         if (auth()->user()->isTeacher()) {
@@ -40,16 +40,16 @@ class BatchAttendanceController extends Controller
         }
 
         $batches = $batches->orderBy('batch_name')->get();
-            // ->map(function ($batch) {
-            //     return [
-            //         'id' => $batch->id,
-            //         'batch_name' => $batch->batch_name,
-            //         'subject_name' => $batch->subject?->name ?? 'N/A',
-            //         'student_count' => $batch->students()->wherePivot('enrolled_at', '<=', Carbon::today())->count(),
-            //     ];
-            // });
+        // ->map(function ($batch) {
+        //     return [
+        //         'id' => $batch->id,
+        //         'batch_name' => $batch->batch_name,
+        //         'subject_name' => $batch->subject?->name ?? 'N/A',
+        //         'student_count' => $batch->students()->wherePivot('enrolled_at', '<=', Carbon::today())->count(),
+        //     ];
+        // });
 
-            // return  $batches[0]->students;
+        // return  $batches[0]->students;
 
         $attendanceMonthLabel = Carbon::createFromDate($attendanceYear, $attendanceMonth, 1)->format('F Y');
 
@@ -69,7 +69,7 @@ class BatchAttendanceController extends Controller
 
         if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
-            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+            if ($teacher && ! $batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
             }
         }
@@ -101,27 +101,42 @@ class BatchAttendanceController extends Controller
             ->select('student_id', DB::raw('sum(due_remaining) as due_remaining_total'))
             ->pluck('due_remaining_total', 'student_id');
 
-        $formattedStudents = $students->map(function ($student) use ($existingAttendances, $studentTotalDues) {
+        $studentAttendanceHistory = BatchAttendance::where('batch_id', $batchId)
+            ->whereIn('student_id', $students->pluck('id'))
+            ->where('attendance_date', '<=', $date)
+            ->orderBy('attendance_date', 'desc')
+            ->get()
+            ->groupBy('student_id')
+            ->map(fn ($records) => $records->take(10));
+
+        $formattedStudents = $students->map(function ($student) use ($existingAttendances, $studentTotalDues, $studentAttendanceHistory) {
             $totalDueRemaining = (float) ($studentTotalDues[$student->id] ?? 0);
             $hasDue = $totalDueRemaining > 0;
 
+            $attendanceHistory = $studentAttendanceHistory->get($student->id, collect())
+                ->map(fn ($record) => [
+                    'date' => Carbon::parse($record->attendance_date)->format('d M'),
+                    'status' => $record->status,
+                ]);
+
             return [
                 'id' => $student->id,
-                'name' => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                'name' => trim(($student->first_name ?? '').' '.($student->last_name ?? '')),
                 'roll' => $student->roll ?? '',
                 'id_no' => $student->id_no ?? '',
                 'image' => $student->image?->thumbnail ?? null,
                 'status' => $existingAttendances[$student->id] ?? null,
                 'has_due' => $hasDue,
                 'due_amount' => $totalDueRemaining,
+                'attendance_history' => $attendanceHistory,
             ];
         });
 
         $stats = [
             'total' => $students->count(),
-            'present' => collect($existingAttendances)->where(fn($v) => $v === 'present')->count(),
-            'absent' => collect($existingAttendances)->where(fn($v) => $v === 'absent')->count(),
-            'late' => collect($existingAttendances)->where(fn($v) => $v === 'late')->count(),
+            'present' => collect($existingAttendances)->where(fn ($v) => $v === 'present')->count(),
+            'absent' => collect($existingAttendances)->where(fn ($v) => $v === 'absent')->count(),
+            'late' => collect($existingAttendances)->where(fn ($v) => $v === 'late')->count(),
             'marked' => count($existingAttendances),
         ];
 
@@ -146,7 +161,7 @@ class BatchAttendanceController extends Controller
 
         if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
-            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+            if ($teacher && ! $batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
             }
         }
@@ -196,7 +211,7 @@ class BatchAttendanceController extends Controller
 
         if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
-            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+            if ($teacher && ! $batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
             }
         }
@@ -218,10 +233,10 @@ class BatchAttendanceController extends Controller
         $reportData = $students->map(function ($student) use ($attendances, $startDate, $endDate) {
             $enrolledAt = $student->pivot->enrolled_at ?? $startDate;
             $effectiveStart = max(Carbon::parse($startDate), Carbon::parse($enrolledAt));
-            
+
             $studentAttendances = $attendances->get($student->id, collect())
-                ->filter(fn($a) => Carbon::parse($a->attendance_date)->gte($effectiveStart));
-            
+                ->filter(fn ($a) => Carbon::parse($a->attendance_date)->gte($effectiveStart));
+
             $totalDays = $effectiveStart->diffInDays(Carbon::parse($endDate)) + 1;
             $present = $studentAttendances->where('status', 'present')->count();
             $absent = $studentAttendances->where('status', 'absent')->count();
@@ -230,7 +245,7 @@ class BatchAttendanceController extends Controller
 
             return [
                 'id' => $student->id,
-                'name' => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                'name' => trim(($student->first_name ?? '').' '.($student->last_name ?? '')),
                 'roll' => $student->roll ?? '',
                 'total_days' => $totalDays,
                 'present' => $present,
@@ -253,7 +268,7 @@ class BatchAttendanceController extends Controller
 
         if (auth()->user()->isTeacher()) {
             $teacher = auth()->user()->teacher;
-            if ($teacher && !$batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
+            if ($teacher && ! $batch->teachers()->where('teachers.id', $teacher->id)->exists()) {
                 abort_if(true, Response::HTTP_FORBIDDEN, '403 Forbidden');
             }
         }
@@ -264,7 +279,7 @@ class BatchAttendanceController extends Controller
             ->where('student_basic_infos.id', $studentId)
             ->exists();
 
-        if (!$isEnrolled) {
+        if (! $isEnrolled) {
             return response()->json([
                 'success' => false,
                 'message' => 'Student not found in this batch.',
@@ -301,7 +316,7 @@ class BatchAttendanceController extends Controller
             'success' => true,
             'student' => [
                 'id' => $student->id,
-                'name' => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                'name' => trim(($student->first_name ?? '').' '.($student->last_name ?? '')),
             ],
             'batch' => [
                 'id' => $batch->id,
@@ -318,8 +333,8 @@ class BatchAttendanceController extends Controller
 
         $selectedBatchId = $request->input('batch_id');
         $monthInput = $request->input('month', Carbon::now()->format('Y-m'));
-        
-        $parsedDate = Carbon::parse($monthInput . '-01');
+
+        $parsedDate = Carbon::parse($monthInput.'-01');
         $selectedMonth = $parsedDate->month;
         $selectedYear = $parsedDate->year;
 
@@ -328,7 +343,7 @@ class BatchAttendanceController extends Controller
                 'students as students_count' => function ($query) use ($selectedMonth, $selectedYear) {
                     $query->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
                         ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear);
-                }
+                },
             ]);
 
         if (auth()->user()->isTeacher()) {
@@ -352,11 +367,11 @@ class BatchAttendanceController extends Controller
                 $rawSchedule = $batch->getAttributes()['class_schedule'] ?? null;
                 $decodedSchedule = $rawSchedule ? json_decode($rawSchedule, true) : null;
 
-                file_put_contents(storage_path('debug_calendar.txt'), 
-                    "Batch: {$batch->batch_name}\n" .
-                    "Batch ID: {$selectedBatchId}\n" .
-                    "Raw: " . var_export($rawSchedule, true) . "\n" .
-                    "Decoded: " . json_encode($decodedSchedule) . "\n" .
+                file_put_contents(storage_path('debug_calendar.txt'),
+                    "Batch: {$batch->batch_name}\n".
+                    "Batch ID: {$selectedBatchId}\n".
+                    'Raw: '.var_export($rawSchedule, true)."\n".
+                    'Decoded: '.json_encode($decodedSchedule)."\n".
                     "Month: {$selectedMonth}/{$selectedYear}\n"
                 );
                 $totalStudents = $batch->students()
@@ -379,7 +394,7 @@ class BatchAttendanceController extends Controller
 
                     // Use decoded schedule directly from raw
                     $schedule = $decodedSchedule ?? [];
-                    $hasClass = isset($schedule[$dayName]) && !empty($schedule[$dayName]);
+                    $hasClass = isset($schedule[$dayName]) && ! empty($schedule[$dayName]);
 
                     $dayAttendances = $attendances->get($dateStr, collect());
                     $present = $dayAttendances->where('status', 'present')->count();
@@ -395,8 +410,8 @@ class BatchAttendanceController extends Controller
                         'present' => $present,
                         'absent' => $absent,
                         'late' => $late,
-                        'percentage' => $totalStudents > 0 && $dayAttendances->count() > 0 
-                            ? round((($present + $late) / $dayAttendances->count()) * 100, 1) 
+                        'percentage' => $totalStudents > 0 && $dayAttendances->count() > 0
+                            ? round((($present + $late) / $dayAttendances->count()) * 100, 1)
                             : ($hasClass ? 0 : null),
                     ];
                 }
