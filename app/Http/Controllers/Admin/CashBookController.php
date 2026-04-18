@@ -36,7 +36,6 @@ class CashBookController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
             'note' => ['nullable', 'string'],
         ]);
 
@@ -45,6 +44,8 @@ class CashBookController extends Controller
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('cash-books', 'public');
         }
+
+        $data['icon'] = $request->input('icon') ?: null;
 
         $cashBook = CashBook::create($data);
 
@@ -74,7 +75,6 @@ class CashBookController extends Controller
         $data = $request->validate([
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
-            'image' => ['nullable', 'image', 'mimes:jpeg,png,jpg,gif,svg,webp', 'max:2048'],
             'remove_image' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
         ]);
@@ -88,6 +88,12 @@ class CashBookController extends Controller
             $data['image'] = $request->hasFile('image') ? $request->file('image')->store('cash-books', 'public') : null;
         } else {
             unset($data['image']);
+        }
+
+        if ($request->filled('icon')) {
+            $data['icon'] = $request->input('icon');
+        } else {
+            $data['icon'] = null;
         }
 
         $cashBook->update($data);

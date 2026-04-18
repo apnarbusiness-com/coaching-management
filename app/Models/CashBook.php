@@ -23,6 +23,7 @@ class CashBook extends Model
         'title',
         'amount',
         'image',
+        'icon',
         'note',
         'status',
         'created_at',

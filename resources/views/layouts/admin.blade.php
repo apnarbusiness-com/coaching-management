@@ -3,7 +3,7 @@
 
 <head>
     @include('layouts._partials.head')
-    @yield('styles')
+    
     <style>
         .symbol-of-tk {
             font-size: 20px;
@@ -23,6 +23,9 @@
             color: #667eea !important;
         }
     </style>
+    
+    @yield('styles')
+    @stack('styles')
 </head>
 
 <body class="c-app">
@@ -67,6 +70,8 @@
 
     {{-- Page specific scripts --}}
     @yield('scripts')
+
+    @stack('scripts')
 </body>
 
 </html>
