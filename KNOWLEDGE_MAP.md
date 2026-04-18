@@ -157,6 +157,34 @@ StudentBasicInfo >----< StudentMonthlyDue >----< Earning
 
 ---
 
+## Cash Book Module
+
+### Purpose
+Track financial assets (cash, bank accounts, mobile banking, prize bonds, etc.) with change history.
+
+### Routes
+- `/admin/cash-books` - List all cash book entries
+- `/admin/cash-books/create` - Create new entry
+- `/admin/cash-books/{id}/edit` - Edit entry
+
+### Features
+- Icon selection (💰💵🏦📱💳🎁🪙💲) OR image upload
+- Edit via modal (click edit button on card)
+- Total balance calculation
+- Change history tracked in `cash_book_transactions`
+
+### Key Tables
+- `cash_books` - Main entries
+- `cash_book_transactions` - Change history (create/update/delete)
+
+### Permissions
+- `cash_book_access`
+- `cash_book_create`
+- `cash_book_edit`
+- `cash_book_delete`
+
+---
+
 ## Console Commands
 
 - `php artisan due:generate-monthly` - Generate monthly dues
