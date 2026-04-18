@@ -128,6 +128,7 @@
             width: 48px;
             height: 48px;
             object-fit: contain;
+            border-radius: 50%;
         }
 
         .add-card-icon {

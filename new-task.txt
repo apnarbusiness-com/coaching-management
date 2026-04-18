@@ -1,3 +1,6 @@
 card gulor colum ise gap ache kintu 1 ta row theke ar ekta row er gap nai gap ba margin diye dao
 when click edit showing error in console: Uncaught ReferenceError: openEditModal is not defined
     at HTMLButtonElement.onclick (cash-books:723:219) 
+
+
+Vasan tek, 2 tola moshjid, deowan para. bissash building. United er pashe
