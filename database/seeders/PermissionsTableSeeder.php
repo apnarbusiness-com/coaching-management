@@ -614,6 +614,31 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'student_flag_assign',
                 'parent_id' => 106,
             ],
+            [
+                'id'    => 111,
+                'title' => 'cash_book_access',
+                'parent_id' => null,
+            ],
+            [
+                'id'    => 112,
+                'title' => 'cash_book_create',
+                'parent_id' => 111,
+            ],
+            [
+                'id'    => 113,
+                'title' => 'cash_book_edit',
+                'parent_id' => 111,
+            ],
+            [
+                'id'    => 114,
+                'title' => 'cash_book_show',
+                'parent_id' => 111,
+            ],
+            [
+                'id'    => 115,
+                'title' => 'cash_book_delete',
+                'parent_id' => 111,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);

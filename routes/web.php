@@ -3,6 +3,7 @@
 use App\Http\Controllers\Admin\AdmissionApplicationsController;
 use App\Http\Controllers\Admin\BatchAttendanceController;
 use App\Http\Controllers\Admin\BatchController;
+use App\Http\Controllers\Admin\CashBookController;
 use App\Http\Controllers\Admin\DueCollectionController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
@@ -142,6 +143,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('expenses/demo-csv', 'ExpensesController@downloadDemoCsv')->name('expenses.demoCsv');
     Route::post('expenses/import', 'ExpensesController@importExcel')->name('expenses.import');
     Route::resource('expenses', 'ExpensesController');
+
+    // Cash Book
+    Route::resource('cash-books', 'CashBookController');
 
     // Teacher
     Route::get('teachers/{id}/id-card', [TeacherController::class, 'idCard'])->name('teachers.idCard');

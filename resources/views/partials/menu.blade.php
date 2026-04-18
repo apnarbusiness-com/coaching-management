@@ -354,6 +354,17 @@
                 </a>
             </li>
         @endcan
+        @can('cash_book_access')
+            <li class="c-sidebar-nav-item">
+                <a href="{{ route('admin.cash-books.index') }}"
+                    class="c-sidebar-nav-link {{ request()->is('admin/cash-books*') ? 'c-active' : '' }}">
+                    <i class="fa-fw fas fa-wallet c-sidebar-nav-icon">
+
+                    </i>
+                    Cash Book
+                </a>
+            </li>
+        @endcan
         @can('earning_access')
             <li class="c-sidebar-nav-item">
                 <a href="{{ route('admin.earnings.index') }}"

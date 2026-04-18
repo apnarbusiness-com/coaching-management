@@ -1,3 +1,20 @@
-in this project i want to add a new module name 'Cash-book' main purpose 2 ta
+in this project i want to add a new module name 'Cash-book' main purpose 1 ta
 1. koto tk koi rakhchi. peronsal bkash, offiiale bkash accunt, or prise bond e 5k or hoyto kauke loan dici. ei part ta 1 time entry and every time update kora jabe kono history lagbe na
-2. loan section. kauke loan dile sei loan jodi 10 bar e ektu ektu kore dey ami caile 10 bar e entry korte parbo.
+so alada ekta parent menu dao with permission and create a CRUD about that.
+fields gulo lagbe:
+icon, title,amount, note(ckeditor), update_at, created_at, deleted_at
+
+jemon dhoro ami create korlam 
+1. Hand Cash -> 5000 
+2. Bkash-personal -> 3000
+3. Prize bond - 30000
+egulo ami caile edit to korte parbo
+edit korlal:
+1. hand cash -> 3000
+ekhon ei j ami edit korlam eikhane ekta Bank-transaction korle jemon ekta transaction history pore j umuk date e umuk (hand cash) edit kora hoiche 5000 chilo 3000 kora hoiche. or kichu ekta tmr moto kore kore dio
+even ami jodi kono ta delete o kore dei seitaopp history rakhba like a log 
+
+Design:
+------
+C:\Users\sazza\Downloads\Stitch\New folder\cashbook_design.html ei page theke design nao. eikhane card gulo te edit icon dio cclick korle sundor modal asbe edit kore submit korle update hoye jabe.
+and card reload hoye updated data dekhabe. songe upore total jeita ache oitao new ccalculated ta dekhabe.
