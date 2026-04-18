@@ -442,68 +442,7 @@
         </div>
     @endcan
 
-    @can('cash_book_edit')
-        @push('scripts')
-            <script>
-                console.log("ddd");
-                
-                function openEditModal(id, title, amount, image, icon) {
-                    document.getElementById('editTitle').value = title;
-                    document.getElementById('editAmount').value = amount;
-                    document.getElementById('editNote').value = '';
-                    document.getElementById('editImageUpload').value = '';
-                    document.getElementById('editMethod').value = 'PUT';
-                    document.getElementById('editRemoveImage').value = '0';
-                    document.getElementById('editIconSelect').value = icon || '';
-                    document.getElementById('editIconValue').value = icon || '';
-
-                    document.getElementById('editCashBookForm').action = '/admin/cash-books/' + id;
-                    document.getElementById('deleteBtn').onclick = function() {
-                        if (confirm('Delete this entry? This will be logged.')) {
-                            document.getElementById('editMethod').value = 'DELETE';
-                            document.getElementById('editCashBookForm').submit();
-                        }
-                    };
-
-                    var modalEl = document.getElementById('editCashBookModal');
-                    if (modalEl) {
-                        var modal = new bootstrap.Modal(modalEl);
-                        modal.show();
-                    }
-                }
-
-                function toggleEditIcon() {
-                    var iconSelect = document.getElementById('editIconSelect');
-                    var imageUpload = document.getElementById('editImageUpload');
-                    var iconValue = document.getElementById('editIconValue');
-                    var removeImage = document.getElementById('editRemoveImage');
-
-                    if (imageUpload && imageUpload.files.length > 0) {
-                        iconSelect.value = '';
-                        iconValue.value = '';
-                        removeImage.value = '1';
-                    } else if (iconSelect && iconSelect.value) {
-                        iconValue.value = iconSelect.value;
-                        removeImage.value = '0';
-                    } else if (iconValue) {
-                        iconValue.value = '';
-                        removeImage.value = '0';
-                    }
-                }
-            </script>
-        @endpush
-    @endcan
-
-    @if (!Auth::user()->can('cash_book_edit'))
-        @section('scripts')
-            <script>
-                function openEditModal() {
-                    return false;
-                }
-            </script>
-        @endsection
-    @endif
-
+@can('cash_book_access')
     <div class="drawer-overlay" id="transactionOverlay" onclick="closeTransactionDrawer()"></div>
     <div class="drawer" id="transactionDrawer">
         <div class="drawer-header">
@@ -517,109 +456,158 @@
             </div>
         </div>
     </div>
-@endsection
 
-@push('scripts')
-    <script>
-        // console.log("hello");
-        
-        let currentCashBookId = null;
+    @push('scripts')
+        <script>
+            let currentCashBookId = null;
 
-        function openTransactionDrawer(id, title) {
-            currentCashBookId = id;
-            document.getElementById('drawerTitle').textContent = title + ' - History';
-            document.getElementById('transactionOverlay').classList.add('open');
-            document.getElementById('transactionDrawer').classList.add('open');
+            function openTransactionDrawer(id, title) {
+                currentCashBookId = id;
+                document.getElementById('drawerTitle').textContent = title + ' - History';
+                document.getElementById('transactionOverlay').classList.add('open');
+                document.getElementById('transactionDrawer').classList.add('open');
 
-            loadTransactions(id);
-        }
+                loadTransactions(id);
+            }
 
-        function closeTransactionDrawer() {
-            document.getElementById('transactionOverlay').classList.remove('open');
-            document.getElementById('transactionDrawer').classList.remove('open');
-        }
+            function closeTransactionDrawer() {
+                document.getElementById('transactionOverlay').classList.remove('open');
+                document.getElementById('transactionDrawer').classList.remove('open');
+            }
 
-        function loadTransactions(id) {
-            const listEl = document.getElementById('transactionList');
-            listEl.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>';
+            function loadTransactions(id) {
+                const listEl = document.getElementById('transactionList');
+                listEl.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>';
 
-            fetch('/admin/cash-books/' + id + '/transactions')
-                .then(response => response.json())
-                .then(data => {
-                    if (data.transactions.length === 0) {
-                        listEl.innerHTML = '<div class="text-center text-muted py-5"><p>No transactions found.</p></div>';
-                        return;
-                    }
+                fetch('/admin/cash-books/' + id + '/transactions')
+                    .then(response => response.json())
+                    .then(data => {
+                        if (data.transactions.length === 0) {
+                            listEl.innerHTML = '<div class="text-center text-muted py-5"><p>No transactions found.</p></div>';
+                            return;
+                        }
 
-                    let html = '';
-                    const icons = {
-                        'wallet' => '💰',
-                        'money' => '💵',
-                        'bank' => '🏦',
-                        'mobile' => '📱',
-                        'card' => '💳',
-                        'gift' => '🎁',
-                        'gold' => '🪙',
-                        'dollar' => '💲',
-                    };
+                        let html = '';
 
-                    data.transactions.forEach(function(tx) {
-                        const typeLabels = {
-                            'create': 'Created',
-                            'update': 'Updated',
-                            'delete': 'Deleted'
-                        };
-                        const type = tx.action_type;
-                        const typeLabel = typeLabels[type] || type;
+                        data.transactions.forEach(function(tx) {
+                            const typeLabels = {
+                                'create': 'Created',
+                                'update': 'Updated',
+                                'delete': 'Deleted'
+                            };
+                            const type = tx.action_type;
+                            const typeLabel = typeLabels[type] || type;
 
-                        const date = new Date(tx.created_at);
-                        const formattedDate = date.toLocaleDateString('en-US', {
-                            year: 'numeric',
-                            month: 'short',
-                            day: 'numeric'
-                        }) + ' ' + date.toLocaleTimeString('en-US', {
-                            hour: '2-digit',
-                            minute: '2-digit'
+                            const date = new Date(tx.created_at);
+                            const formattedDate = date.toLocaleDateString('en-US', {
+                                year: 'numeric',
+                                month: 'short',
+                                day: 'numeric'
+                            }) + ' ' + date.toLocaleTimeString('en-US', {
+                                hour: '2-digit',
+                                minute: '2-digit'
+                            });
+
+                            html += '<div class="transaction-item ' + type + '">';
+                            html += '<div class="transaction-header">';
+                            html += '<span class="transaction-type">' + typeLabel + '</span>';
+                            html += '<span class="transaction-date">' + formattedDate + '</span>';
+                            html += '</div>';
+
+                            if (type === 'create') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
+                            } else if (type === 'update') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
+                            } else if (type === 'delete') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
+                            }
+
+                            if (tx.note) {
+                                html += '<p class="transaction-note">' + tx.note + '</p>';
+                            }
+
+                            if (tx.created_by) {
+                                html += '<div class="transaction-user">By: ' + tx.created_by.name + '</div>';
+                            }
+
+                            html += '</div>';
                         });
 
-                        html += '<div class="transaction-item ' + type + '">';
-                        html += '<div class="transaction-header">';
-                        html += '<span class="transaction-type">' + typeLabel + '</span>';
-                        html += '<span class="transaction-date">' + formattedDate + '</span>';
-                        html += '</div>';
-
-                        if (type === 'create') {
-                            html += '<div class="transaction-amounts">';
-                            html += '<span>New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                            html += '</div>';
-                        } else if (type === 'update') {
-                            html += '<div class="transaction-amounts">';
-                            html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                            html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                            html += '</div>';
-                        } else if (type === 'delete') {
-                            html += '<div class="transaction-amounts">';
-                            html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                            html += '</div>';
-                        }
-
-                        if (tx.note) {
-                            html += '<p class="transaction-note">' + tx.note + '</p>';
-                        }
-
-                        if (tx.created_by) {
-                            html += '<div class="transaction-user">By: ' + tx.created_by.name + '</div>';
-                        }
-
-                        html += '</div>';
+                        listEl.innerHTML = html;
+                    })
+                    .catch(error => {
+                        console.error('Error:', error);
+                        listEl.innerHTML = '<div class="text-center text-danger py-5"><p>Error loading transactions.</p></div>';
                     });
+            }
+        </script>
+    @endpush
+@endcan
 
-                    listEl.innerHTML = html;
-                })
-                .catch(error => {
-                    console.error('Error:', error);
-                    listEl.innerHTML = '<div class="text-center text-danger py-5"><p>Error loading transactions.</p></div>';
-                });
-        }
-    </script>
-@endpush
+@can('cash_book_edit')
+    @push('scripts')
+        <script>
+            function openEditModal(id, title, amount, image, icon) {
+                document.getElementById('editTitle').value = title;
+                document.getElementById('editAmount').value = amount;
+                document.getElementById('editNote').value = '';
+                document.getElementById('editImageUpload').value = '';
+                document.getElementById('editMethod').value = 'PUT';
+                document.getElementById('editRemoveImage').value = '0';
+                document.getElementById('editIconSelect').value = icon || '';
+                document.getElementById('editIconValue').value = icon || '';
+
+                document.getElementById('editCashBookForm').action = '/admin/cash-books/' + id;
+                document.getElementById('deleteBtn').onclick = function() {
+                    if (confirm('Delete this entry? This will be logged.')) {
+                        document.getElementById('editMethod').value = 'DELETE';
+                        document.getElementById('editCashBookForm').submit();
+                    }
+                };
+
+                var modalEl = document.getElementById('editCashBookModal');
+                if (modalEl) {
+                    var modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                }
+            }
+
+            function toggleEditIcon() {
+                var iconSelect = document.getElementById('editIconSelect');
+                var imageUpload = document.getElementById('editImageUpload');
+                var iconValue = document.getElementById('editIconValue');
+                var removeImage = document.getElementById('editRemoveImage');
+
+                if (imageUpload && imageUpload.files.length > 0) {
+                    iconSelect.value = '';
+                    iconValue.value = '';
+                    removeImage.value = '1';
+                } else if (iconSelect && iconSelect.value) {
+                    iconValue.value = iconSelect.value;
+                    removeImage.value = '0';
+                } else if (iconValue) {
+                    iconValue.value = '';
+                    removeImage.value = '0';
+                }
+            }
+        </script>
+    @endpush
+@endcan
+
+@if (!Auth::user()->can('cash_book_edit'))
+    @section('scripts')
+        <script>
+            function openEditModal() {
+                return false;
+            }
+        </script>
+    @endsection
+@endif
+@endsection
