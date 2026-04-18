@@ -10,6 +10,7 @@ return new class extends Migration
     {
         Schema::create('cash_books', function (Blueprint $table) {
             $table->id();
+            $table->string('icon')->nullable();
             $table->string('title')->nullable();
             $table->decimal('amount', 15, 2)->default(0);
             $table->string('image')->nullable();
