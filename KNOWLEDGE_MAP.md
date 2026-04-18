@@ -103,6 +103,15 @@ StudentBasicInfo >----< StudentMonthlyDue >----< Earning
 - **Fixed**: `salary_amount` (direct amount per batch)
 - **Percentage**: `batch_revenue × salary_amount / 100`
 
+### Triggers for Salary Calculation/Recalculation
+1. **Copy Previous Month Teachers** (all batches) - creates salary for each assigned teacher
+2. **Assign Teacher to Batch** - creates salary when teacher assigned
+3. **Update Teacher Assignment** - recalculates salary when changed
+4. **Remove Teacher from Batch** - removes/zeroes salary
+5. **Student Enroll** - triggers recalculation for percentage teachers
+6. **Student Unenroll** - triggers recalculation for percentage teachers
+7. **Add Discount/Custom Fee** - triggers recalculation for percentage teachers
+
 ### Payment Status
 - `due` - salary calculated, not paid
 - `partial` - partially paid

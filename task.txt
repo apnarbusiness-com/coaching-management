@@ -1,6 +1,2 @@
-3. teacher er salary live calculate hobe. 
-	1.1 fixed hoile enroll er time e payment add hoye jabe	
-	1.2 percentage hoile enroll er time e calculate hobe + jekono student er due calculation er time e Teachers payment re-calculate hobe
-4. teacher er salalry fixed thakle tara batch er income koto dekhte parbe na.
-5. teacher er jara variable/percentage e thakbe sei teacher batch er oi oi month er income + kono student er discount thakle seitao dekhte parbe
-6. Student attendence dite gele teacher 1 ta student er attandence er row te kon kon din asche seita ekhanei dekhte aprbe.
+C:\Users\sazza\Downloads\Stitch\New folder\cashbook_design.html ei design dekho. 
+ami ekta Cashbook module banayte cai 

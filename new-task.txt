@@ -1,0 +1,3 @@
+in this project i want to add a new module name 'Cash-book' main purpose 2 ta
+1. koto tk koi rakhchi. peronsal bkash, offiiale bkash accunt, or prise bond e 5k or hoyto kauke loan dici. ei part ta 1 time entry and every time update kora jabe kono history lagbe na
+2. loan section. kauke loan dile sei loan jodi 10 bar e ektu ektu kore dey ami caile 10 bar e entry korte parbo.

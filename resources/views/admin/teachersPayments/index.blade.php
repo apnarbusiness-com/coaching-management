@@ -12,7 +12,7 @@
 @endphp
 
 <!-- Generate Monthly Salaries Form -->
-<div class="mb-6 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
+{{-- <div class="mb-6 p-6 bg-white dark:bg-slate-800 rounded-xl shadow-sm border border-slate-200 dark:border-slate-700">
     <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100 mb-4 flex items-center gap-2">
         <span class="material-symbols-outlined text-primary">payments</span>
         Generate Monthly Salaries
@@ -43,7 +43,7 @@
     <p class="text-sm text-slate-500 dark:text-slate-400 mt-3">
         This will create salary payment records for all active teachers based on their batch assignments for the selected month.
     </p>
-</div>
+</div> --}}
 
 @if (session('status'))
     <div class="mb-4 rounded-lg bg-green-50 text-green-700 px-4 py-3 text-sm border border-green-200">

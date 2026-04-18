@@ -1275,7 +1275,6 @@ class BatchController extends Controller
             ->exists();
 
         if ($exists) {
-            // Update existing
             DB::table('batch_teacher')
                 ->where('batch_id', $batch->id)
                 ->where('teacher_id', $data['teacher_id'])
@@ -1287,8 +1286,11 @@ class BatchController extends Controller
                     'role' => $data['role'] ?? null,
                     'updated_at' => now(),
                 ]);
+
+            $this->calculateAndCreateTeacherPayment($batch->id, $data['teacher_id'], $data['month'], $data['year']);
+
+            $message = 'Teacher assignment updated. Salary recalculated.';
         } else {
-            // Insert new
             DB::table('batch_teacher')->insert([
                 'batch_id' => $batch->id,
                 'teacher_id' => $data['teacher_id'],
@@ -1300,11 +1302,17 @@ class BatchController extends Controller
                 'created_at' => now(),
                 'updated_at' => now(),
             ]);
+
+            $paymentCreated = $this->calculateAndCreateTeacherPayment($batch->id, $data['teacher_id'], $data['month'], $data['year']);
+
+            $message = $paymentCreated
+                ? 'Teacher assigned. Salary record created.'
+                : 'Teacher assigned. No salary calculated (batch may have no students/revenue).';
         }
 
         return redirect()
             ->route('admin.batches.assignTeachers', [$batch->id, 'month' => $data['month'], 'year' => $data['year']])
-            ->with('status', 'Teacher assignment saved.');
+            ->with('status', $message);
     }
 
     public function removeAssignedTeacher(Request $request, Batch $batch, Teacher $teacher)
@@ -1321,6 +1329,12 @@ class BatchController extends Controller
             ->where('year', $year)
             ->delete();
 
-        return back()->with('status', 'Teacher removed from batch.');
+        TeachersPayment::where('teacher_id', $teacher->id)
+            ->where('batch_id', $batch->id)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->delete();
+
+        return back()->with('status', 'Teacher removed from batch and salary record deleted.');
     }
 }
