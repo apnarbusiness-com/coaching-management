@@ -140,6 +140,142 @@
             align-items: center;
             justify-content: center;
         }
+
+        .drawer {
+            position: fixed;
+            top: 0;
+            right: 0;
+            width: 400px;
+            max-width: 90vw;
+            height: 100vh;
+            background: white;
+            box-shadow: -4px 0 20px rgba(0,0,0,0.15);
+            z-index: 1050;
+            transform: translateX(100%);
+            transition: transform 0.3s ease;
+            display: flex;
+            flex-direction: column;
+        }
+
+        .drawer.open {
+            transform: translateX(0);
+        }
+
+        .drawer-overlay {
+            position: fixed;
+            top: 0;
+            left: 0;
+            width: 100%;
+            height: 100%;
+            background: rgba(0,0,0,0.5);
+            z-index: 1040;
+            opacity: 0;
+            visibility: hidden;
+            transition: opacity 0.3s, visibility 0.3s;
+        }
+
+        .drawer-overlay.open {
+            opacity: 1;
+            visibility: visible;
+        }
+
+        .drawer-header {
+            padding: 1rem 1.5rem;
+            border-bottom: 1px solid #e2e8f0;
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            flex-shrink: 0;
+        }
+
+        .drawer-body {
+            padding: 1rem 1.5rem;
+            overflow-y: auto;
+            flex: 1;
+        }
+
+        .drawer-close {
+            background: none;
+            border: none;
+            font-size: 1.5rem;
+            cursor: pointer;
+            color: #64748b;
+            padding: 0;
+            line-height: 1;
+        }
+
+        .drawer-close:hover {
+            color: #1e293b;
+        }
+
+        .transaction-item {
+            padding: 1rem;
+            border-radius: 0.5rem;
+            background: #f8fafc;
+            margin-bottom: 0.75rem;
+            border-left: 3px solid #0d47a1;
+        }
+
+        .transaction-item.create {
+            border-left-color: #22c55e;
+        }
+
+        .transaction-item.update {
+            border-left-color: #0d47a1;
+        }
+
+        .transaction-item.delete {
+            border-left-color: #ef4444;
+        }
+
+        .transaction-header {
+            display: flex;
+            align-items: center;
+            justify-content: space-between;
+            margin-bottom: 0.5rem;
+        }
+
+        .transaction-type {
+            font-weight: 600;
+            font-size: 0.875rem;
+            text-transform: uppercase;
+        }
+
+        .transaction-date {
+            font-size: 0.75rem;
+            color: #64748b;
+        }
+
+        .transaction-amounts {
+            display: flex;
+            gap: 0.75rem;
+            font-size: 0.875rem;
+            margin-bottom: 0.25rem;
+        }
+
+        .transaction-old {
+            color: #ef4444;
+        }
+
+        .transaction-new {
+            color: #22c55e;
+        }
+
+        .transaction-note {
+            font-size: 0.875rem;
+            color: #64748b;
+            margin: 0;
+        }
+
+        .transaction-user {
+            font-size: 0.75rem;
+            color: #94a3b8;
+            margin-top: 0.5rem;
+        }
+
+        .btn-details {
+            top: 1rem;
+        }
     </style>
 
     <div class="row">
@@ -204,9 +340,15 @@
                     <p class="fund-amount">Tk {{ number_format($cashBook->amount, 2) }}</p>
                     <span class="status-tag">{{ $cashBook->status === 'active' ? 'Active' : 'Inactive' }}</span>
                     @can('cash_book_edit')
-                        <button class="btn btn-sm btn-outline-primary position-absolute" style="top: 1rem; right: 1.5rem;"
+                        <button class="btn btn-sm btn-outline-primary position-absolute btn-details" style="top: 1rem; right: 1.5rem;"
                             onclick="openEditModal({{ $cashBook->id }}, {{ json_encode($cashBook->title) }}, {{ $cashBook->amount }}, {{ json_encode($cashBook->image ?? '') }}, {{ json_encode($cashBook->icon ?? '') }})">
                             <i class="fas fa-edit"></i>
+                        </button>
+                    @endcan
+                    @can('cash_book_access')
+                        <button class="btn btn-sm btn-outline-info position-absolute" style="top: 1rem; right: {{ Auth::user()->can('cash_book_edit') ? '5.5rem' : '1.5rem' }};"
+                            onclick="openTransactionDrawer({{ $cashBook->id }}, {{ json_encode($cashBook->title) }})">
+                            <i class="fas fa-info-circle"></i>
                         </button>
                     @endcan
                 </div>
@@ -361,4 +503,123 @@
             </script>
         @endsection
     @endif
+
+    <div class="drawer-overlay" id="transactionOverlay" onclick="closeTransactionDrawer()"></div>
+    <div class="drawer" id="transactionDrawer">
+        <div class="drawer-header">
+            <h5 class="mb-0 fw-bold" id="drawerTitle">Transaction History</h5>
+            <button class="drawer-close" onclick="closeTransactionDrawer()">&times;</button>
+        </div>
+        <div class="drawer-body" id="transactionList">
+            <div class="text-center text-muted py-5">
+                <i class="fas fa-spinner fa-spin fa-2x"></i>
+                <p class="mt-2">Loading...</p>
+            </div>
+        </div>
+    </div>
 @endsection
+
+@push('scripts')
+    <script>
+        // console.log("hello");
+        
+        let currentCashBookId = null;
+
+        function openTransactionDrawer(id, title) {
+            currentCashBookId = id;
+            document.getElementById('drawerTitle').textContent = title + ' - History';
+            document.getElementById('transactionOverlay').classList.add('open');
+            document.getElementById('transactionDrawer').classList.add('open');
+
+            loadTransactions(id);
+        }
+
+        function closeTransactionDrawer() {
+            document.getElementById('transactionOverlay').classList.remove('open');
+            document.getElementById('transactionDrawer').classList.remove('open');
+        }
+
+        function loadTransactions(id) {
+            const listEl = document.getElementById('transactionList');
+            listEl.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>';
+
+            fetch('/admin/cash-books/' + id + '/transactions')
+                .then(response => response.json())
+                .then(data => {
+                    if (data.transactions.length === 0) {
+                        listEl.innerHTML = '<div class="text-center text-muted py-5"><p>No transactions found.</p></div>';
+                        return;
+                    }
+
+                    let html = '';
+                    const icons = {
+                        'wallet' => '💰',
+                        'money' => '💵',
+                        'bank' => '🏦',
+                        'mobile' => '📱',
+                        'card' => '💳',
+                        'gift' => '🎁',
+                        'gold' => '🪙',
+                        'dollar' => '💲',
+                    };
+
+                    data.transactions.forEach(function(tx) {
+                        const typeLabels = {
+                            'create': 'Created',
+                            'update': 'Updated',
+                            'delete': 'Deleted'
+                        };
+                        const type = tx.action_type;
+                        const typeLabel = typeLabels[type] || type;
+
+                        const date = new Date(tx.created_at);
+                        const formattedDate = date.toLocaleDateString('en-US', {
+                            year: 'numeric',
+                            month: 'short',
+                            day: 'numeric'
+                        }) + ' ' + date.toLocaleTimeString('en-US', {
+                            hour: '2-digit',
+                            minute: '2-digit'
+                        });
+
+                        html += '<div class="transaction-item ' + type + '">';
+                        html += '<div class="transaction-header">';
+                        html += '<span class="transaction-type">' + typeLabel + '</span>';
+                        html += '<span class="transaction-date">' + formattedDate + '</span>';
+                        html += '</div>';
+
+                        if (type === 'create') {
+                            html += '<div class="transaction-amounts">';
+                            html += '<span>New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                            html += '</div>';
+                        } else if (type === 'update') {
+                            html += '<div class="transaction-amounts">';
+                            html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                            html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                            html += '</div>';
+                        } else if (type === 'delete') {
+                            html += '<div class="transaction-amounts">';
+                            html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                            html += '</div>';
+                        }
+
+                        if (tx.note) {
+                            html += '<p class="transaction-note">' + tx.note + '</p>';
+                        }
+
+                        if (tx.created_by) {
+                            html += '<div class="transaction-user">By: ' + tx.created_by.name + '</div>';
+                        }
+
+                        html += '</div>';
+                    });
+
+                    listEl.innerHTML = html;
+                })
+                .catch(error => {
+                    console.error('Error:', error);
+                    listEl.innerHTML = '<div class="text-center text-danger py-5"><p>Error loading transactions.</p></div>';
+                });
+        }
+    </script>
+@endpush

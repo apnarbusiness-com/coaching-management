@@ -133,4 +133,19 @@ class CashBookController extends Controller
 
         return back()->with('status', 'Cash book entry deleted.');
     }
+
+    public function transactions(CashBook $cashBook)
+    {
+        abort_if(Gate::denies('cash_book_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $transactions = $cashBook->transactions()
+            ->with('createdBy')
+            ->orderBy('created_at', 'desc')
+            ->get();
+
+        return response()->json([
+            'cash_book' => $cashBook,
+            'transactions' => $transactions,
+        ]);
+    }
 }
