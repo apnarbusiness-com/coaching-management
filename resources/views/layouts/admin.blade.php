@@ -3,7 +3,7 @@
 
 <head>
     @include('layouts._partials.head')
-    
+
     <style>
         .symbol-of-tk {
             font-size: 20px;
@@ -11,19 +11,28 @@
             margin-top: -4px;
             margin-left: -4px;
         }
+
         /* Override sidebar active menu item background to white */
-        .c-sidebar .c-active.c-sidebar-nav-dropdown-toggle, .c-sidebar .c-sidebar-nav-link.c-active,
+        .c-sidebar .c-active.c-sidebar-nav-dropdown-toggle,
+        .c-sidebar .c-sidebar-nav-link.c-active,
         .c-sidebar.c-sidebar-light .c-active.c-sidebar-nav-dropdown-toggle {
             background: #ffffff !important;
             color: #1e293b !important;
             font-weight: 600;
             border-left: 3px solid #667eea;
         }
-        .c-sidebar .c-active.c-sidebar-nav-dropdown-toggle .c-sidebar-nav-icon, .c-sidebar .c-sidebar-nav-link.c-active .c-sidebar-nav-icon {
+
+        .c-sidebar .c-active.c-sidebar-nav-dropdown-toggle .c-sidebar-nav-icon,
+        .c-sidebar .c-sidebar-nav-link.c-active .c-sidebar-nav-icon {
             color: #667eea !important;
         }
+
+
+        .c-sidebar-nav-dropdown-items {
+            margin-left: 12% !important;
+        }
     </style>
-    
+
     @yield('styles')
     @stack('styles')
 </head>
