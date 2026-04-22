@@ -404,7 +404,7 @@ template {
 }
 
 .ps {
-    overflow: hidden !important;
+    /* overflow: hidden !important; */
     -ms-touch-action: auto;
     touch-action: auto;
     -ms-overflow-style: none;
@@ -10645,7 +10645,7 @@ html:not([dir=rtl]) .c-sidebar-nav-dropdown-toggle .badge {
 .c-sidebar-nav-dropdown-items {
     max-height: 0;
     padding: 0;
-    overflow-y: hidden;
+    /* overflow-y: hidden; */
     list-style: none;
     transition: max-height .3s ease-in-out
 }
