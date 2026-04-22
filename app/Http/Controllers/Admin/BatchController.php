@@ -768,13 +768,12 @@ class BatchController extends Controller
         //     'updated' => $updated
         // ]);
         if ($updated) {
-            $this->dueService->deleteDuesOnUnenroll($student->id, $batch->id, $month, $year);
-            $this->dueService->generateDueForEnrollment($student->id, $batch->id, $month, $year, $discount, $customFee);
+            $this->dueService->updateDueForEnrollment($student->id, $batch->id, $month, $year, $discount, $customFee);
         }
 
         return response()->json([
             'success' => true,
-            'message' => 'Enrollment updated and due regenerated successfully.',
+            'message' => 'Enrollment updated and due recalculated successfully.',
         ]);
     }
 

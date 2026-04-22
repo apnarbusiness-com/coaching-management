@@ -74,10 +74,61 @@ class DueCalculationService
         return $due;
     }
 
+    public function updateDueForEnrollment(int $studentId, int $batchId, int $month, int $year, ?float $perStudentDiscount = null, ?float $customMonthlyFee = null): ?StudentMonthlyDue
+    {
+        $student = StudentBasicInfo::with('studentDetails')->find($studentId);
+        $batch = Batch::find($batchId);
+
+        if (! $student || ! $batch) {
+            return null;
+        }
+
+        $existingDue = StudentMonthlyDue::where('student_id', $studentId)
+            ->where('batch_id', $batchId)
+            ->where('month', $month)
+            ->where('year', $year)
+            ->first();
+
+        $pivot = DB::table('batch_student_basic_info')
+            ->where('batch_id', $batchId)
+            ->where('student_basic_info_id', $studentId)
+            ->whereMonth('enrolled_at', '<=', $month)
+            ->whereYear('enrolled_at', '<=', $year)
+            ->orderBy('enrolled_at', 'desc')
+            ->first();
+
+        $discount = $perStudentDiscount ?? $pivot->per_student_discount ?? 0;
+        $customFee = $customMonthlyFee ?? $pivot->custom_monthly_fee ?? null;
+
+        $newDueAmount = $this->calculateDueAmountDirect($batch, $discount, $customFee);
+
+        if ($existingDue) {
+            $existingPaid = $existingDue->paid_amount;
+            $existingDue->due_amount = $newDueAmount;
+            $existingDue->discount_amount = $discount;
+            $existingDue->due_remaining = max(0, $newDueAmount - $existingPaid);
+
+            if ($existingDue->due_remaining <= 0) {
+                $existingDue->status = 'paid';
+                $existingDue->paid_date = now()->format('Y-m-d');
+            } elseif ($existingPaid > 0) {
+                $existingDue->status = 'partial';
+            } else {
+                $existingDue->status = 'unpaid';
+            }
+
+            $existingDue->save();
+
+            $this->salaryService->recalculatePercentageSalaries($batchId, $month, $year);
+
+            return $existingDue;
+        }
+
+        return $this->generateDueForEnrollment($studentId, $batchId, $month, $year, $perStudentDiscount, $customMonthlyFee);
+    }
+
     public function deleteDuesOnUnenroll(int $studentId, int $batchId, int $month, int $year): int
     {
-        // dd($studentId, $batchId, $month, $year);
-
         return StudentMonthlyDue::where('student_id', $studentId)
             ->where('batch_id', $batchId)
             ->where('month', $month)

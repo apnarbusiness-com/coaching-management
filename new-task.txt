@@ -1,3 +1,0 @@
-when click 'fas fa-info-circle' icon it says 'cash-books:861 Uncaught ReferenceError: openTransactionDrawer is not defined
-    at HTMLButtonElement.onclick (cash-books:861:96)
-onclick	@	cash-books:861'
