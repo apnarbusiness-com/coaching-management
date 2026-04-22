@@ -332,6 +332,27 @@ class BatchController extends Controller
 
         $teacherCount = $teacherAssignments->count();
 
+        $teacherAssignmentsWithDetails = $teacherAssignments->map(function ($ta) {
+            $teacher = \App\Models\Teacher::find($ta->teacher_id);
+            $calculatedSalary = 0;
+            if ($ta->salary_amount_type === 'percentage') {
+                $monthlyDues = \App\Models\StudentMonthlyDue::where('batch_id', $ta->batch_id)
+                    ->where('month', $ta->month)
+                    ->where('year', $ta->year)
+                    ->sum('due_amount');
+                $calculatedSalary = ($monthlyDues * $ta->salary_amount) / 100;
+            } else {
+                $calculatedSalary = $ta->salary_amount;
+            }
+            return (object) [
+                'teacher_id' => $ta->teacher_id,
+                'name' => $teacher?->name ?? 'Unknown',
+                'salary_amount' => $ta->salary_amount,
+                'salary_amount_type' => $ta->salary_amount_type,
+                'calculated_salary' => $calculatedSalary,
+            ];
+        });
+
         $enrollments = DB::table('batch_student_basic_info')
             ->where('batch_id', $batch->id)
             ->whereMonth('enrolled_at', $month)
@@ -349,6 +370,7 @@ class BatchController extends Controller
             ->map(function ($student) use ($enrollments, $batch) {
                 $enrollment = $enrollments->get($student->id);
                 $student->pivot_discount = $enrollment->per_student_discount ?? 0;
+                $student->pivot_one_time_discount = $enrollment->one_time_discount ?? 0;
                 $student->pivot_custom_fee = $enrollment->custom_monthly_fee;
                 $student->batch_fee = (float) $batch->fee_amount;
 
@@ -392,6 +414,7 @@ class BatchController extends Controller
             'batch',
             'teacherCount',
             'teacherAssignments',
+            'teacherAssignmentsWithDetails',
             'studentCount',
             'expectedIncome',
             'incomeUntilNow',
@@ -488,6 +511,7 @@ class BatchController extends Controller
                     'student_basic_info_id' => $studentId,
                     'enrolled_at' => $enrolledAt,
                     'per_student_discount' => $discount,
+                    'one_time_discount' => 0,
                     'custom_monthly_fee' => null,
                 ];
 
@@ -567,6 +591,7 @@ class BatchController extends Controller
                         'student_basic_info_id' => $studentId,
                         'enrolled_at' => $enrolledAt,
                         'per_student_discount' => $discount,
+                        'one_time_discount' => 0,
                         'custom_monthly_fee' => null,
                     ];
 
@@ -666,21 +691,9 @@ class BatchController extends Controller
                         'student_basic_info_id' => $studentId,
                         'enrolled_at' => $enrolledAt,
                         'per_student_discount' => $discount ?? 0,
+                        'one_time_discount' => 0,
                         'custom_monthly_fee' => null,
                     ];
-
-                    // return response()->json([
-                    //     'success' => true,
-                    //     // 'message' => 'Students enrolled successfully.',
-                    //     // 'data' => $data,
-                    //     'enrolledAt' => $enrolledAt,
-                    //     'idNos' => $idNos,
-                    //     'studentIds' => $studentIds,
-                    //     'existingStudentIds' => $existingStudentIds,
-                    //     'studentsToEnroll' => $studentsToEnroll,
-                    //     'validStudentIds' => $validStudentIds,
-                    //     'rows' => $rows
-                    // ]);
 
                     $studentMonthlyDue = $this->dueService->generateDueForEnrollment($studentId, $batch->id, $month, $year, $discount);
                     $this->salaryService->addEnrollmentPayment($batch->id, $studentId, $month, $year);
@@ -741,12 +754,14 @@ class BatchController extends Controller
             'month' => ['required', 'integer', 'min:1', 'max:12'],
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
             'discount' => ['nullable', 'numeric', 'min:0'],
+            'one_time_discount' => ['nullable', 'numeric', 'min:0'],
             'custom_fee' => ['nullable', 'numeric', 'min:0'],
         ]);
 
         $month = (int) $data['month'];
         $year = (int) $data['year'];
         $discount = (float) ($data['discount'] ?? 0);
+        $oneTimeDiscount = (float) ($data['one_time_discount'] ?? 0);
         $customFee = isset($data['custom_fee']) ? (float) $data['custom_fee'] : null;
 
         $updated = DB::table('batch_student_basic_info')
@@ -756,8 +771,8 @@ class BatchController extends Controller
             ->whereYear('enrolled_at', $year)
             ->update([
                 'per_student_discount' => $discount,
+                'one_time_discount' => $oneTimeDiscount,
                 'custom_monthly_fee' => $customFee,
-                // 'updated_at' => now(),
             ]);
 
         // return response()->json([
@@ -799,6 +814,7 @@ class BatchController extends Controller
             ->map(function ($student) use ($enrollments) {
                 $enrollment = $enrollments->get($student->id);
                 $student->pivot_discount = $enrollment->per_student_discount ?? 0;
+                $student->pivot_one_time_discount = $enrollment->one_time_discount ?? 0;
                 $student->pivot_custom_fee = $enrollment->custom_monthly_fee;
 
                 return $student;
@@ -818,6 +834,7 @@ class BatchController extends Controller
                 'id_no' => $s->id_no,
                 'class_name' => $s->class->class_name ?? 'N/A',
                 'pivot_discount' => $s->pivot_discount,
+                'pivot_one_time_discount' => $s->pivot_one_time_discount,
                 'pivot_custom_fee' => $s->pivot_custom_fee,
             ]),
             'studentCount' => $studentCount,
@@ -870,6 +887,7 @@ class BatchController extends Controller
                 'student_basic_info_id' => $prev->student_basic_info_id,
                 'enrolled_at' => $enrolledAt,
                 'per_student_discount' => $prev->per_student_discount ?? 0,
+                'one_time_discount' => 0,
                 'custom_monthly_fee' => $prev->custom_monthly_fee ?? null,
             ];
         }
@@ -938,6 +956,7 @@ class BatchController extends Controller
                     'student_basic_info_id' => $prev->student_basic_info_id,
                     'enrolled_at' => $enrolledAt,
                     'per_student_discount' => $prev->per_student_discount ?? 0,
+                    'one_time_discount' => 0,
                     'custom_monthly_fee' => $prev->custom_monthly_fee ?? null,
                 ];
             }

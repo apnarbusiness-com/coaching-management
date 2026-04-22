@@ -47,10 +47,12 @@ class DueCalculationService
             ->orderBy('enrolled_at', 'desc')
             ->first();
 
-        $discount = $perStudentDiscount ?? $pivot->per_student_discount ?? 0;
+        $permanentDiscount = $perStudentDiscount ?? $pivot->per_student_discount ?? 0;
+        $oneTimeDiscount = $pivot->one_time_discount ?? 0;
+        $totalDiscount = $permanentDiscount + $oneTimeDiscount;
         $customFee = $customMonthlyFee ?? $pivot->custom_monthly_fee ?? null;
 
-        $dueAmount = $this->calculateDueAmountDirect($batch, $discount, $customFee);
+        $dueAmount = $this->calculateDueAmountDirect($batch, $totalDiscount, $customFee);
         $dueDate = Carbon::createFromDate($year, $month, $this->dueDateDay);
 
         $due = StudentMonthlyDue::create([
@@ -63,7 +65,7 @@ class DueCalculationService
             'year' => $year,
             'due_amount' => $dueAmount,
             'paid_amount' => 0,
-            'discount_amount' => $discount,
+            'discount_amount' => $totalDiscount,
             'due_remaining' => $dueAmount,
             'status' => 'unpaid',
             'due_date' => $dueDate->format('Y-m-d'),
@@ -97,15 +99,17 @@ class DueCalculationService
             ->orderBy('enrolled_at', 'desc')
             ->first();
 
-        $discount = $perStudentDiscount ?? $pivot->per_student_discount ?? 0;
+        $permanentDiscount = $perStudentDiscount ?? $pivot->per_student_discount ?? 0;
+        $oneTimeDiscount = $pivot->one_time_discount ?? 0;
+        $totalDiscount = $permanentDiscount + $oneTimeDiscount;
         $customFee = $customMonthlyFee ?? $pivot->custom_monthly_fee ?? null;
 
-        $newDueAmount = $this->calculateDueAmountDirect($batch, $discount, $customFee);
+        $newDueAmount = $this->calculateDueAmountDirect($batch, $totalDiscount, $customFee);
 
         if ($existingDue) {
             $existingPaid = $existingDue->paid_amount;
             $existingDue->due_amount = $newDueAmount;
-            $existingDue->discount_amount = $discount;
+            $existingDue->discount_amount = $totalDiscount;
             $existingDue->due_remaining = max(0, $newDueAmount - $existingPaid);
 
             if ($existingDue->due_remaining <= 0) {
@@ -216,7 +220,7 @@ class DueCalculationService
                         'year' => $year,
                         'due_amount' => $dueAmount,
                         'paid_amount' => 0,
-                        'discount_amount' => $pivot->per_student_discount ?? 0,
+                        'discount_amount' => ($pivot->per_student_discount ?? 0) + ($pivot->one_time_discount ?? 0),
                         'due_remaining' => $dueAmount,
                         'status' => 'unpaid',
                         'due_date' => $dueDate->format('Y-m-d'),
@@ -253,20 +257,22 @@ class DueCalculationService
 
     public function calculateDueAmount(Batch $batch, $pivot, StudentBasicInfo $student): float
     {
-        $discount = $pivot->per_student_discount ?? 0;
+        $permanentDiscount = $pivot->per_student_discount ?? 0;
+        $oneTimeDiscount = $pivot->one_time_discount ?? 0;
+        $totalDiscount = $permanentDiscount + $oneTimeDiscount;
         $customFee = $pivot->custom_monthly_fee;
 
         if ($customFee !== null) {
-            return max(0, $customFee - $discount);
+            return max(0, $customFee - $totalDiscount);
         }
 
         if ($batch->fee_type === 'course' && $batch->duration_in_months) {
             $monthlyFee = $batch->fee_amount / $batch->duration_in_months;
 
-            return max(0, $monthlyFee - $discount);
+            return max(0, $monthlyFee - $totalDiscount);
         }
 
-        return max(0, $batch->fee_amount - $discount);
+        return max(0, $batch->fee_amount - $totalDiscount);
     }
 
     public function calculateStudentTotalDue(int $studentId): array

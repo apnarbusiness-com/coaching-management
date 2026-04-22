@@ -111,7 +111,7 @@ class Batch extends Model
     public function students()
     {
         return $this->belongsToMany(StudentBasicInfo::class)
-            ->withPivot(['enrolled_at', 'per_student_discount', 'custom_monthly_fee']);
+            ->withPivot(['enrolled_at', 'per_student_discount', 'one_time_discount', 'custom_monthly_fee']);
     }
 
     public function teachers()

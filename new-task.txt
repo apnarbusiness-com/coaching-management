@@ -1,0 +1,1 @@
+http://dev-coaching-management.test/admin/due-collections/checker

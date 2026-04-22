@@ -8,13 +8,24 @@
                 $teacherIds = $teacherAssignments->pluck('teacher_id')->toArray();
                 $teachers = \App\Models\Teacher::whereIn('id', $teacherIds)->pluck('name', 'id');
                 foreach ($teacherAssignments as $assignment) {
-                    $totalExpense += (float) ($assignment->salary_amount ?? 0);
+                    $calculatedSalary = 0;
+                    if ($assignment->salary_amount_type === 'percentage') {
+                        $monthlyDues = \App\Models\StudentMonthlyDue::where('batch_id', $assignment->batch_id)
+                            ->where('month', $assignment->month)
+                            ->where('year', $assignment->year)
+                            ->sum('due_amount');
+                        $calculatedSalary = ($monthlyDues * $assignment->salary_amount) / 100;
+                    } else {
+                        $calculatedSalary = $assignment->salary_amount;
+                    }
+                    $totalExpense += $calculatedSalary;
                     $teacherAssignmentsWithDetails->push((object) [
-                        'id' => $assignment->teacher_id,
+                        'teacher_id' => $assignment->teacher_id,
                         'name' => $teachers[$assignment->teacher_id] ?? 'Unknown',
                         'salary_amount' => $assignment->salary_amount,
                         'salary_amount_type' => $assignment->salary_amount_type,
                         'role' => $assignment->role,
+                        'calculated_salary' => $calculatedSalary,
                     ]);
                 }
             }
@@ -297,19 +308,29 @@
                             class="px-2.5 py-1 rounded-full bg-green-100 dark:bg-green-900/30 text-green-600 dark:text-green-400 text-xs font-bold uppercase tracking-wider">Active</span>
                     </div>
                     <div class="flex flex-wrap gap-2 py-2">
-                        @forelse ($teacherAssignmentsWithDetails->take(5) as $teacher)
+                        @forelse ($teacherAssignmentsWithDetails as $teacher)
                             @php
                                 $initials = collect(explode(' ', $teacher->name))
                                     ->filter()
                                     ->map(fn($part) => strtoupper(substr($part, 0, 1)))
                                     ->take(2)
                                     ->implode('');
+                                $salaryTypeLabel = $teacher->salary_amount_type === 'fixed' ? 'Fixed' : $teacher->salary_amount . '%';
+                                $salaryBg = $teacher->salary_amount_type === 'fixed' ? 'bg-emerald-100 dark:bg-emerald-900/30 text-emerald-700 dark:text-emerald-400' : 'bg-violet-100 dark:bg-violet-900/30 text-violet-700 dark:text-violet-400';
                             @endphp
-                            <div
-                                class="flex items-center gap-2 px-3 py-2 rounded-full bg-slate-100 dark:bg-slate-700 text-slate-700 dark:text-slate-200 text-xs font-semibold">
-                                <span
-                                    class="inline-flex h-7 w-7 items-center justify-center rounded-full bg-primary/10 text-primary">{{ $initials ?: 'T' }}</span>
-                                <span>{{ $teacher->name }}</span>
+                            <div class="flex items-center justify-between gap-2 px-3 py-2 rounded-lg bg-slate-100 dark:bg-slate-700 w-full">
+                                <div class="flex items-center gap-2">
+                                    <span class="inline-flex h-8 w-8 items-center justify-center rounded-full bg-primary/10 text-primary text-sm font-bold">{{ $initials ?: 'T' }}</span>
+                                    <span class="text-sm font-semibold text-slate-700 dark:text-slate-200">{{ $teacher->name }}</span>
+                                </div>
+                                <div class="flex items-center gap-3">
+                                    <span class="px-2 py-0.5 rounded text-xs font-medium {{ $salaryBg }}">
+                                        {{ $salaryTypeLabel }}
+                                    </span>
+                                    <span class="text-sm font-bold text-slate-600 dark:text-slate-300">
+                                        <span class="tk-sign">৳</span>{{ number_format($teacher->calculated_salary, 0) }}
+                                    </span>
+                                </div>
                             </div>
                         @empty
                             <p class="text-sm text-slate-500">No teachers assigned yet.</p>
@@ -351,10 +372,19 @@
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Monthly
-                                    Discount</label>
+                                    Discount (Permanent)</label>
                                 <input type="number" name="discount" id="modalDiscount" step="0.01" min="0"
                                     class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
                                     placeholder="0">
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">One-Time
+                                    Discount (This Month Only)</label>
+                                <input type="number" name="one_time_discount" id="modalOneTimeDiscount" step="0.01" min="0"
+                                    class="w-full px-3 py-2 border border-slate-300 dark:border-slate-600 rounded-lg focus:ring-2 focus:ring-primary focus:border-primary bg-white dark:bg-slate-700 text-slate-900 dark:text-white"
+                                    placeholder="0">
+                                <p class="text-xs text-amber-600 dark:text-amber-400 mt-1">
+                                    This discount applies only to this month. Won't carry over to next month.</p>
                             </div>
                             <div>
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Custom
@@ -454,6 +484,10 @@
                                             <span
                                                 class="text-xs px-1.5 py-0.5 rounded bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400 font-medium">-{{ number_format($student->pivot_discount, 0) }}</span>
                                         @endif
+                                        @if (isset($student->pivot_one_time_discount) && $student->pivot_one_time_discount > 0)
+                                            <span
+                                                class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 font-medium" title="One-time discount (this month only)">-{{ number_format($student->pivot_one_time_discount, 0) }} <span class="text-[10px]">★</span></span>
+                                        @endif
                                         @if (isset($student->pivot_custom_fee))
                                             <span
                                                 class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium"><span
@@ -461,7 +495,7 @@
                                         @endif
                                         <span class="text-xs text-slate-400">{{ $student->id_no ?? 'N/A' }}</span>
                                         <button type="button"
-                                            onclick="openEditEnrollmentModal({{ $student->id }}, '{{ trim($student->first_name . ' ' . $student->last_name) }}', {{ $student->pivot_discount ?? 0 }}, {{ $student->pivot_custom_fee ?? 'null' }}, {{ $student->batch_fee }})"
+                                            onclick="openEditEnrollmentModal({{ $student->id }}, '{{ trim($student->first_name . ' ' . $student->last_name) }}', {{ $student->pivot_discount ?? 0 }}, {{ $student->pivot_one_time_discount ?? 0 }}, {{ $student->pivot_custom_fee ?? 'null' }}, {{ $student->batch_fee }})"
                                             class="text-slate-400 hover:text-primary transition-colors p-1">
                                             <span class="material-symbols-outlined text-lg">edit</span>
                                         </button>
@@ -690,6 +724,14 @@
                                     </span>
                                 ` : ''}
 
+                            ${student?.pivot_one_time_discount > 0 ? `
+                                    <span
+                                        class="text-xs px-1.5 py-0.5 rounded bg-purple-100 text-purple-700 dark:bg-purple-900/30 dark:text-purple-400 font-medium"
+                                        title="One-time discount (this month only)">
+                                        -${Number(student.pivot_one_time_discount).toLocaleString()} <span class="text-[10px]">★</span>
+                                    </span>
+                                ` : ''}
+
                             ${student?.pivot_custom_fee != null ? `
                                     <span
                                         class="text-xs px-1.5 py-0.5 rounded bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400 font-medium">
@@ -702,6 +744,7 @@
                                 data-student-id="${student.id}"
                                 data-student-name="${student.first_name} ${student.last_name ?? ''}"
                                 data-discount="${student.pivot_discount || 0}"
+                                data-one-time-discount="${student.pivot_one_time_discount || 0}"
                                 data-custom-fee="${student.pivot_custom_fee !== null ? student.pivot_custom_fee : ''}"
                                 data-batch-fee="{{ $batch->fee_amount }}">
                                 <span class="material-symbols-outlined text-lg">edit</span>
@@ -718,10 +761,11 @@
 
         let currentEditStudentId = null;
 
-        function openEditEnrollmentModal(studentId, studentName, discount, customFee, batchFee) {
+        function openEditEnrollmentModal(studentId, studentName, discount, oneTimeDiscount, customFee, batchFee) {
             currentEditStudentId = studentId;
             document.getElementById('modalStudentName').textContent = studentName;
             document.getElementById('modalDiscount').value = discount;
+            document.getElementById('modalOneTimeDiscount').value = oneTimeDiscount || 0;
             document.getElementById('modalCustomFee').value = customFee || '';
             document.getElementById('modalBatchFee').textContent = ' ' + parseFloat(batchFee)
                 .toFixed(2);
@@ -743,6 +787,7 @@
                 month: document.getElementById('modalMonth').value,
                 year: document.getElementById('modalYear').value,
                 discount: document.getElementById('modalDiscount').value,
+                one_time_discount: document.getElementById('modalOneTimeDiscount').value || 0,
                 custom_fee: document.getElementById('modalCustomFee').value || null,
             };
 
@@ -776,6 +821,7 @@
                     btn.dataset.studentId,
                     btn.dataset.studentName,
                     btn.dataset.discount,
+                    btn.dataset.oneTimeDiscount,
                     btn.dataset.customFee,
                     btn.dataset.batchFee
                 );
