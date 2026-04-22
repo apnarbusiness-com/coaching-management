@@ -57,6 +57,23 @@
         .hovered  i{
             display: none;
         }
+        .c-sidebar-nav-dropdown > a >  i{
+            display: block !important;
+        }
+
+        .c-show{
+            background: #fff !important;
+            color: #1e293b !important;
+        }
+
+        .c-show > a{
+            color: #1e293b !important;
+        }
+
+        .c-show > a > i{
+            display: block;
+            color: #1e293b !important;
+        }
 
         @media (max-width: 991px) {
             #sidebar .c-sidebar-nav > li.c-sidebar-nav-dropdown {
