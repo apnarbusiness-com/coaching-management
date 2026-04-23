@@ -75,12 +75,23 @@ class EarningsController extends Controller
                 $deleteGate = 'earning_delete';
                 $crudRoutePart = 'earnings';
 
+                $studentInfo = '';
+                if ($row->student_monthly_due_id) {
+                    $due = \App\Models\StudentMonthlyDue::find($row->student_monthly_due_id);
+                    $studentName = $row->student->first_name ?? 'N/A';
+                    $batchName = $row->batch->batch_name ?? 'N/A';
+                    $dueAmount = number_format((float) ($due->due_remaining ?? 0), 2);
+                    $monthName = date('F', mktime(0, 0, 0, $due->month ?? 1, 1));
+                    $studentInfo = addslashes("Student: {$studentName} | Batch: {$batchName} | Month: {$monthName} | Due: {$dueAmount} BDT");
+                }
+
                 return view('partials.datatablesActions', compact(
                     'viewGate',
                     'editGate',
                     'deleteGate',
                     'crudRoutePart',
-                    'row'
+                    'row',
+                    'studentInfo'
                 ));
             });
 
@@ -305,6 +316,17 @@ class EarningsController extends Controller
     {
         abort_if(Gate::denies('earning_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        if ($earning->student_monthly_due_id) {
+            $due = \App\Models\StudentMonthlyDue::find($earning->student_monthly_due_id);
+            if ($due) {
+                $due->update([
+                    'status' => 'unpaid',
+                    'paid_amount' => 0,
+                    'paid_date' => null,
+                ]);
+            }
+        }
+
         $earning->delete();
 
         return back();
@@ -315,6 +337,16 @@ class EarningsController extends Controller
         $earnings = Earning::find(request('ids'));
 
         foreach ($earnings as $earning) {
+            if ($earning->student_monthly_due_id) {
+                $due = \App\Models\StudentMonthlyDue::find($earning->student_monthly_due_id);
+                if ($due) {
+                    $due->update([
+                        'status' => 'unpaid',
+                        'paid_amount' => 0,
+                        'paid_date' => null,
+                    ]);
+                }
+            }
             $earning->delete();
         }
 

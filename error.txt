@@ -1,1 +1,1 @@
-Error: Method App\Http\Controllers\Admin\EarningsController::bulkUpdateDate does not exist.
+Try deleting a student-linked earning now. Should show warning with student/batch info.

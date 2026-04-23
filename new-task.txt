@@ -1,1 +1,2 @@
-http://dev-coaching-management.test/admin/teachers ei page er toggole button er moto batch er toggole button dao
+http://dev-coaching-management.test/admin/earnings earnings er moddhe jegulo student er sathe connected. i meanm jegulo due-payment theke generate hoiche oi gulo delete korte caile sundor ekta modern alert box asbe j eitar sathe umuk student er umuk month er umuk batch er eto amount due related ache jodi earning delete kore deya hoy tahole oi paid again unpaid hoye jabe.
+ 
