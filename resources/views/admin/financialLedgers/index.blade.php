@@ -88,128 +88,73 @@
                 </div>
             </div>
             <!-- MAIN CORE TABLE: EXCEL RECREATION -->
-            <div class="table-wrapper">
-                <table class="excel-table min-w-full" id="financialLedgerTable">
-                    <thead>
-                        <tr class="bg-[#1F4E79] ">
-                            <th
-                                class="grid-cell px-4 py-2 text-left font-header-primary text-header-primary border-r-sky-800 fixed-col fixed-left">
-                                Batch
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                Jan
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                Feb
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                March
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                April
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                May
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                June
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                July
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                August
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                September
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                October
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                November
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                December
-                            </th>
-                            <th
-                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary fixed-col fixed-right">
-                                Total Earning
-                            </th>
-                        </tr>
-                    </thead>
-                    <tbody class="text-cell-data font-cell-data text-on-surface">
-                        <tr class="bg-white hover:bg-slate-50 text-sky-900">
-                            <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">Ict</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">500</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td
-                                class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
-                                2500</td>
-                        </tr>
-                        <tr class="bg-white hover:bg-slate-50 text-sky-900">
-                            <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">English-1 &amp; 2</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">500</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td
-                                class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
-                                4500</td>
-                        </tr>
-                    </tbody>
-                    <tfoot>
-                        <tr class="bg-secondary-container text-sky-900 font-bold border-t-2 border-primary">
-                            <td
-                                class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">
-                                Total</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">500</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                            <td class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg fixed-col fixed-right">
-                                39925</td>
-                        </tr>
-                    </tfoot>
-                </table>
+            <div class="bg-white border-2 border-primary-container shadow-lg">
+                <div class="p-4 bg-[#1F4E79] flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Financial Ledger - {{ $year }}</h2>
+                    <form action="{{ route('admin.financial-ledgers.index') }}" method="GET"
+                        class="flex items-center gap-2">
+                        <select name="year" class="form-select text-sm" onchange="this.form.submit()">
+                            @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
+                                <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}
+                                </option>
+                            @endfor
+                        </select>
+                    </form>
+                </div>
+                <div class="table-wrapper">
+                    <table class="excel-table min-w-full" id="financialLedgerTable">
+                        <thead>
+                            <tr class="bg-[#1F4E79]">
+                                <th
+                                    class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-sky-800 fixed-col fixed-left">
+                                    Batch
+                                </th>
+                                @foreach ($months as $month)
+                                    <th
+                                        class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-sky-800">
+                                        {{ $month }}
+                                    </th>
+                                @endforeach
+                                <th
+                                    class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">
+                                    Total Earning
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-cell-data font-cell-data text-on-surface">
+                            @forelse($batchEarnings as $batch)
+                                <tr class="bg-white hover:bg-slate-50 text-sky-900">
+                                    <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">{{ $batch['batch_name'] }}</td>
+                                    @for ($m = 1; $m <= 12; $m++)
+                                        <td class="grid-cell px-4 py-1.5 text-right">
+                                            {{ number_format($batch['monthly'][$m] ?? 0) }}</td>
+                                    @endfor
+                                    <td style="background: #00FF00;"
+                                        class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
+                                        {{ number_format($batch['total']) }}</td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="14" class="text-center py-4">No batches found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-secondary-container text-sky-900 font-bold border-t-2 border-primary">
+                                <td
+                                    class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">
+                                    Total</td>
+                                @for ($m = 1; $m <= 12; $m++)
+                                    <td class="grid-cell px-4 py-1.5 text-right">
+                                        {{ number_format($totalPerMonth[$m] ?? 0) }}</td>
+                                @endfor
+                                <td
+                                    class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg fixed-col fixed-right">
+                                    {{ number_format($grandTotal) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
             </div>
             <!-- Secondary Data Row (Visual Density Improvement) -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
