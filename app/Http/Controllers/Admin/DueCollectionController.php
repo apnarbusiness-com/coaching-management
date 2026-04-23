@@ -530,8 +530,17 @@ class DueCollectionController extends Controller
         ];
 
         $dueHistory = $dues->map(function ($due) {
+            $pivot = DB::table('batch_student_basic_info')
+                ->where('batch_id', $due->batch_id)
+                ->where('student_basic_info_id', $due->student_id)
+                ->whereMonth('enrolled_at', '<=', $due->month)
+                ->whereYear('enrolled_at', '<=', $due->year)
+                ->orderBy('enrolled_at', 'desc')
+                ->first();
+
             return [
                 'id' => $due->id,
+                'batch_id' => $due->batch_id,
                 'month' => $due->month,
                 'year' => $due->year,
                 'month_name' => $this->getMonthName($due->month),
@@ -539,6 +548,8 @@ class DueCollectionController extends Controller
                 'due_amount' => (float) $due->due_amount,
                 'paid_amount' => (float) $due->paid_amount,
                 'discount_amount' => (float) $due->discount_amount,
+                'pivot_permanent_discount' => $pivot->per_student_discount ?? 0,
+                'pivot_one_time_discount' => $pivot->one_time_discount ?? 0,
                 'due_remaining' => (float) $due->due_remaining,
                 'status' => $due->status,
             ];

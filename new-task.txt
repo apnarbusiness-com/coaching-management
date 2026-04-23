@@ -1,4 +1,44 @@
-Option C: Both A & B
-- Show breakdown (permanent + one-time)
-- Allow adding new one-time discount during payment-all or pay-now
+D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-management\resources\views\admin\dueCollections\checker.blade.php eikhane dekho blade e tumi 
+ response.due_history.forEach(function(due) {
+                        let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status ===
+                            'partial' ? 'badge-warning' : 'badge-danger');
+                        let permDisc = due.pivot_permanent_discount || 0;
+                        let oneTimeDisc = due.pivot_one_time_discount || 0;
+                        let payButton = due.due_remaining > 0 ?
+                            `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-remaining="${due.due_remaining}" data-one-time="${oneTimeDisc}">Pay Now</button>` :
+                            '-';
+                        dueHistoryBody.append(`
 
+due.pivot_one_time_discount & due.pivot_permanent_discount use korcho kintu controller theke to tumi emon kichu antecho na.
+console.log(response.due_history); ei log kore pailam 
+
+[
+    {
+        "id": 1,
+        "month": 4,
+        "year": 2026,
+        "month_name": "April",
+        "batch_name": "ICT-8",
+        "due_amount": 0,
+        "paid_amount": 0,
+        "discount_amount": 500,
+        "pivot_permanent_discount": 0,
+        "pivot_one_time_discount": 0,
+        "due_remaining": 0,
+        "status": "paid"
+    },
+    {
+        "id": 6,
+        "month": 5,
+        "year": 2026,
+        "month_name": "May",
+        "batch_name": "ICT-8",
+        "due_amount": 500,
+        "paid_amount": 0,
+        "discount_amount": 0,
+        "pivot_permanent_discount": 0,
+        "pivot_one_time_discount": 0,
+        "due_remaining": 500,
+        "status": "unpaid"
+    }
+]

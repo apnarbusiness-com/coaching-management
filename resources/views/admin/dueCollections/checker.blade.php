@@ -976,6 +976,9 @@
                     dueHistoryBody.html(
                         '<tr><td colspan="9" class="text-center text-muted">No due records found</td></tr>');
                 } else {
+                    // console.log("response.due_history: ");
+                    // console.log(response.due_history);
+                    
                     response.due_history.forEach(function(due) {
                         let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status ===
                             'partial' ? 'badge-warning' : 'badge-danger');
