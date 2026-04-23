@@ -553,7 +553,14 @@
                 </div>
             </div>
             <div class="search-box">
-                <input type="text" id="studentSearch" class="form-control" placeholder="Search by Name, ID No, Admission ID, Father's Name or Mother's Name..." autofocus>
+                <div class="input-group">
+                    <input type="text" id="studentSearch" class="form-control" placeholder="Search by Name, ID No, Admission ID, Father's Name or Mother's Name..." autofocus>
+                    <div class="input-group-append">
+                        <button type="button" class="btn btn-info" id="refreshStudentBtn" title="Refresh Data" style="display: none; background-color: #17a2b8; border-color: #17a2b8;">
+                            <i class="fa fa-refresh"></i>
+                        </button>
+                    </div>
+                </div>
                 <div id="searchResults" class="search-results"></div>
             </div>
         </div>
@@ -851,6 +858,7 @@
                 if (query.length < 1) {
                     $('#searchResults').hide();
                     selectedStudentId = null;
+                    $('#refreshStudentBtn').hide();
                     $('#emptyState').show();
                     $('#studentData').hide();
                     return;
@@ -881,12 +889,30 @@
                 }, 300);
             });
 
-            $(document).on('click', '.search-result-item', function() {
+$(document).on('click', '.search-result-item', function() {
                 const studentId = $(this).data('id');
+                const studentName = $(this).find('.main-text').text();
                 selectedStudentId = studentId;
-                $('#studentSearch').val($(this).find('.main-text').text());
+                $('#studentSearch').val(studentName);
                 $('#searchResults').hide();
+                $('#refreshStudentBtn').show();
                 loadStudentData();
+            });
+
+            $('#studentSearch').on('focus', function() {
+                if (selectedStudentId) {
+                    $(this).select();
+                    $('#searchResults').show();
+                }
+            });
+
+            $('#refreshStudentBtn').on('click', function(e) {
+                e.stopPropagation();
+                $(this).find('.fa').addClass('fa-spin');
+                loadStudentData();
+                setTimeout(function() {
+                    $('#refreshStudentBtn').find('.fa').removeClass('fa-spin');
+                }, 500);
             });
 
             $(document).on('click', function(e) {
@@ -899,6 +925,7 @@
                 const query = $(this).val();
                 if (!query || query.length < 1) {
                     selectedStudentId = null;
+                    $('#refreshStudentBtn').hide();
                     $('#emptyState').show();
                     $('#studentData').hide();
                     return;
@@ -907,6 +934,7 @@
                     $.get("{{ route('admin.due-collections.checker.search') }}", { term: query }, function(data) {
                         if (data.length > 0) {
                             selectedStudentId = data[0].id;
+                            $('#refreshStudentBtn').show();
                             loadStudentData();
                         } else {
                             alert('No student found with this search term');
