@@ -10,231 +10,263 @@
 
         .grid-cell {
             border: 1px solid #c2c7d0;
-            /* outline-variant */
         }
 
         .excel-table {
             border-collapse: collapse;
             width: 100%;
         }
+
+        .table-wrapper {
+            overflow-x: auto;
+            max-width: 100%;
+            position: relative;
+        }
+
+        .table-wrapper table {
+            min-width: 1200px;
+        }
+
+        .fixed-col {
+            position: sticky;
+            z-index: 10;
+            background: #fff;
+        }
+
+        .fixed-left {
+            left: 0;
+            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        .fixed-right {
+            right: 0;
+            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
+        }
+
+        thead .fixed-col {
+            background: #1F4E79;
+        }
+
+        tbody .fixed-col {
+            background: #fff;
+        }
+
+        tfoot .fixed-col {
+            background: #d8e0f1;
+        }
     </style>
 @endpush
 
 @section('content')
-    <div class="container-fluid">
-        <!-- Main Content Canvas -->
-        <main class="flex-1 overflow-auto bg-surface-container-low p-4">
 
-            <!-- Dashboard Content Container -->
-            <div class="max-w-6xl mx-auto space-y-6">
-                <!-- Top Bento Row -->
-                <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
-                    <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Portfolio Value</span>
-                        <span class="text-2xl font-bold text-primary">$39,925.00</span>
-                        <div class="text-[10px] text-green-600 font-bold mt-1">▲ +4.2% from last month</div>
+    <!-- Main Content Canvas -->
+    <main class="flex-1 overflow-auto bg-surface-container-low p-4">
+
+        <!-- Dashboard Content Container -->
+        <div class="max-w-6xl mx-auto space-y-6">
+            <!-- Top Bento Row -->
+            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Portfolio Value</span>
+                    <span class="text-2xl font-bold text-primary">$39,925.00</span>
+                    <div class="text-[10px] text-green-600 font-bold mt-1">▲ +4.2% from last month</div>
+                </div>
+                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Active Accounts</span>
+                    <span class="text-2xl font-bold text-primary">14</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">Operational status: Stable</div>
+                </div>
+                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Risk Exposure</span>
+                    <span class="text-2xl font-bold text-error">Low</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">Diversification: High</div>
+                </div>
+                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Fiscal Cycle</span>
+                    <span class="text-2xl font-bold text-primary">Q1 - Jun</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">Next report in 12 days</div>
+                </div>
+            </div>
+            <!-- MAIN CORE TABLE: EXCEL RECREATION -->
+            <div class="table-wrapper">
+                <table class="excel-table min-w-full" id="financialLedgerTable">
+                    <thead>
+                        <tr class="bg-[#1F4E79] ">
+                            <th
+                                class="grid-cell px-4 py-2 text-left font-header-primary text-header-primary border-r-sky-800 fixed-col fixed-left">
+                                Batch
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                Jan
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                Feb
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                March
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                April
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                May
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                June
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                July
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                August
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                September
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                October
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                November
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
+                                December
+                            </th>
+                            <th
+                                class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary fixed-col fixed-right">
+                                Total Earning
+                            </th>
+                        </tr>
+                    </thead>
+                    <tbody class="text-cell-data font-cell-data text-on-surface">
+                        <tr class="bg-white hover:bg-slate-50 text-sky-900">
+                            <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">Ict</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">500</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td
+                                class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
+                                2500</td>
+                        </tr>
+                        <tr class="bg-white hover:bg-slate-50 text-sky-900">
+                            <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">English-1 &amp; 2</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">500</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td
+                                class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
+                                4500</td>
+                        </tr>
+                    </tbody>
+                    <tfoot>
+                        <tr class="bg-secondary-container text-sky-900 font-bold border-t-2 border-primary">
+                            <td
+                                class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">
+                                Total</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">300</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">400</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">500</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-1.5 text-right">600</td>
+                            <td class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg fixed-col fixed-right">
+                                39925</td>
+                        </tr>
+                    </tfoot>
+                </table>
+            </div>
+            <!-- Secondary Data Row (Visual Density Improvement) -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white border border-outline-variant p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
+                            Trend Analysis
+                        </h3>
+                        <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold">LIVE
+                            DATA</span>
                     </div>
-                    <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Active Accounts</span>
-                        <span class="text-2xl font-bold text-primary">14</span>
-                        <div class="text-[10px] text-slate-400 font-normal mt-1">Operational status: Stable</div>
+                    <div class="h-32 bg-slate-50 flex items-end justify-between px-6 pb-2 gap-2">
+                        <div class="w-full bg-sky-300 h-[40%]" title="Jan"></div>
+                        <div class="w-full bg-sky-400 h-[50%]" title="Feb"></div>
+                        <div class="w-full bg-sky-500 h-[60%]" title="Mar"></div>
+                        <div class="w-full bg-sky-600 h-[70%]" title="Apr"></div>
+                        <div class="w-full bg-sky-700 h-[85%]" title="May"></div>
+                        <div class="w-full bg-primary h-[100%]" title="Jun"></div>
                     </div>
-                    <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Risk Exposure</span>
-                        <span class="text-2xl font-bold text-error">Low</span>
-                        <div class="text-[10px] text-slate-400 font-normal mt-1">Diversification: High</div>
-                    </div>
-                    <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Fiscal Cycle</span>
-                        <span class="text-2xl font-bold text-primary">Q1 - Jun</span>
-                        <div class="text-[10px] text-slate-400 font-normal mt-1">Next report in 12 days</div>
+                    <div class="flex justify-between mt-2 text-[10px] font-bold text-slate-400 px-2">
+                        <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
                     </div>
                 </div>
-                <!-- MAIN CORE TABLE: EXCEL RECREATION -->
-                <div class="bg-white border-2 border-primary-container shadow-lg overflow-x-auto">
-                    <table class="excel-table min-w-full" id="financialLedgerTable">
-                        <thead>
-                            <tr class="bg-[#1F4E79] text-white">
-                                <th
-                                    class="grid-cell px-4 py-2 text-left font-header-primary text-header-primary border-r-sky-800">
-                                    Batch
-                                </th>
-                                {{-- <th
-                                    class="grid-cell px-4 py-2 text-left font-header-primary text-header-primary border-r-sky-800">
-                                    Teacher
-                                </th> --}}
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    Jan
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    Feb
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    March
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    April
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    May
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    June
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    July
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    August
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    September
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    October
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    November
-                                </th>
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary border-r-sky-800">
-                                    December
-                                </th>
-                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-header-primary">
-                                    Total Earning
-                                </th>
-                            </tr>
-                        </thead>
-                        <tbody class="text-cell-data font-cell-data text-on-surface">
-                            <tr class="bg-white hover:bg-slate-50">
-                                <td class="grid-cell px-4 py-1.5">Ict</td>
-                                {{-- <td class="grid-cell px-4 py-1.5">Shawon</td> --}}
-                                <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">500</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td
-                                    class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black">
-                                    2500</td>
-                            </tr>
-                            <tr class="bg-white hover:bg-slate-50">
-                                <td class="grid-cell px-4 py-1.5">English-1 &amp; 2</td>
-                                {{-- <td class="grid-cell px-4 py-1.5">Sumon</td> --}}
-                                <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">500</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td
-                                    class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black">
-                                    4500</td>
-                            </tr>
-
-
-                        </tbody>
-                        <tfoot>
-                            <tr class="bg-secondary-container text-sky-900 font-bold border-t-2 border-primary">
-                                <td class="grid-cell px-4 py-3 text-right text-header-primary font-black uppercase tracking-widest"
-                                    colspan="">Total Profit</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">300</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">400</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">500</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-1.5 text-right">600</td>
-                                <td class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg">39925</td>
-                            </tr>
-                        </tfoot>
-                    </table>
-                </div>
-                <!-- Secondary Data Row (Visual Density Improvement) -->
-                <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                    <div class="bg-white border border-outline-variant p-4">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-primary flex items-center gap-2">
-                                <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
-                                Trend Analysis
-                            </h3>
-                            <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold">LIVE
-                                DATA</span>
-                        </div>
-                        <div class="h-32 bg-slate-50 flex items-end justify-between px-6 pb-2 gap-2">
-                            <div class="w-full bg-sky-300 h-[40%]" title="Jan"></div>
-                            <div class="w-full bg-sky-400 h-[50%]" title="Feb"></div>
-                            <div class="w-full bg-sky-500 h-[60%]" title="Mar"></div>
-                            <div class="w-full bg-sky-600 h-[70%]" title="Apr"></div>
-                            <div class="w-full bg-sky-700 h-[85%]" title="May"></div>
-                            <div class="w-full bg-primary h-[100%]" title="Jun"></div>
-                        </div>
-                        <div class="flex justify-between mt-2 text-[10px] font-bold text-slate-400 px-2">
-                            <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
-                        </div>
+                <div class="bg-white border border-outline-variant p-4">
+                    <div class="flex items-center justify-between mb-4">
+                        <h3 class="font-bold text-primary flex items-center gap-2">
+                            <span class="material-symbols-outlined" data-icon="description">description</span>
+                            Key Documents
+                        </h3>
+                        <button class="text-xs text-primary underline">View All</button>
                     </div>
-                    <div class="bg-white border border-outline-variant p-4">
-                        <div class="flex items-center justify-between mb-4">
-                            <h3 class="font-bold text-primary flex items-center gap-2">
-                                <span class="material-symbols-outlined" data-icon="description">description</span>
-                                Key Documents
-                            </h3>
-                            <button class="text-xs text-primary underline">View All</button>
+                    <div class="space-y-2">
+                        <div
+                            class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-red-500"
+                                    data-icon="picture_as_pdf">picture_as_pdf</span>
+                                <span class="text-cell-data">Q2_Forecast_Summary.pdf</span>
+                            </div>
+                            <span class="text-label-sm text-slate-400">1.2 MB</span>
                         </div>
-                        <div class="space-y-2">
-                            <div
-                                class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-red-500"
-                                        data-icon="picture_as_pdf">picture_as_pdf</span>
-                                    <span class="text-cell-data">Q2_Forecast_Summary.pdf</span>
-                                </div>
-                                <span class="text-label-sm text-slate-400">1.2 MB</span>
+                        <div
+                            class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
+                            <div class="flex items-center gap-2">
+                                <span class="material-symbols-outlined text-green-600"
+                                    data-icon="table_view">table_view</span>
+                                <span class="text-cell-data">Raw_Export_June_2024.csv</span>
                             </div>
-                            <div
-                                class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                                <div class="flex items-center gap-2">
-                                    <span class="material-symbols-outlined text-green-600"
-                                        data-icon="table_view">table_view</span>
-                                    <span class="text-cell-data">Raw_Export_June_2024.csv</span>
-                                </div>
-                                <span class="text-label-sm text-slate-400">452 KB</span>
-                            </div>
+                            <span class="text-label-sm text-slate-400">452 KB</span>
                         </div>
                     </div>
                 </div>
             </div>
-        </main>
-    </div>
+        </div>
+    </main>
+
 @endsection
 
 {{-- @push('scripts')
