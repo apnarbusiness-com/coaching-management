@@ -921,6 +921,25 @@ $(document).on('click', '.search-result-item', function() {
                 }
             });
 
+            $('#studentSearch').on('keypress', function(e) {
+                if (e.which === 13) {
+                    e.preventDefault();
+                    const query = $(this).val().trim();
+                    if (query) {
+                        $.get("{{ route('admin.due-collections.checker.search') }}", { term: query }, function(data) {
+                            if (data.length > 0) {
+                                selectedStudentId = data[0].id;
+                                $('#refreshStudentBtn').show();
+                                $('#studentSearch').val(data[0].first_name + ' ' + (data[0].last_name || ''));
+                                loadStudentData();
+                            } else {
+                                alert('No student found with this search term');
+                            }
+                        });
+                    }
+                }
+            });
+
             $('#studentSearch').on('change', function() {
                 const query = $(this).val();
                 if (!query || query.length < 1) {
