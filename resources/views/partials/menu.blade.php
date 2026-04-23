@@ -111,6 +111,17 @@
                 {{ trans('global.dashboard') }}
             </a>
         </li>
+        @can('financial_ledger_access')
+            <li class="c-sidebar-nav-item">
+                <a href="{{ route('admin.financial-ledgers.index') }}"
+                    class="c-sidebar-nav-link {{ request()->is('admin/financial-ledgers*') ? 'c-active' : '' }}">
+                    <i class="c-sidebar-nav-icon fas fa-fw fa-book">
+
+                    </i>
+                    Financial Ledger
+                </a>
+            </li>
+        @endcan
         @can('user_management_access')
             <li
                 class="c-sidebar-nav-dropdown {{ request()->is('admin/permissions*') ? 'c-show' : '' }} {{ request()->is('admin/roles*') ? 'c-show' : '' }} {{ request()->is('admin/users*') ? 'c-show' : '' }} {{ request()->is('admin/audit-logs*') ? 'c-show' : '' }}">

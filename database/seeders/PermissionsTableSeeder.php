@@ -639,6 +639,11 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'cash_book_delete',
                 'parent_id' => 111,
             ],
+            [
+                'id'    => 116,
+                'title' => 'financial_ledger_access',
+                'parent_id' => null,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);

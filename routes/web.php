@@ -30,6 +30,7 @@ Auth::routes(['register' => false]);
 
 Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'middleware' => ['auth']], function () {
     Route::get('/', 'HomeController@index')->name('home');
+    Route::get('financial-ledgers', 'FinancialLedgerController@index')->name('financial-ledgers.index');
     Route::get('student/profile', 'HomeController@studentProfile')->name('student.profile');
     Route::get('student/batches', 'HomeController@myBatches')->name('student.myBatches');
     Route::get('teacher/profile', 'HomeController@teacherProfile')->name('teacher.profile');
