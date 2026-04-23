@@ -183,16 +183,65 @@ class DashboardWidgetService
         }
 
         if (in_array('student_due_alert', $visibleWidgets)) {
+            $currentMonth = (int) now()->format('n');
+            $currentYear = (int) now()->format('Y');
+
+            $overdueDues = \App\Models\StudentMonthlyDue::where(function ($query) use ($currentMonth, $currentYear) {
+                $query->where('year', '<', $currentYear)
+                    ->orWhere(function ($q) use ($currentMonth, $currentYear) {
+                        $q->where('year', $currentYear)->where('month', '<', $currentMonth);
+                    });
+            })
+            ->where('due_remaining', '>', 0)
+            ->where('status', '!=', 'paid')
+            ->with('student')
+            ->get();
+
+            $overdueStudents = $overdueDues->map(function ($due) {
+                return [
+                    'id' => $due->student_id,
+                    'id_no' => $due->student->id_no ?? 'N/A',
+                    'name' => $due->student->first_name ?? 'N/A',
+                    'month' => $due->month,
+                    'year' => $due->year,
+                    'due_amount' => $due->due_remaining,
+                ];
+            });
+
             $data['studentAlerts'] = [
-                'overdueCount' => 0,
-                'overdueStudents' => collect(),
+                'overdueCount' => $overdueDues->count(),
+                'overdueStudents' => $overdueStudents,
             ];
         }
 
         if (in_array('teacher_payment_alert', $visibleWidgets)) {
+            $currentMonth = (int) now()->format('n');
+            $currentYear = (int) now()->format('Y');
+
+            $pendingPayments = \App\Models\TeachersPayment::where(function ($query) use ($currentMonth, $currentYear) {
+                $query->where(function ($q) use ($currentMonth, $currentYear) {
+                    $q->where('year', '<', $currentYear)
+                        ->orWhere(function ($q2) use ($currentMonth, $currentYear) {
+                            $q2->where('year', $currentYear)->where('month', '<', $currentMonth);
+                        });
+                })->where('payment_status', '!=', 'paid');
+            })
+            ->with('teacher')
+            ->get();
+
+            $pendingTeachers = $pendingPayments->map(function ($payment) {
+                return [
+                    'id' => $payment->teacher_id,
+                    'name' => $payment->teacher->name ?? 'N/A',
+                    'month' => $payment->month,
+                    'year' => $payment->year,
+                    'amount' => $payment->amount,
+                ];
+            });
+
             $data['teacherPaymentAlerts'] = [
-                'pendingCount' => 0,
-                'pendingTeachers' => collect(),
+                'pendingCount' => $pendingPayments->count(),
+                'pendingTeachers' => $pendingTeachers,
             ];
         }
 

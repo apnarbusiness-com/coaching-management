@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Models\Earning;
 use App\Models\Expense;
 use App\Models\StudentMonthlyDue;
+use App\Models\Batch;
 use App\Services\DueCalculationService;
 use App\Services\DashboardWidgetService;
 use Carbon\Carbon;
@@ -33,7 +34,15 @@ class HomeController
             'growthTrend' => 'flat',
         ];
 
-        return view('home', compact('transactionData', 'lastSixMonthsData', 'visibleWidgets'));
+        $batches = Batch::orderBy('batch_name')->get();
+
+        $currentMonth = (int) now()->format('n');
+        $currentYear = (int) now()->format('Y');
+
+        $studentAlerts = $transactionData['studentAlerts'] ?? ['overdueCount' => 0, 'overdueStudents' => collect()];
+        $teacherPaymentAlerts = $transactionData['teacherPaymentAlerts'] ?? ['pendingCount' => 0, 'pendingTeachers' => collect()];
+
+        return view('home', compact('transactionData', 'lastSixMonthsData', 'visibleWidgets', 'batches', 'currentMonth', 'currentYear', 'studentAlerts', 'teacherPaymentAlerts'));
     }
 
     public function loadStudentDashboard()
@@ -247,6 +256,66 @@ class HomeController
         return response()->json([
             'labels' => $labels,
             'data'   => $data,
+        ]);
+    }
+
+    public function getAlertData(Request $request)
+    {
+        $month = (int) $request->input('month', now()->month);
+        $year = (int) $request->input('year', now()->year);
+        $batchId = $request->input('batch_id');
+
+        $studentQuery = StudentMonthlyDue::where('month', $month)
+            ->where('year', $year)
+            ->whereIn('status', ['unpaid', 'partial']);
+
+        if ($batchId) {
+            $studentQuery->where('batch_id', $batchId);
+        }
+
+        $dueRecords = $studentQuery->get();
+        $studentData = [
+            'count' => $dueRecords->count(),
+            'totalAmount' => $dueRecords->sum('due_remaining'),
+            'students' => $dueRecords->take(10)->map(function ($due) {
+                return [
+                    'id' => $due->student_id,
+                    'name' => $due->student->first_name . ' ' . ($due->student->last_name ?? ''),
+                    'batch' => $due->batch->batch_name ?? 'N/A',
+                    'due_amount' => $due->due_amount,
+                    'paid_amount' => $due->paid_amount,
+                    'due_remaining' => $due->due_remaining,
+                ];
+            })->values(),
+        ];
+
+        $teacherQuery = TeachersPayment::where('month', $month)
+            ->where('year', $year)
+            ->whereIn('payment_status', ['due', 'partial']);
+
+        if ($batchId) {
+            $teacherQuery->where('batch_id', $batchId);
+        }
+
+        $paymentRecords = $teacherQuery->get();
+        $teacherData = [
+            'count' => $paymentRecords->count(),
+            'totalAmount' => $paymentRecords->sum('amount'),
+            'teachers' => $paymentRecords->take(10)->map(function ($payment) {
+                $teacher = \App\Models\Teacher::find($payment->teacher_id);
+                return [
+                    'id' => $payment->teacher_id,
+                    'name' => $teacher?->name ?? 'Unknown',
+                    'batch' => $payment->batch->batch_name ?? 'N/A',
+                    'amount' => $payment->amount,
+                    'payment_status' => $payment->payment_status,
+                ];
+            })->values(),
+        ];
+
+        return response()->json([
+            'student_alerts' => $studentData,
+            'teacher_alerts' => $teacherData,
         ]);
     }
 }

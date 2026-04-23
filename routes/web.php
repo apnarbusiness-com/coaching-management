@@ -39,6 +39,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     Route::get('/monthly-revenue/{months}', [HomeController::class, 'getMonthLyRevenueBreakdown'])->name('monthly.revenue');
 
+    // Alert Data API
+    Route::get('/alert-data', [HomeController::class, 'getAlertData'])->name('alert-data');
+
     // Dashboard Widget Configuration
     Route::get('dashboard-widgets', 'DashboardWidgetConfigController@index')->name('dashboard-widgets.index');
     Route::get('dashboard-widgets/role/{role}/edit', 'DashboardWidgetConfigController@edit')->name('dashboard-widgets.edit');
@@ -96,6 +99,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('batches/{batch}/assign-teachers', [BatchController::class, 'storeAssignedTeacher'])->name('batches.assignTeachers.store');
     Route::delete('batches/{batch}/assign-teachers/{teacher}', [BatchController::class, 'removeAssignedTeacher'])->name('batches.assignTeachers.remove');
     Route::delete('batches/destroy', 'BatchController@massDestroy')->name('batches.massDestroy');
+    Route::post('batches/{batch}/toggle-status', [BatchController::class, 'toggleStatus'])->name('batches.toggleStatus');
     Route::resource('batches', 'BatchController');
 
     // Student Basic Info
@@ -183,6 +187,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Earnings
     Route::get('students/search', 'EarningsController@getStudents')->name('students.search');
     Route::delete('earnings/destroy', 'EarningsController@massDestroy')->name('earnings.massDestroy');
+    Route::post('earnings/bulk-update-date', 'EarningsController@bulkUpdateDate')->name('earnings.bulkUpdateDate');
     Route::post('earnings/media', 'EarningsController@storeMedia')->name('earnings.storeMedia');
     Route::post('earnings/ckmedia', 'EarningsController@storeCKEditorImages')->name('earnings.storeCKEditorImages');
     Route::get('earnings/summary', 'EarningsController@summary')->name('earnings.summary');

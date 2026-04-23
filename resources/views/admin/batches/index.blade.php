@@ -357,6 +357,11 @@
                         title: 'Batch Name'
                     },
                     {
+                        data: 'status',
+                        name: 'status',
+                        title: 'Status'
+                    },
+                    {
                         data: 'fee_type',
                         name: 'fee_type',
                         title: 'Fee Type'
@@ -634,6 +639,29 @@
                     const item = element.parentElement;
                     item.classList.toggle('active');
                 };
+
+                // Batch Status Toggle
+                $(document).on('change', '.batch-status-toggle', function() {
+                    const checkbox = $(this);
+                    const label = checkbox.closest('.status-toggle').find('.status-label');
+                    const nextStatus = checkbox.is(':checked') ? 1 : 0;
+                    const url = checkbox.data('url');
+
+                    $.ajax({
+                        url: url,
+                        type: 'POST',
+                        data: { status: nextStatus, _token: '{{ csrf_token() }}' },
+                        success: function(res) {
+                            const isActive = !!res.status;
+                            checkbox.prop('checked', isActive);
+                            label.text(isActive ? 'Active' : 'Inactive');
+                            label.toggleClass('is-active', isActive);
+                        },
+                        error: function() {
+                            checkbox.prop('checked', !nextStatus);
+                        }
+                    });
+                });
             }
         });
     </script>

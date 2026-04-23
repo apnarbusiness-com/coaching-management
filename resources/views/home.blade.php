@@ -268,7 +268,33 @@
                 <!-- Level 2: Alert Zone -->
                 @if (in_array('student_due_alert', $visibleWidgets) || in_array('teacher_payment_alert', $visibleWidgets))
                     <div class="flex flex-col gap-4">
-                        <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight px-1">Priority Alerts</h3>
+                        <div class="flex items-center justify-between">
+                            <h3 class="text-slate-900 dark:text-white text-lg font-bold leading-tight px-1">Priority Alerts
+                            </h3>
+                            <div class="flex items-center gap-2">
+                                <select id="alertMonthFilter" class="text-sm border rounded px-2 py-1">
+                                    @for ($m = 1; $m <= 12; $m++)
+                                        <option value="{{ $m }}" {{ $m == $currentMonth ? 'selected' : '' }}>
+                                            {{ \Carbon\Carbon::createFromDate(null, $m)->format('F') }}</option>
+                                    @endfor
+                                </select>
+                                <select id="alertYearFilter" class="text-sm border rounded px-2 py-1">
+                                    @for ($y = $currentYear; $y >= $currentYear - 2; $y--)
+                                        <option value="{{ $y }}" {{ $y == $currentYear ? 'selected' : '' }}>
+                                            {{ $y }}</option>
+                                    @endfor
+                                </select>
+                                <select id="alertBatchFilter" class="text-sm border rounded px-2 py-1">
+                                    <option value="">All Batches</option>
+                                    @foreach ($batches as $batch)
+                                        <option value="{{ $batch->id }}"
+                                            {{ $batch->status == 0 ? 'class="text-red-500"' : '' }}>
+                                            {{ $batch->batch_name }} {{ $batch->status == 0 ? '(Inactive)' : '' }}
+                                        </option>
+                                    @endforeach
+                                </select>
+                            </div>
+                        </div>
                         <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                             @if (in_array('student_due_alert', $visibleWidgets))
                                 <!-- Student Due Alert -->
@@ -281,8 +307,10 @@
                                     <div class="flex-1">
                                         <h4 class="text-slate-900 dark:text-white font-semibold">Student Due Alert</h4>
                                         <p class="text-slate-600 dark:text-[#9da6b9] text-sm">
-                                            {{ $studentAlerts['overdueCount'] ?? 0 }} Students have overdue payments &gt;
-                                            30 days.
+                                            <span id="studentDueCount">{{ $studentAlerts['overdueCount'] ?? 0 }}</span>
+                                            Students have overdue payments.
+                                        </p>
+                                        <p class="text-xs text-slate-400 mt-1">Total: <span id="studentDueAmount">৳0</span>
                                         </p>
                                     </div>
                                     <button
@@ -302,7 +330,12 @@
                                         <h4 class="text-slate-900 dark:text-white font-semibold">Teacher Payment Pending
                                         </h4>
                                         <p class="text-slate-600 dark:text-[#9da6b9] text-sm">
-                                            {{ $teacherPaymentAlerts['pendingCount'] ?? 0 }} Teachers pending payment.</p>
+                                            <span
+                                                id="teacherPaymentCount">{{ $teacherPaymentAlerts['pendingCount'] ?? 0 }}</span>
+                                            Teachers pending payment.
+                                        </p>
+                                        <p class="text-xs text-slate-400 mt-1">Total: <span
+                                                id="teacherPaymentAmount">৳0</span></p>
                                     </div>
                                     <button
                                         class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">Review</button>
@@ -489,6 +522,33 @@
                 });
             }
 
+            // Alert Filters
+            function loadAlertData() {
+                const month = $('#alertMonthFilter').val();
+                const year = $('#alertYearFilter').val();
+                const batchId = $('#alertBatchFilter').val();
+
+                $.get("{{ route('admin.alert-data') }}", {
+                    month: month,
+                    year: year,
+                    batch_id: batchId
+                }, function(response) {
+                    $('#studentDueCount').text(response.student_alerts.count);
+                    $('#studentDueAmount').text('৳' + parseFloat(response.student_alerts
+                        .totalAmount).toLocaleString());
+                    $('#teacherPaymentCount').text(response.teacher_alerts.count);
+                    $('#teacherPaymentAmount').text('৳' + parseFloat(response
+                        .teacher_alerts.totalAmount).toLocaleString());
+                });
+            }
+
+            $('#alertMonthFilter, #alertYearFilter, #alertBatchFilter').on('change',
+                function() {
+                    loadAlertData();
+                });
+
+            // Initial load
+            loadAlertData();
 
         });
     </script>

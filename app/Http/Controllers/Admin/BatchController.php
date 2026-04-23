@@ -89,6 +89,11 @@ class BatchController extends Controller
             $table->editColumn('batch_name', function ($row) {
                 return $row->batch_name ? $row->batch_name : '';
             });
+            $table->editColumn('status', function ($row) {
+                $toggleUrl = route('admin.batches.toggleStatus', $row->id);
+                $isActive = $row->status == 1;
+                return view('partials.statusToggle', compact('toggleUrl', 'isActive'));
+            });
             $table->addColumn('subject_names', function ($row) {
                 $subjects = $row->subjects->pluck('name')->filter()->unique()->values();
 
@@ -1354,5 +1359,15 @@ class BatchController extends Controller
             ->delete();
 
         return back()->with('status', 'Teacher removed from batch and salary record deleted.');
+    }
+
+    public function toggleStatus(Batch $batch)
+    {
+        abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batch->status = $batch->status == 1 ? 0 : 1;
+        $batch->save();
+
+        return response()->json(['status' => $batch->status]);
     }
 }

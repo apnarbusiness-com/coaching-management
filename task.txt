@@ -1,2 +1,9 @@
-C:\Users\sazza\Downloads\Stitch\New folder\cashbook_design.html ei design dekho. 
-ami ekta Cashbook module banayte cai 
+http://dev-coaching-management.test/admin/earnings earning ta valo kore analyse koro. direct entry o deya jacche (connect with student optional)
+abar student due paid hoye gele seitao earning e jacche.
+ekhon ami ekta option chai j filter kore (month, year & batch) multiple earnings select kore earning date chaneg kore deya jabe.
+
+main reason holo: dhoro earning hoiche 10 din age ami likhe rakhchilam onno jaygay pore onno keu entry deyar time e current date select kore entry diye diche. or current date e payid kore diche from student due.
+
+ekhon ami jeno sob gulo filter kore earning date ta chaneg kore dite pari. tahole amar earning er calculation thik hoy. match kore amar hisaber sathe 
+
+data tables theke checkbox use korte giye dekhlam tumigolay felaccho. better tumi datatable use kora bad ao nijer moto table nao. and nije server side pagination add kore dao.

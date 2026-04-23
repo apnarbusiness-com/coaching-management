@@ -50,6 +50,7 @@ class Batch extends Model
         'duration_in_months',
         'class_schedule',
         'capacity',
+        'status',
         'created_at',
         'updated_at',
         'deleted_at',

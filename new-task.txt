@@ -1,1 +1,1 @@
-http://dev-coaching-management.test/admin/batches/13/assign-teachers?month=4&year=2026 ei page e january,2026 select kora thakleo ami jodi teacher remove kori ta april or current month theke remove hoy keno?
+http://dev-coaching-management.test/admin/teachers ei page er toggole button er moto batch er toggole button dao
