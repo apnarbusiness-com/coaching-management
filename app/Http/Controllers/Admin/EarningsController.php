@@ -7,6 +7,7 @@ use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyEarningRequest;
 use App\Http\Requests\StoreEarningRequest;
 use App\Http\Requests\UpdateEarningRequest;
+use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\EarningCategory;
 use App\Models\StudentBasicInfo;
@@ -41,12 +42,13 @@ class EarningsController extends Controller
         abort_if(Gate::denies('earning_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Earning::with(['earning_category', 'student', 'subject', 'created_by', 'updated_by'])
+            $query = Earning::with(['earning_category', 'student', 'subject', 'batch', 'created_by', 'updated_by'])
                 ->select(sprintf('%s.*', (new Earning)->table));
 
             $categoryId = $request->input('category_id');
             $month = $request->input('month');
             $year = $request->input('year');
+            $batchId = $request->input('batch_id');
 
             if (!empty($categoryId)) {
                 $query->where('earning_category_id', $categoryId);
@@ -57,9 +59,14 @@ class EarningsController extends Controller
             if (!empty($year)) {
                 $query->whereYear('earning_date', $year);
             }
+            if (!empty($batchId)) {
+                $query->where('batch_id', $batchId);
+            }
 
             $table = DataTables::of($query);
             $table->addColumn('placeholder', '&nbsp;');
+            $table->addColumn('checkbox', '&nbsp;');
+            $table->editColumn('checkbox', fn($row) => '<input type="checkbox" class="earning-checkbox" value="' . $row->id . '">');
             $table->addColumn('actions', '&nbsp;');
 
             $table->editColumn('actions', function ($row) {
@@ -87,8 +94,9 @@ class EarningsController extends Controller
             $table->editColumn('earning_date', fn($row) => $row->earning_date ?? '');
             $table->editColumn('paid_by', fn($row) => $row->paid_by ?? '');
             $table->editColumn('recieved_by', fn($row) => $row->recieved_by ?? '');
+            $table->addColumn('batch_name', fn($row) => $row->batch->batch_name ?? '');
 
-            $table->rawColumns(['actions', 'placeholder']);
+            $table->rawColumns(['actions', 'placeholder', 'checkbox']);
             $table->setRowAttr([
                 'data-entry-id' => fn($row) => $row->id,
             ]);
@@ -97,8 +105,9 @@ class EarningsController extends Controller
         }
 
         $earning_categories = EarningCategory::pluck('name', 'id');
+        $batches = Batch::orderBy('batch_name')->pluck('batch_name', 'id');
 
-        return view('admin.earnings.index', compact('earning_categories'));
+        return view('admin.earnings.index', compact('earning_categories', 'batches'));
     }
 
     public function summary(Request $request)
@@ -108,6 +117,7 @@ class EarningsController extends Controller
         $categoryId = $request->input('category_id');
         $month = $request->input('month');
         $year = $request->input('year');
+        $batchId = $request->input('batch_id');
         $summaryYear = !empty($year) ? (int) $year : (int) date('Y');
 
         $query = Earning::query()
@@ -119,6 +129,9 @@ class EarningsController extends Controller
         }
         if (!empty($month)) {
             $query->whereMonth('earning_date', $month);
+        }
+        if (!empty($batchId)) {
+            $query->where('batch_id', $batchId);
         }
 
         $totals = $query
