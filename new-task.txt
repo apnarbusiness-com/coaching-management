@@ -1,1 +1,4 @@
-http://dev-coaching-management.test/admin/due-collections/checker
+Option C: Both A & B
+- Show breakdown (permanent + one-time)
+- Allow adding new one-time discount during payment-all or pay-now
+

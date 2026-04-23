@@ -632,7 +632,8 @@
                                             <th>Batch</th>
                                             <th>Due</th>
                                             <th>Paid</th>
-                                            <th>Disc.</th>
+                                            <th>Perm. Disc.</th>
+                                            <th>One-Time</th>
                                             <th>Rem.</th>
                                             <th>Status</th>
                                             <th>Action</th>
@@ -715,13 +716,23 @@
                                 <input type="text" class="form-control" id="pay-due-amount" readonly>
                             </div>
                             <div class="form-group">
-                                <label>Remaining</label>
+                                <label>Current One-Time Discount</label>
+                                <input type="text" class="form-control" id="pay-due-one-time" readonly>
+                            </div>
+                            <div class="form-group">
+                                <label>Add/Update One-Time Discount (Optional)</label>
+                                <input type="number" class="form-control" id="pay-one-time-discount" step="0.01"
+                                    min="0" value="0">
+                                <small class="form-text text-muted">This discount applies only to this month</small>
+                            </div>
+                            <div class="form-group">
+                                <label>Remaining After Discount</label>
                                 <input type="text" class="form-control" id="pay-due-remaining" readonly>
                             </div>
                             <div class="form-group">
                                 <label>Pay Amount</label>
                                 <input type="number" class="form-control" id="pay-amount" step="0.01"
-                                    min="1" required>
+                                    min="0" required>
                             </div>
                         </div>
                         <div class="modal-footer">
@@ -765,10 +776,23 @@
                             <div class="form-group">
                                 <label>Enter Payment Amount</label>
                                 <input type="number" class="form-control" id="payAllAmount" step="0.01"
-                                    min="1" required>
+                                    min="0" required>
                                 <small class="form-text text-muted">System will pay dues in order (oldest first) and apply
                                     partial payment to the last one if needed.</small>
                             </div>
+                            {{-- <div class="form-group">
+                                <label>One-Time Discount for a Specific Due (Optional)</label>
+                                <div class="input-group">
+                                    <input type="number" class="form-control" id="payAllOneTimeDiscount" step="0.01"
+                                        min="0" placeholder="Amount" value="0">
+                                    <select class="form-control" id="payAllDiscountBatch" style="max-width: 150px;">
+                                        <option value="">Select Batch</option>
+                                    </select>
+                                    <input type="number" class="form-control" id="payAllDiscountMonth" placeholder="Month" min="1" max="12" style="max-width: 80px;">
+                                    <input type="number" class="form-control" id="payAllDiscountYear" placeholder="Year" min="2000" max="2100" style="max-width: 100px;">
+                                </div>
+                                <small class="form-text text-muted">Select batch and month to apply one-time discount</small>
+                            </div> --}}
                         </div>
                         <div class="modal-footer">
                             <button type="submit" class="btn btn-success">Submit Payment</button>
@@ -950,13 +974,15 @@
                 dueHistoryBody.empty();
                 if (response.due_history.length === 0) {
                     dueHistoryBody.html(
-                        '<tr><td colspan="8" class="text-center text-muted">No due records found</td></tr>');
+                        '<tr><td colspan="9" class="text-center text-muted">No due records found</td></tr>');
                 } else {
                     response.due_history.forEach(function(due) {
                         let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status ===
                             'partial' ? 'badge-warning' : 'badge-danger');
+                        let permDisc = due.pivot_permanent_discount || 0;
+                        let oneTimeDisc = due.pivot_one_time_discount || 0;
                         let payButton = due.due_remaining > 0 ?
-                            `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-remaining="${due.due_remaining}">Pay Now</button>` :
+                            `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-remaining="${due.due_remaining}" data-one-time="${oneTimeDisc}">Pay Now</button>` :
                             '-';
                         dueHistoryBody.append(`
                     <tr>
@@ -964,9 +990,10 @@
                         <td>${due.batch_name}</td>
                         <td>${parseFloat(due.due_amount).toFixed(2)}</td>
                         <td>${parseFloat(due.paid_amount).toFixed(2)}</td>
-                        <td>${parseFloat(due.discount_amount).toFixed(2)}</td>
+                        <td><span class="text-amber-600">${parseFloat(permDisc).toFixed(2)}</span></td>
+                        <td><span class="text-purple-600">${parseFloat(oneTimeDisc).toFixed(2)}</span></td>
                         <td>${parseFloat(due.due_remaining).toFixed(2)}</td>
-                        <td><span class="badge ${badgeClass} text-capitalize"> 
+                        <td><span class="badge ${badgeClass} text-capitalize">
                             ${due.status}
                         </span></td>
                         <td>${payButton}</td>
@@ -1065,27 +1092,45 @@
             let dueId = $(this).data('id');
             let dueAmount = $(this).data('due-amount');
             let remaining = $(this).data('remaining');
+            let oneTimeDisc = $(this).data('one-time') || 0;
 
             $('#pay-due-id').val(dueId);
             $('#pay-due-amount').val(dueAmount);
-            $('#pay-due-remaining').val(remaining);
-            $('#pay-amount').attr('max', remaining);
+            $('#pay-due-one-time').val(oneTimeDisc);
+            $('#pay-one-time-discount').val(oneTimeDisc);
+
+            let newDiscount = parseFloat(oneTimeDisc);
+            let remainingAfterDiscount = Math.max(0, remaining - newDiscount);
+            $('#pay-due-remaining').val(remainingAfterDiscount.toFixed(2));
+            $('#pay-amount').attr('max', remainingAfterDiscount);
+            $('#pay-amount').val(remainingAfterDiscount.toFixed(2));
             $('#payDueModal').modal('show');
+        });
+
+        $('#pay-one-time-discount').on('input', function() {
+            let oneTimeDisc = parseFloat($(this).val()) || 0;
+            let originalDue = parseFloat($('#pay-due-amount').val()) || 0;
+            let remainingAfterDiscount = Math.max(0, originalDue - oneTimeDisc);
+            $('#pay-due-remaining').val(remainingAfterDiscount.toFixed(2));
+            $('#pay-amount').attr('max', remainingAfterDiscount);
+            $('#pay-amount').val(remainingAfterDiscount.toFixed(2));
         });
 
         $('#pay-due-form').on('submit', function(e) {
             e.preventDefault();
             let dueId = $('#pay-due-id').val();
             let amount = $('#pay-amount').val();
+            let oneTimeDiscount = $('#pay-one-time-discount').val() || 0;
 
             $.post("{{ route('admin.due-collections.pay') }}", {
                 _token: '{{ csrf_token() }}',
                 due_id: dueId,
-                amount: amount
+                amount: amount,
+                one_time_discount: oneTimeDiscount
             }, function(response) {
                 $('#payDueModal').modal('hide');
                 loadStudentData();
-                alert('Payment recorded successfully!');
+                alert(response.message || 'Payment recorded successfully!');
             }).fail(function(xhr) {
                 let msg = 'Payment failed. Please try again.';
                 if (xhr.responseJSON && xhr.responseJSON.message) {
@@ -1105,6 +1150,14 @@
             $('#payAllTotalDue').text(totalRemaining.toFixed(2));
             $('#payAllAmount').attr('max', totalRemaining);
             $('#payAllAmount').val(totalRemaining);
+
+            let batchSelect = $('#payAllDiscountBatch');
+            batchSelect.empty().append('<option value="">Select Batch</option>');
+
+            currentDues.forEach(function(due) {
+                let selected = '';
+                batchSelect.append(`<option value="${due.batch_id}" ${selected}>${due.batch_name}</option>`);
+            });
 
             const dueListBody = $('#payAllDueList');
             dueListBody.empty();
@@ -1130,16 +1183,29 @@
             e.preventDefault();
             let studentId = selectedStudentId;
             let amount = $('#payAllAmount').val();
+            let oneTimeDiscount = $('#payAllOneTimeDiscount').val() || 0;
+            let discountBatchId = $('#payAllDiscountBatch').val();
+            let discountMonth = $('#payAllDiscountMonth').val();
+            let discountYear = $('#payAllDiscountYear').val();
 
             let submitBtn = $(this).find('button[type="submit"]');
             let originalText = submitBtn.text();
             submitBtn.prop('disabled', true).text('Processing...');
 
-            $.post("{{ route('admin.due-collections.payAll') }}", {
+            let postData = {
                 _token: '{{ csrf_token() }}',
                 student_id: studentId,
                 amount: amount
-            }, function(response) {
+            };
+
+            if (oneTimeDiscount > 0 && discountBatchId && discountMonth && discountYear) {
+                postData.one_time_discount = oneTimeDiscount;
+                postData.one_time_discount_batch_id = discountBatchId;
+                postData.one_time_discount_month = discountMonth;
+                postData.one_time_discount_year = discountYear;
+            }
+
+            $.post("{{ route('admin.due-collections.payAll') }}", postData, function(response) {
                 let paidDues = response.paid_dues;
                 let currentIndex = 0;
 

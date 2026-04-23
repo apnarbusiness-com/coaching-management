@@ -16,7 +16,6 @@ use App\Models\StudentFlag;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
 use Carbon\Carbon;
-// use Illuminate\Support\Facades\Gate;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -115,7 +114,21 @@ class DueCollectionController extends Controller
         $dues = StudentMonthlyDue::where('student_id', $studentId)
             ->whereIn('status', ['unpaid', 'partial'])
             ->with('batch')
-            ->get();
+            ->get()
+            ->map(function ($due) {
+                $pivot = DB::table('batch_student_basic_info')
+                    ->where('batch_id', $due->batch_id)
+                    ->where('student_basic_info_id', $due->student_id)
+                    ->whereMonth('enrolled_at', '<=', $due->month)
+                    ->whereYear('enrolled_at', '<=', $due->year)
+                    ->orderBy('enrolled_at', 'desc')
+                    ->first();
+
+                $due->pivot_permanent_discount = $pivot->per_student_discount ?? 0;
+                $due->pivot_one_time_discount = $pivot->one_time_discount ?? 0;
+
+                return $due;
+            });
 
         return response()->json($dues);
     }
@@ -129,10 +142,53 @@ class DueCollectionController extends Controller
 
         $request->validate([
             'due_id' => 'required|exists:student_monthly_dues,id',
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:0',
+            'one_time_discount' => 'nullable|numeric|min:0',
         ]);
 
         $due = StudentMonthlyDue::with('batch')->findOrFail($request->input('due_id'));
+
+        $oneTimeDiscount = (float) ($request->input('one_time_discount') ?? 0);
+
+        if ($oneTimeDiscount > 0) {
+            DB::table('batch_student_basic_info')
+                ->where('batch_id', $due->batch_id)
+                ->where('student_basic_info_id', $due->student_id)
+                ->whereMonth('enrolled_at', $due->month)
+                ->whereYear('enrolled_at', $due->year)
+                ->update([
+                    'one_time_discount' => $oneTimeDiscount,
+                ]);
+
+            $pivot = DB::table('batch_student_basic_info')
+                ->where('batch_id', $due->batch_id)
+                ->where('student_basic_info_id', $due->student_id)
+                ->whereMonth('enrolled_at', '<=', $due->month)
+                ->whereYear('enrolled_at', '<=', $due->year)
+                ->orderBy('enrolled_at', 'desc')
+                ->first();
+
+            $permanentDiscount = $pivot->per_student_discount ?? 0;
+            $newTotalDiscount = $permanentDiscount + $oneTimeDiscount;
+            $newDueAmount = max(0, $due->batch->fee_amount - $newTotalDiscount);
+
+            $due->update([
+                'due_amount' => $newDueAmount,
+                'discount_amount' => $newTotalDiscount,
+                'due_remaining' => max(0, $newDueAmount - $due->paid_amount),
+            ]);
+
+            if ($due->paid_amount >= $newDueAmount) {
+                $due->update([
+                    'status' => 'paid',
+                    'paid_date' => now()->format('Y-m-d'),
+                ]);
+            } elseif ($due->paid_amount > 0) {
+                $due->update([
+                    'status' => 'partial',
+                ]);
+            }
+        }
 
         $amount = (float) $request->input('amount');
 
@@ -195,11 +251,73 @@ class DueCollectionController extends Controller
 
         $request->validate([
             'student_id' => 'required|exists:student_basic_infos,id',
-            'amount' => 'required|numeric|min:1',
+            'amount' => 'required|numeric|min:0',
+            'one_time_discount' => 'nullable|numeric|min:0',
+            'one_time_discount_batch_id' => 'nullable|exists:batches,id',
+            'one_time_discount_month' => 'nullable|integer|min:1|max:12',
+            'one_time_discount_year' => 'nullable|integer|min:2000',
         ]);
 
         $studentId = $request->input('student_id');
         $totalAmount = (float) $request->input('amount');
+        $oneTimeDiscount = (float) ($request->input('one_time_discount') ?? 0);
+
+        if ($oneTimeDiscount > 0) {
+            $batchId = $request->input('one_time_discount_batch_id');
+            $discountMonth = $request->input('one_time_discount_month');
+            $discountYear = $request->input('one_time_discount_year');
+
+            if ($batchId && $discountMonth && $discountYear) {
+                DB::table('batch_student_basic_info')
+                    ->where('batch_id', $batchId)
+                    ->where('student_basic_info_id', $studentId)
+                    ->whereMonth('enrolled_at', $discountMonth)
+                    ->whereYear('enrolled_at', $discountYear)
+                    ->update([
+                        'one_time_discount' => $oneTimeDiscount,
+                    ]);
+
+                $batch = Batch::find($batchId);
+                if ($batch) {
+                    $pivot = DB::table('batch_student_basic_info')
+                        ->where('batch_id', $batchId)
+                        ->where('student_basic_info_id', $studentId)
+                        ->whereMonth('enrolled_at', '<=', $discountMonth)
+                        ->whereYear('enrolled_at', '<=', $discountYear)
+                        ->orderBy('enrolled_at', 'desc')
+                        ->first();
+
+                    $permanentDiscount = $pivot->per_student_discount ?? 0;
+                    $newTotalDiscount = $permanentDiscount + $oneTimeDiscount;
+                    $newDueAmount = max(0, $batch->fee_amount - $newTotalDiscount);
+
+                    $due = StudentMonthlyDue::where('student_id', $studentId)
+                        ->where('batch_id', $batchId)
+                        ->where('month', $discountMonth)
+                        ->where('year', $discountYear)
+                        ->first();
+
+                    if ($due) {
+                        $due->update([
+                            'due_amount' => $newDueAmount,
+                            'discount_amount' => $newTotalDiscount,
+                            'due_remaining' => max(0, $newDueAmount - $due->paid_amount),
+                        ]);
+
+                        if ($due->paid_amount >= $newDueAmount) {
+                            $due->update([
+                                'status' => 'paid',
+                                'paid_date' => now()->format('Y-m-d'),
+                            ]);
+                        } elseif ($due->paid_amount > 0) {
+                            $due->update([
+                                'status' => 'partial',
+                            ]);
+                        }
+                    }
+                }
+            }
+        }
 
         $dues = StudentMonthlyDue::where('student_id', $studentId)
             ->whereIn('status', ['unpaid', 'partial'])
