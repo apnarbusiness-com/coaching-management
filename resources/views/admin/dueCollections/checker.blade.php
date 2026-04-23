@@ -66,6 +66,11 @@
             background: #f8fafc;
         }
 
+        .search-result-item.active {
+            background: #e0e7ff;
+            border-left: 3px solid #667eea;
+        }
+
         .search-result-item:last-child {
             border-bottom: none;
         }
@@ -848,8 +853,76 @@
     <script>
         let searchTimeout = null;
         let selectedStudentId = null;
+        let searchResultsIndex = -1;
+        let searchResultsCount = 0;
 
         $(function() {
+            $('#studentSearch').on('keydown', function(e) {
+                if (e.which === 40) { // Arrow Down
+                    e.preventDefault();
+                    if (searchResultsCount > 0) {
+                        searchResultsIndex = Math.min(searchResultsIndex + 1, searchResultsCount - 1);
+                        highlightSearchResult();
+                    }
+                } else if (e.which === 38) { // Arrow Up
+                    e.preventDefault();
+                    if (searchResultsCount > 0) {
+                        searchResultsIndex = Math.max(searchResultsIndex - 1, 0);
+                        highlightSearchResult();
+                    }
+                } else if (e.which === 13) { // Enter
+                    e.preventDefault();
+                    selectHighlightedResult();
+                }
+            });
+
+            function highlightSearchResult() {
+                $('.search-result-item').removeClass('active');
+                if (searchResultsIndex >= 0) {
+                    const $items = $('.search-result-item');
+                    if ($items.length > searchResultsIndex) {
+                        $items.eq(searchResultsIndex).addClass('active');
+                        // Scroll into view
+                        const $active = $items.eq(searchResultsIndex);
+                        const container = document.getElementById('searchResults');
+                        if (container) {
+                            const containerTop = container.scrollTop;
+                            const containerHeight = container.offsetHeight;
+                            const activeTop = $active.position().top;
+                            const activeHeight = $active.outerHeight();
+                            if (activeTop < containerTop) {
+                                container.scrollTop = activeTop;
+                            } else if (activeTop + activeHeight > containerTop + containerHeight) {
+                                container.scrollTop = activeTop + activeHeight - containerHeight;
+                            }
+                        }
+                    }
+                }
+            }
+
+            function selectHighlightedResult() {
+                if (searchResultsIndex >= 0 && searchResultsIndex < searchResultsCount) {
+                    const $item = $('.search-result-item').eq(searchResultsIndex);
+                    const studentId = $item.data('id');
+                    const studentName = $item.find('.main-text').text();
+                    selectedStudentId = studentId;
+                    $('#studentSearch').val(studentName);
+                    $('#searchResults').hide();
+                    $('#refreshStudentBtn').show();
+                    loadStudentData();
+                } else if (searchResultsIndex === -1 && searchResultsCount > 0) {
+                    // If no highlighted but have results, select first one
+                    const $item = $('.search-result-item').first();
+                    const studentId = $item.data('id');
+                    const studentName = $item.find('.main-text').text();
+                    selectedStudentId = studentId;
+                    $('#studentSearch').val(studentName);
+                    $('#searchResults').hide();
+                    $('#refreshStudentBtn').show();
+                    loadStudentData();
+                }
+            }
+
             $('#studentSearch').on('input', function() {
                 const query = $(this).val();
                 
@@ -858,6 +931,8 @@
                 if (query.length < 1) {
                     $('#searchResults').hide();
                     selectedStudentId = null;
+                    searchResultsIndex = -1;
+                    searchResultsCount = 0;
                     $('#refreshStudentBtn').hide();
                     $('#emptyState').show();
                     $('#studentData').hide();
@@ -868,6 +943,8 @@
                     $.get("{{ route('admin.due-collections.checker.search') }}", { term: query }, function(data) {
                         const resultsContainer = $('#searchResults');
                         resultsContainer.empty();
+                        searchResultsIndex = -1;
+                        searchResultsCount = data.length;
                         
                         if (data.length === 0) {
                             resultsContainer.html('<div class="p-3 text-muted">No results found</div>');
