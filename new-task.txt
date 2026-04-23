@@ -1,3 +1,1 @@
-http://dev-coaching-management.test/admin/due-collections/checker ei page e kichu modification lagbe.
-1. ekbar kauke search kore data anle. next time ekta choto refresh button (icon) lagbe oikhane click korle oi ager id er data e refresh hobe. jeno new kore search korte na hoy
-2. search korar por search box e name dekha jacche. jokhon e again search box e click korbo search box faka hoye jete hobe jeno new search korte pari 
+http://dev-coaching-management.test/admin/batches/13/assign-teachers?month=4&year=2026 ei page e january,2026 select kora thakleo ami jodi teacher remove kori ta april or current month theke remove hoy keno?

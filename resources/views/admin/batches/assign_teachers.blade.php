@@ -200,7 +200,7 @@
                                         @method('DELETE')
                                         <input type="hidden" name="month" value="{{ $month }}">
                                         <input type="hidden" name="year" value="{{ $year }}">
-                                        <button class="text-red-600 hover:text-red-800 text-sm font-semibold">Remove</button>
+                                        <button type="submit" class="text-red-600 hover:text-red-800 text-sm font-semibold">Remove</button>
                                     </form>
                                 </td>
                             </tr>

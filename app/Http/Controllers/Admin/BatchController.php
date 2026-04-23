@@ -1337,8 +1337,8 @@ class BatchController extends Controller
     {
         abort_if(Gate::denies('batch_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $month = (int) $request->query('month', now()->month);
-        $year = (int) $request->query('year', now()->year);
+        $month = (int) ($request->input('month') ?? now()->month);
+        $year = (int) ($request->input('year') ?? now()->year);
 
         DB::table('batch_teacher')
             ->where('batch_id', $batch->id)
