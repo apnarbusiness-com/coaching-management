@@ -321,6 +321,21 @@ class EarningsController extends Controller
         return response(null, Response::HTTP_NO_CONTENT);
     }
 
+    public function bulkUpdateDate(Request $request)
+    {
+        abort_if(Gate::denies('earning_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'ids' => 'required|array',
+            'ids.*' => 'exists:earnings,id',
+            'earning_date' => 'required|date',
+        ]);
+
+        Earning::whereIn('id', $request->ids)->update(['earning_date' => $request->earning_date]);
+
+        return response()->json(['message' => 'Earnings updated successfully']);
+    }
+
     public function importExcel(Request $request)
     {
         abort_if(Gate::denies('earning_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
