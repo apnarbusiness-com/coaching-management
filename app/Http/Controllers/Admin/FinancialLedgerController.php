@@ -91,6 +91,8 @@ class FinancialLedgerController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $amount = Expense::where('expense_month', $m)
                 ->where('expense_year', $year)
+                ->whereNotNull('teacher_id')
+                ->whereNotNull('batch_id')
                 ->sum('amount');
             $totalExpensePerMonth[$m] = $amount;
             $grandTotalExpense += $amount;
