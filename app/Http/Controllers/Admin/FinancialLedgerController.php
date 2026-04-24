@@ -63,37 +63,15 @@ class FinancialLedgerController extends Controller
         foreach ($batches as $batch) {
             $monthlyExpenses = [];
             $totalExpenses = 0;
-            $monthlyTeacherDetails = [];
 
             for ($m = 1; $m <= 12; $m++) {
-                $expenses = Expense::where('batch_id', $batch->id)
+                $amount = Expense::where('batch_id', $batch->id)
                     ->where('expense_month', $m)
                     ->where('expense_year', $year)
-                    ->whereNotNull('teacher_id')
-                    ->get();
+                    ->sum('amount');
 
-                $teachersInMonth = [];
-                foreach ($expenses as $exp) {
-                    $teacher = Teacher::find($exp->teacher_id);
-                    $teacherName = $teacher ? ($teacher->name ?? ($teacher->first_name ?? '') . ' ' . ($teacher->last_name ?? '')) : 'Unknown';
-                    $teacherName = trim($teacherName);
-
-                    $batchTeacher = $batch->teachers()->where('teachers.id', $exp->teacher_id)->first();
-                    $salaryType = $batchTeacher ? ($batchTeacher->pivot->salary_amount_type ?? 'fixed') : 'fixed';
-                    $salaryAmount = $batchTeacher ? ($batchTeacher->pivot->salary_amount ?? 0) : 0;
-
-                    $teachersInMonth[] = [
-                        'teacher_id' => $exp->teacher_id,
-                        'teacher_name' => $teacherName,
-                        'amount' => $exp->amount,
-                        'salary_type' => $salaryType,
-                        'salary_amount' => $salaryAmount,
-                    ];
-                }
-
-                $monthlyTeacherDetails[$m] = $teachersInMonth;
-                $monthlyExpenses[$m] = $expenses->sum('amount');
-                $totalExpenses += $monthlyExpenses[$m];
+                $monthlyExpenses[$m] = $amount;
+                $totalExpenses += $amount;
             }
 
             if ($totalExpenses > 0) {
@@ -101,7 +79,6 @@ class FinancialLedgerController extends Controller
                     'batch_id' => $batch->id,
                     'batch_name' => $batch->batch_name,
                     'monthly' => $monthlyExpenses,
-                    'monthly_teachers' => $monthlyTeacherDetails,
                     'total' => $totalExpenses,
                 ];
             }
@@ -139,5 +116,52 @@ class FinancialLedgerController extends Controller
             'profitMargin',
             'percentChange'
         ));
+    }
+
+    public function getExpenseDetails(Request $request)
+    {
+        abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batchId = $request->input('batch_id');
+        $month = $request->input('month');
+        $year = $request->input('year', date('Y'));
+
+        $batch = Batch::findOrFail($batchId);
+        $expenses = Expense::where('batch_id', $batchId)
+            ->where('expense_month', $month)
+            ->where('expense_year', $year)
+            ->whereNotNull('teacher_id')
+            ->get();
+
+        $batchTeachers = $batch->teachers()->get()->keyBy('id');
+
+        // dd($batchTeachers);
+
+        $teachers = [];
+        foreach ($expenses as $exp) {
+            $teacher = Teacher::find($exp->teacher_id);
+            $teacherName = $teacher ? trim($teacher->name ?? $teacher->first_name . ' ' . $teacher->last_name) : 'Unknown';
+
+            $batchTeacher = $batchTeachers->get($exp->teacher_id);
+
+            // dd($batchTeacher->pivot);
+
+            $salaryType = $batchTeacher ? ($batchTeacher->pivot->salary_amount_type ?? 'fixed') : 'fixed';
+            $salaryAmount = $batchTeacher ? ($batchTeacher->pivot->salary_amount ?? 0) : 0;
+
+            $teachers[] = [
+                'teacher_id' => $exp->teacher_id,
+                'teacher_name' => $teacherName,
+                'amount' => (float) $exp->amount,
+                'salary_type' => $salaryType,
+                'salary_amount' => (float) $salaryAmount,
+            ];
+        }
+
+        return response()->json([
+            'batch_name' => $batch->batch_name,
+            'month' => $month,
+            'teachers' => $teachers
+        ]);
     }
 }

@@ -118,7 +118,7 @@ class Batch extends Model
     public function teachers()
     {
         return $this->belongsToMany(Teacher::class)
-            ->withPivot(['salary_amount', 'role'])
+            ->withPivot(['salary_amount', 'role', 'salary_amount_type'])
             ->withTimestamps();
     }
 }

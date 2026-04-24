@@ -116,6 +116,10 @@
             background: #fff;
         }
 
+        tbody{
+            color: #1F4E79;
+        }
+
         tfoot .fixed-col {
             background: #d8e0f1;
         }
@@ -262,24 +266,23 @@
                             </tr>
                         </thead>
                         <tbody class="text-cell-data font-cell-data text-on-surface">
-                            @forelse($batchExpenses as $batch)
+@forelse($batchExpenses as $batch)
                                 <tr class="bg-white hover:bg-slate-50 text-red-900">
                                     <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">
                                         <span class="font-bold">{{ $batch['batch_name'] }}</span>
                                     </td>
-                                    @for ($m = 1; $m <= 12; $m++)
+                                    @for($m = 1; $m <= 12; $m++)
                                         <td class="grid-cell px-4 py-1.5 text-right relative">
                                             {{ number_format($batch['monthly'][$m] ?? 0) }}
-                                            @if (count($batch['monthly_teachers'][$m] ?? []) > 0)
-                                                <button type="button" class="expense-info-btn-cell"
-                                                    onclick="openExpenseDrawer('{{ $batch['batch_id'] }}', '{{ $batch['batch_name'] }}', {{ $m }})">
+                                            @if(($batch['monthly'][$m] ?? 0) > 0)
+                                                <button type="button" class="expense-info-btn-cell" 
+                                                    onclick="loadExpenseDetails('{{ $batch['batch_id'] }}', '{{ addslashes($batch['batch_name']) }}', {{ $m }}, {{ $year }})">
                                                     <i class="fas fa-info-circle"></i>
                                                 </button>
                                             @endif
                                         </td>
                                     @endfor
-                                    <td
-                                        class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
+                                    <td class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
                                         {{ number_format($batch['total']) }}
                                     </td>
                                 </tr>
@@ -323,62 +326,62 @@
 @endsection
 
 @push('scripts')
-    <script>
-        const batchExpensesData = @json($batchExpenses);
-        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+<script>
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        function openExpenseDrawer(batchId, batchName, month = null) {
-            const batch = batchExpensesData.find(b => b.batch_id == batchId);
-            if (!batch) return;
+    function loadExpenseDetails(batchId, batchName, month, year) {
+        const drawer = document.getElementById('expenseDrawer');
+        const overlay = document.getElementById('expenseDrawerOverlay');
+        const title = document.getElementById('drawerTitle');
+        const content = document.getElementById('drawerContent');
 
-            const drawer = document.getElementById('expenseDrawer');
-            const overlay = document.getElementById('expenseDrawerOverlay');
-            const title = document.getElementById('drawerTitle');
-            const content = document.getElementById('drawerContent');
+        title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Expenses';
+        content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
 
-            const monthLabel = month ? monthNames[month - 1] : 'All';
-            title.textContent = batchName + ' - ' + monthLabel + ' Expenses';
+        drawer.classList.add('open');
+        overlay.classList.add('open');
 
-            let html = '<div class="space-y-4">';
+        fetch("{{ route('admin.financial-ledgers.expense-details') }}?batch_id=" + batchId + "&month=" + month + "&year=" + year)
+            .then(response => response.json())
+            .then(data => {
 
-            if (month && batch.monthly_teachers && batch.monthly_teachers[month]) {
-                const teachers = batch.monthly_teachers[month];
-                if (teachers.length > 0) {
-                    teachers.forEach(teacher => {
+                console.log(data);
+                
+
+                let html = '<div class="space-y-4">';
+                
+                if (data.teachers && data.teachers.length > 0) {
+                    data.teachers.forEach(teacher => {
+                        const salaryLabel = teacher.salary_type === 'percentage' 
+                            ? teacher.salary_amount + '%' 
+                            : teacher.salary_amount.toLocaleString() + ' BDT';
+                        
                         html += '<div class="border rounded-lg p-3">';
                         html += '<div class="flex justify-between items-center mb-2">';
                         html += '<h4 class="font-bold text-red-800">' + teacher.teacher_name + '</h4>';
-                        html += '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">' + teacher
-                            .salary_type + '</span>';
+                        html += '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">' + teacher.salary_type + '</span>';
                         html += '</div>';
                         html += '<table class="w-full text-sm">';
-                        html += '<tr><td class="py-1 text-gray-600">Salary Type:</td><td class="py-1 text-right">' +
-                            teacher.salary_type + '</td></tr>';
-                        html +=
-                            '<tr><td class="py-1 text-gray-600">Salary Amount:</td><td class="py-1 text-right">' +
-                            teacher.salary_amount.toLocaleString() + ' BDT</td></tr>';
-                        html +=
-                            '<tr class="font-bold"><td class="py-1">Paid This Month:</td><td class="py-1 text-right">' +
-                            teacher.amount.toLocaleString() + ' BDT</td></tr>';
+                        html += '<tr><td class="py-1 text-gray-600">Salary Type:</td><td class="py-1 text-right">' + teacher.salary_type + '</td></tr>';
+                        html += '<tr><td class="py-1 text-gray-600">Salary Amount:</td><td class="py-1 text-right">' + salaryLabel + '</td></tr>';
+                        html += '<tr class="font-bold"><td class="py-1">Paid This Month:</td><td class="py-1 text-right">' + teacher.amount.toLocaleString() + ' BDT</td></tr>';
                         html += '</table></div>';
                     });
                 } else {
                     html += '<p class="text-gray-500">No expenses for this month.</p>';
                 }
-            } else {
-                html += '<p class="text-gray-500">No data available.</p>';
-            }
 
-            html += '</div>';
-            content.innerHTML = html;
+                html += '</div>';
+                content.innerHTML = html;
+            })
+            .catch(error => {
+                content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+            });
+    }
 
-            drawer.classList.add('open');
-            overlay.classList.add('open');
-        }
-
-        function closeExpenseDrawer() {
-            document.getElementById('expenseDrawer').classList.remove('open');
-            document.getElementById('expenseDrawerOverlay').classList.remove('open');
-        }
-    </script>
+    function closeExpenseDrawer() {
+        document.getElementById('expenseDrawer').classList.remove('open');
+        document.getElementById('expenseDrawerOverlay').classList.remove('open');
+    }
+</script>
 @endpush
