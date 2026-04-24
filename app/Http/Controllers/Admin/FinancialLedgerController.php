@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\Expense;
+use App\Models\TeacherPaymentTransaction;
 use App\Models\TeachersPayment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
@@ -80,13 +81,13 @@ class FinancialLedgerController extends Controller
                 $totalSalary = 0;
 
                 for ($m = 1; $m <= 12; $m++) {
-                    $payments = TeachersPayment::where('teacher_id', $teacher->id)
-                        ->where('batch_id', $batch->id)
-                        ->whereYear('created_at', $year)
-                        ->whereMonth('created_at', $m)
-                        ->get();
+                    $amount = TeacherPaymentTransaction::whereHas('teachersPayment', function($query) use ($teacher, $batch, $year, $m) {
+                        $query->where('teacher_id', $teacher->id)
+                            ->where('batch_id', $batch->id)
+                            ->where('month', $m)
+                            ->where('year', $year);
+                    })->sum('amount');
 
-                    $amount = $payments->sum('paid_amount');
                     $monthlySalary[$m] = $amount;
                     $totalSalary += $amount;
                     $batchTotalMonthly[$m] += $amount;
@@ -122,10 +123,9 @@ class FinancialLedgerController extends Controller
         $totalExpensePerMonth = [];
         $grandTotalExpense = 0;
         for ($m = 1; $m <= 12; $m++) {
-            $amount = DB::table('teacher_payment_transactions')
-                ->whereYear('created_at', $year)
-                ->whereMonth('created_at', $m)
-                ->sum('amount');
+            $amount = TeacherPaymentTransaction::whereHas('teachersPayment', function($query) use ($year, $m) {
+                $query->where('month', $m)->where('year', $year);
+            })->sum('amount');
             $totalExpensePerMonth[$m] = $amount;
             $grandTotalExpense += $amount;
         }

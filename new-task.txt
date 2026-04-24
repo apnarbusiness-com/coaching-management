@@ -1,3 +1,3 @@
-http://dev-coaching-management.test/admin/financial-ledgers?year=2025 
+http://dev-coaching-management.test/admin/teachers-payments ekhan theke teacher salary pay korle ta expense table e jacche na keno?
 
-ei page e year filter ta upore tule dao jehetu puro page er uporei filter hoy. 
+student er due pay korle jemon earning e jay. temni teachers er salary pay korle expense e jaowar kotha
