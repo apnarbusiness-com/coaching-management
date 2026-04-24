@@ -63,44 +63,37 @@ class FinancialLedgerController extends Controller
         foreach ($batches as $batch) {
             $monthlyExpenses = [];
             $totalExpenses = 0;
-
-            $batchDetailExpenses = Expense::where('batch_id', $batch->id)
-                ->where('expense_year', $year)
-                ->whereNotNull('teacher_id')
-                ->get()
-                ->groupBy('teacher_id');
-
-            $teacherDetails = [];
-            foreach ($batchDetailExpenses as $teacherId => $expenses) {
-                $teacher = Teacher::find($teacherId);
-                $teacherName = $teacher ? ($teacher->name ?? ($teacher->first_name ?? '') . ' ' . ($teacher->last_name ?? '')) : 'Unknown';
-                $teacherName = trim($teacherName);
-
-                $monthlyBreakdown = [];
-                for ($m = 1; $m <= 12; $m++) {
-                    $monthlyBreakdown[$m] = 0;
-                }
-
-                foreach ($expenses as $exp) {
-                    $monthlyBreakdown[$exp->expense_month] = $exp->amount;
-                }
-
-                $teacherDetails[] = [
-                    'teacher_id' => $teacherId,
-                    'teacher_name' => $teacherName,
-                    'monthly' => $monthlyBreakdown,
-                    'total' => $expenses->sum('amount'),
-                ];
-            }
+            $monthlyTeacherDetails = [];
 
             for ($m = 1; $m <= 12; $m++) {
-                $amount = Expense::where('batch_id', $batch->id)
+                $expenses = Expense::where('batch_id', $batch->id)
                     ->where('expense_month', $m)
                     ->where('expense_year', $year)
-                    ->sum('amount');
+                    ->whereNotNull('teacher_id')
+                    ->get();
 
-                $monthlyExpenses[$m] = $amount;
-                $totalExpenses += $amount;
+                $teachersInMonth = [];
+                foreach ($expenses as $exp) {
+                    $teacher = Teacher::find($exp->teacher_id);
+                    $teacherName = $teacher ? ($teacher->name ?? ($teacher->first_name ?? '') . ' ' . ($teacher->last_name ?? '')) : 'Unknown';
+                    $teacherName = trim($teacherName);
+
+                    $batchTeacher = $batch->teachers()->where('teachers.id', $exp->teacher_id)->first();
+                    $salaryType = $batchTeacher ? ($batchTeacher->pivot->salary_amount_type ?? 'fixed') : 'fixed';
+                    $salaryAmount = $batchTeacher ? ($batchTeacher->pivot->salary_amount ?? 0) : 0;
+
+                    $teachersInMonth[] = [
+                        'teacher_id' => $exp->teacher_id,
+                        'teacher_name' => $teacherName,
+                        'amount' => $exp->amount,
+                        'salary_type' => $salaryType,
+                        'salary_amount' => $salaryAmount,
+                    ];
+                }
+
+                $monthlyTeacherDetails[$m] = $teachersInMonth;
+                $monthlyExpenses[$m] = $expenses->sum('amount');
+                $totalExpenses += $monthlyExpenses[$m];
             }
 
             if ($totalExpenses > 0) {
@@ -108,8 +101,8 @@ class FinancialLedgerController extends Controller
                     'batch_id' => $batch->id,
                     'batch_name' => $batch->batch_name,
                     'monthly' => $monthlyExpenses,
+                    'monthly_teachers' => $monthlyTeacherDetails,
                     'total' => $totalExpenses,
-                    'teachers' => $teacherDetails,
                 ];
             }
         }
