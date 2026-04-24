@@ -6,7 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\Expense;
-use App\Models\ExpenseCategory;
+use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
@@ -60,59 +60,56 @@ class FinancialLedgerController extends Controller
         }
 
         $batchExpenses = [];
-        $salaryCategoryId = ExpenseCategory::where('name', 'Like', '%salary%')->first()?->id;
-
         foreach ($batches as $batch) {
-            $batchTeachers = $batch->teachers()->get();
-            $teachersData = [];
+            $monthlyExpenses = [];
+            $totalExpenses = 0;
 
-            $batchTotalMonthly = [];
-            for ($m = 1; $m <= 12; $m++) {
-                $batchTotalMonthly[$m] = 0;
-            }
+            $batchDetailExpenses = Expense::where('batch_id', $batch->id)
+                ->where('expense_year', $year)
+                ->whereNotNull('teacher_id')
+                ->get()
+                ->groupBy('teacher_id');
 
-            foreach ($batchTeachers as $teacherPivot) {
-                $teacher = $teacherPivot;
-                $salaryAmount = $teacherPivot->pivot->salary_amount ?? 0;
-                $teacherRole = $teacherPivot->pivot->role ?? 'Teacher';
-
-                $monthlySalary = [];
-                $totalSalary = 0;
-
-                for ($m = 1; $m <= 12; $m++) {
-                    $amount = Expense::where('batch_id', $batch->id)
-                        ->where('teacher_id', $teacher->id)
-                        ->where('expense_month', $m)
-                        ->where('expense_year', $year)
-                        ->sum('amount');
-
-                    $monthlySalary[$m] = $amount;
-                    $totalSalary += $amount;
-                    $batchTotalMonthly[$m] += $amount;
-                }
-
-                $teacherName = $teacher->name ?? ($teacher->first_name ?? '') . ' ' . ($teacher->last_name ?? '');
+            $teacherDetails = [];
+            foreach ($batchDetailExpenses as $teacherId => $expenses) {
+                $teacher = Teacher::find($teacherId);
+                $teacherName = $teacher ? ($teacher->name ?? ($teacher->first_name ?? '') . ' ' . ($teacher->last_name ?? '')) : 'Unknown';
                 $teacherName = trim($teacherName);
 
-                if ($totalSalary > 0 || $salaryAmount > 0) {
-                    $teachersData[] = [
-                        'teacher_id' => $teacher->id,
-                        'teacher_name' => $teacherName,
-                        'role' => $teacherRole,
-                        'salary_amount' => $salaryAmount,
-                        'monthly' => $monthlySalary,
-                        'total' => $totalSalary,
-                    ];
+                $monthlyBreakdown = [];
+                for ($m = 1; $m <= 12; $m++) {
+                    $monthlyBreakdown[$m] = 0;
                 }
+
+                foreach ($expenses as $exp) {
+                    $monthlyBreakdown[$exp->expense_month] = $exp->amount;
+                }
+
+                $teacherDetails[] = [
+                    'teacher_id' => $teacherId,
+                    'teacher_name' => $teacherName,
+                    'monthly' => $monthlyBreakdown,
+                    'total' => $expenses->sum('amount'),
+                ];
             }
 
-            if (!empty($teachersData)) {
+            for ($m = 1; $m <= 12; $m++) {
+                $amount = Expense::where('batch_id', $batch->id)
+                    ->where('expense_month', $m)
+                    ->where('expense_year', $year)
+                    ->sum('amount');
+
+                $monthlyExpenses[$m] = $amount;
+                $totalExpenses += $amount;
+            }
+
+            if ($totalExpenses > 0) {
                 $batchExpenses[] = [
                     'batch_id' => $batch->id,
                     'batch_name' => $batch->batch_name,
-                    'teachers' => $teachersData,
-                    'monthly' => $batchTotalMonthly,
-                    'total' => array_sum($batchTotalMonthly),
+                    'monthly' => $monthlyExpenses,
+                    'total' => $totalExpenses,
+                    'teachers' => $teacherDetails,
                 ];
             }
         }

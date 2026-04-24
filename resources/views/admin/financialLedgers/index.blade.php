@@ -3,91 +3,131 @@
 @section('title', 'Financial Ledger')
 
 @push('styles')
-    <style>
-        .material-symbols-outlined {
-            font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
-        }
+<style>
+    .material-symbols-outlined {
+        font-variation-settings: 'FILL' 0, 'wght' 400, 'GRAD' 0, 'opsz' 24;
+    }
 
-        .grid-cell {
-            border: 1px solid #c2c7d0;
-        }
+    .grid-cell {
+        border: 1px solid #c2c7d0;
+    }
 
-        .excel-table {
-            border-collapse: collapse;
-            width: 100%;
-        }
+    .excel-table {
+        border-collapse: collapse;
+        width: 100%;
+    }
 
-        .table-wrapper {
-            overflow-x: auto;
-            max-width: 100%;
-            position: relative;
-        }
+    .table-wrapper {
+        overflow-x: auto;
+        max-width: 100%;
+        position: relative;
+    }
 
-        .table-wrapper table {
-            min-width: 1200px;
-        }
+    .table-wrapper table {
+        min-width: 1200px;
+    }
 
-        .fixed-col {
-            position: sticky;
-            z-index: 10;
-            background: #fff;
-        }
+    .expense-info-btn {
+        cursor: pointer;
+        color: #fff;
+        background: #b91c1c;
+        padding: 4px 8px;
+        border-radius: 4px;
+        font-size: 12px;
+        margin-left: 8px;
+    }
 
-        .fixed-left {
-            left: 0;
-            box-shadow: 2px 0 5px rgba(0, 0, 0, 0.1);
-        }
+    .expense-info-btn:hover {
+        background: #991b1b;
+    }
 
-        .fixed-right {
-            right: 0;
-            box-shadow: -2px 0 5px rgba(0, 0, 0, 0.1);
-        }
+    .expense-drawer {
+        position: fixed;
+        top: 0;
+        right: -400px;
+        width: 400px;
+        height: 100vh;
+        background: white;
+        box-shadow: -4px 0 20px rgba(0,0,0,0.2);
+        z-index: 9999;
+        transition: right 0.3s ease;
+        overflow-y: auto;
+    }
 
-        thead .fixed-col {
-            background: #1F4E79;
-        }
+    .expense-drawer.open {
+        right: 0;
+    }
 
-        .expense-table thead .fixed-col {
-            background: #b91c1c;
-        }
+    .expense-drawer-overlay {
+        position: fixed;
+        top: 0;
+        left: 0;
+        width: 100%;
+        height: 100%;
+        background: rgba(0,0,0,0.5);
+        z-index: 9998;
+        display: none;
+    }
 
-        .expense-table thead {
-            background: #b91c1c;
-        }
+    .expense-drawer-overlay.open {
+        display: block;
+    }
 
-        tbody .fixed-col {
-            background: #fff;
-        }
+    .drawer-close {
+        cursor: pointer;
+        font-size: 24px;
+    }
 
-        tfoot .fixed-col {
-            background: #d8e0f1;
-        }
+    .fixed-col {
+        position: sticky;
+        z-index: 10;
+        background: #fff;
+    }
 
-        .expense-table tfoot .fixed-col {
-            background: #fecaca;
-        }
-    </style>
+    .fixed-left {
+        left: 0;
+        box-shadow: 2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    .fixed-right {
+        right: 0;
+        box-shadow: -2px 0 5px rgba(0,0,0,0.1);
+    }
+
+    thead .fixed-col {
+        background: #1F4E79;
+    }
+
+    .expense-table thead .fixed-col {
+        background: #b91c1c;
+    }
+
+    tbody .fixed-col {
+        background: #fff;
+    }
+
+    tfoot .fixed-col {
+        background: #d8e0f1;
+    }
+</style>
 @endpush
 
 @section('content')
-
-    <!-- Main Content Canvas -->
     <main class="flex-1 overflow-auto bg-surface-container-low p-4">
-
-        <!-- Dashboard Content Container -->
         <div class="max-w-6xl mx-auto space-y-6">
             <!-- Year Filter -->
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800">Financial Ledger</h1>
-                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2" style="min-width: 24%">
-                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()" style="width: 100%">
+                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2">
+                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()">
                         @for($y = date('Y'); $y >= date('Y') - 5; $y--)
                             <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}</option>
                         @endfor
                     </select>
                 </form>
             </div>
-            <!-- Top Bento Row -->
+
+            <!-- Cards -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Earning</span>
@@ -112,11 +152,12 @@
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
-                    <span class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-success' : 'text-warning' }}">{{ number_format($netProfit) }} BDT</span>
+                    <span class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($netProfit) }} BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
-</div>
+                </div>
             </div>
-            <!-- MAIN CORE TABLE: EXCEL RECREATION -->
+
+            <!-- Earnings Table -->
             <div class="bg-white border-2 border-primary-container shadow-lg">
                 <div class="p-4 bg-[#1F4E79] flex justify-between items-center">
                     <h2 class="text-lg font-bold text-white">Batch Earnings - {{ $year }}</h2>
@@ -125,18 +166,15 @@
                     <table class="excel-table min-w-full" id="financialLedgerTable">
                         <thead>
                             <tr class="bg-[#1F4E79]">
-                                <th
-                                    class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-sky-800 fixed-col fixed-left">
+                                <th class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-sky-800 fixed-col fixed-left">
                                     Batch
                                 </th>
-                                @foreach ($months as $month)
-                                    <th
-                                        class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-sky-800">
+                                @foreach($months as $month)
+                                    <th class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-sky-800">
                                         {{ $month }}
                                     </th>
                                 @endforeach
-                                <th
-                                    class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">
+                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">
                                     Total Earning
                                 </th>
                             </tr>
@@ -145,49 +183,43 @@
                             @forelse($batchEarnings as $batch)
                                 <tr class="bg-white hover:bg-slate-50 text-sky-900">
                                     <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">{{ $batch['batch_name'] }}</td>
-                                    @for ($m = 1; $m <= 12; $m++)
-                                        <td class="grid-cell px-4 py-1.5 text-right">
-                                            {{ number_format($batch['monthly'][$m] ?? 0) }}</td>
+                                    @for($m = 1; $m <= 12; $m++)
+                                        <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($batch['monthly'][$m] ?? 0) }}</td>
                                     @endfor
-                                    <td style="background: #00FF00;"
-                                        class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
-                                        {{ number_format($batch['total']) }}</td>
+                                    <td class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
+                                        {{ number_format($batch['total']) }}
+                                    </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="14" class="text-center py-4">No batches found</td>
+                                    <td colspan="14" class="text-center py-4">No earnings found</td>
                                 </tr>
                             @endforelse
                         </tbody>
                         <tfoot>
                             <tr class="bg-secondary-container text-sky-900 font-bold border-t-2 border-primary">
-                                <td
-                                    class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">
-                                    Total</td>
-                                @for ($m = 1; $m <= 12; $m++)
-                                    <td class="grid-cell px-4 py-1.5 text-right">
-                                        {{ number_format($totalPerMonth[$m] ?? 0) }}</td>
+                                <td class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">Total</td>
+                                @for($m = 1; $m <= 12; $m++)
+                                    <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($totalPerMonth[$m] ?? 0) }}</td>
                                 @endfor
-                                <td
-                                    class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg fixed-col fixed-right">
-                                    {{ number_format($grandTotal) }}</td>
+                                <td class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg fixed-col fixed-right">{{ number_format($grandTotal) }}</td>
                             </tr>
-</tfoot>
+                        </tfoot>
                     </table>
                 </div>
             </div>
 
-            <!-- Batch Expenses Table -->
+            <!-- Expenses Table -->
             <div class="bg-white border-2 border-red-800 shadow-lg mt-6">
                 <div class="p-4 bg-red-800 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-white">Batch Expenses (Teachers Salary) - {{ $year }}</h2>
+                    <h2 class="text-lg font-bold text-white">Batch Expenses - {{ $year }}</h2>
                 </div>
                 <div class="table-wrapper">
                     <table class="excel-table min-w-full expense-table" id="financialExpenseTable">
                         <thead>
                             <tr class="bg-red-800">
                                 <th class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-red-900 fixed-col fixed-left">
-                                    Batch / Teacher
+                                    Batch
                                 </th>
                                 @foreach($months as $month)
                                     <th class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-red-900">
@@ -201,33 +233,23 @@
                         </thead>
                         <tbody class="text-cell-data font-cell-data text-on-surface">
                             @forelse($batchExpenses as $batch)
-                                @foreach($batch['teachers'] as $teacher)
-                                    <tr class="bg-white hover:bg-slate-50 text-red-900">
-                                        <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">
-                                            <span class="font-bold">{{ $batch['batch_name'] }}</span> - {{ $teacher['teacher_name'] }} ({{ $teacher['role'] }})
-                                        </td>
-                                        @for($m = 1; $m <= 12; $m++)
-                                            <td class="grid-cell px-4 py-1.5 text-right">
-                                                {{ number_format($teacher['monthly'][$m] ?? 0) }}
-                                            </td>
-                                        @endfor
-                                        <td class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
-                                            {{ number_format($teacher['total']) }}
-                                        </td>
-                                    </tr>
-                                @endforeach
-                                <tr class="bg-gray-100 font-bold text-red-900">
-                                    <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">{{ $batch['batch_name'] }} Total</td>
+                                <tr class="bg-white hover:bg-slate-50 text-red-900">
+                                    <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">
+                                        <span class="font-bold">{{ $batch['batch_name'] }}</span>
+                                        <button type="button" class="expense-info-btn" onclick="openExpenseDrawer('{{ $batch['batch_id'] }}', '{{ $batch['batch_name'] }}')">
+                                            <i class="fas fa-info-circle"></i> Info
+                                        </button>
+                                    </td>
                                     @for($m = 1; $m <= 12; $m++)
                                         <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($batch['monthly'][$m] ?? 0) }}</td>
                                     @endfor
-                                    <td class="grid-cell px-4 py-1.5 text-right bg-red-400 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
+                                    <td class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
                                         {{ number_format($batch['total']) }}
                                     </td>
                                 </tr>
                             @empty
                                 <tr>
-                                    <td colspan="14" class="text-center py-4">No teacher salaries found</td>
+                                    <td colspan="14" class="text-center py-4">No expenses found</td>
                                 </tr>
                             @endforelse
                         </tbody>
@@ -243,113 +265,73 @@
                     </table>
                 </div>
             </div>
-             
+
+            <!-- Expense Drawer -->
+            <div class="expense-drawer-overlay" id="expenseDrawerOverlay" onclick="closeExpenseDrawer()"></div>
+            <div class="expense-drawer" id="expenseDrawer">
+                <div class="p-4 bg-red-800 text-white flex justify-between items-center">
+                    <h3 class="text-lg font-bold" id="drawerTitle">Batch Expenses</h3>
+                    <span class="drawer-close" onclick="closeExpenseDrawer()">&times;</span>
+                </div>
+                <div class="p-4" id="drawerContent">
+                    <p class="text-gray-500">Loading...</p>
+                </div>
+            </div>
         </div>
     </main>
-
 @endsection
 
-{{-- @push('scripts')
-    @parent
-    <script id="tailwind-config">
-        tailwind.config = {
-            darkMode: "class",
-            theme: {
-                extend: {
-                    "colors": {
-                        "surface-variant": "#e2e2e2",
-                        "surface-tint": "#35618d",
-                        "on-secondary-fixed-variant": "#3f4755",
-                        "surface-container": "#eeeeee",
-                        "secondary-container": "#d8e0f1",
-                        "on-secondary-fixed": "#141c28",
-                        "inverse-surface": "#2f3131",
-                        "primary-container": "#1f4e79",
-                        "surface-dim": "#dadada",
-                        "primary-fixed-dim": "#a0cafc",
-                        "on-tertiary-fixed-variant": "#2b4e36",
-                        "on-background": "#1a1c1c",
-                        "primary-fixed": "#d1e4ff",
-                        "surface-container-lowest": "#ffffff",
-                        "tertiary-container": "#2f533b",
-                        "on-surface": "#1a1c1c",
-                        "tertiary-fixed-dim": "#a8d0b1",
-                        "error": "#ba1a1a",
-                        "surface": "#faf9f9",
-                        "tertiary-fixed": "#c4edcc",
-                        "tertiary": "#183c25",
-                        "on-primary-fixed": "#001d35",
-                        "outline": "#72777f",
-                        "outline-variant": "#c2c7d0",
-                        "on-tertiary-fixed": "#00210e",
-                        "on-secondary-container": "#5b6371",
-                        "surface-container-highest": "#e2e2e2",
-                        "on-tertiary-container": "#9ec5a6",
-                        "background": "#faf9f9",
-                        "surface-container-high": "#e8e8e8",
-                        "error-container": "#ffdad6",
-                        "surface-container-low": "#f4f3f3",
-                        "on-tertiary": "#ffffff",
-                        "on-error-container": "#93000a",
-                        "secondary-fixed-dim": "#bfc7d7",
-                        "secondary": "#575f6d",
-                        "inverse-on-surface": "#f1f1f0",
-                        "secondary-fixed": "#dbe3f4",
-                        "on-primary-container": "#95bff1",
-                        "on-surface-variant": "#42474f",
-                        "on-error": "#ffffff",
-                        "on-secondary": "#ffffff",
-                        "primary": "#00375e",
-                        "on-primary-fixed-variant": "#184974",
-                        "on-primary": "#ffffff",
-                        "surface-bright": "#faf9f9",
-                        "inverse-primary": "#a0cafc"
-                    },
-                    "borderRadius": {
-                        "DEFAULT": "0.25rem",
-                        "lg": "0.5rem",
-                        "xl": "0.75rem",
-                        "full": "9999px"
-                    },
-                    "spacing": {
-                        "header-height": "32px",
-                        "cell-padding-y": "4px",
-                        "sub-header-height": "28px",
-                        "grid-border-width": "1px",
-                        "cell-padding-x": "8px"
-                    },
-                    "fontFamily": {
-                        "cell-numeric": ["Inter"],
-                        "cell-data": ["Inter"],
-                        "label-sm": ["Inter"],
-                        "header-secondary": ["Inter"],
-                        "header-primary": ["Inter"]
-                    },
-                    "fontSize": {
-                        "cell-numeric": ["13px", {
-                            "lineHeight": "16px",
-                            "letterSpacing": "0.02em",
-                            "fontWeight": "400"
-                        }],
-                        "cell-data": ["13px", {
-                            "lineHeight": "16px",
-                            "fontWeight": "400"
-                        }],
-                        "label-sm": ["11px", {
-                            "lineHeight": "14px",
-                            "fontWeight": "500"
-                        }],
-                        "header-secondary": ["13px", {
-                            "lineHeight": "18px",
-                            "fontWeight": "600"
-                        }],
-                        "header-primary": ["14px", {
-                            "lineHeight": "20px",
-                            "fontWeight": "600"
-                        }]
+@push('scripts')
+<script>
+    const batchExpensesData = @json($batchExpenses);
+
+    function openExpenseDrawer(batchId, batchName) {
+        const batch = batchExpensesData.find(b => b.batch_id == batchId);
+        const drawer = document.getElementById('expenseDrawer');
+        const overlay = document.getElementById('expenseDrawerOverlay');
+        const title = document.getElementById('drawerTitle');
+        const content = document.getElementById('drawerContent');
+
+        title.textContent = batchName + ' - Expense Details';
+
+        let html = '<div class="space-y-4">';
+
+        if (batch && batch.teachers && batch.teachers.length > 0) {
+            batch.teachers.forEach(teacher => {
+                html += '<div class="border rounded-lg p-3">';
+                html += '<h4 class="font-bold text-red-800 mb-2">' + teacher.teacher_name + '</h4>';
+                html += '<table class="w-full text-sm">';
+                html += '<thead><tr class="bg-red-50"><th class="text-left p-1">Month</th><th class="text-right p-1">Amount</th></tr></thead>';
+                html += '<tbody>';
+
+                const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+                let teacherTotal = 0;
+
+                for (let i = 1; i <= 12; i++) {
+                    const amount = teacher.monthly[i] || 0;
+                    if (amount > 0) {
+                        teacherTotal += amount;
+                        html += '<tr><td class="p-1">' + monthNames[i-1] + '</td><td class="text-right p-1">' + amount.toLocaleString() + ' BDT</td></tr>';
                     }
                 }
-            }
+
+                html += '<tr class="font-bold bg-red-50"><td class="p-1">Total</td><td class="text-right p-1">' + teacherTotal.toLocaleString() + ' BDT</td></tr>';
+                html += '</tbody></table></div>';
+            });
+        } else {
+            html += '<p class="text-gray-500">No teacher expenses found for this batch.</p>';
         }
-    </script>
-@endpush --}}
+
+        html += '</div>';
+        content.innerHTML = html;
+
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+    }
+
+    function closeExpenseDrawer() {
+        document.getElementById('expenseDrawer').classList.remove('open');
+        document.getElementById('expenseDrawerOverlay').classList.remove('open');
+    }
+</script>
+@endpush
