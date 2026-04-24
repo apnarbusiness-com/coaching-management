@@ -9,6 +9,7 @@ use App\Http\Requests\UpdateTeachersPaymentRequest;
 use App\Models\Teacher;
 use App\Models\TeacherPaymentTransaction;
 use App\Models\TeachersPayment;
+use App\Models\Expense;
 use App\Services\TeacherSalaryCalculationService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -234,6 +235,25 @@ class TeachersPaymentController extends Controller
 
         $teachersPayment->updatePaymentStatus();
 
+        $teacher = $teachersPayment->teacher;
+        $batch = $teachersPayment->batch;
+        $expenseCategoryId = \App\Models\ExpenseCategory::where('name', 'Like', '%salary%')->first()?->id 
+            ?? \App\Models\ExpenseCategory::first()?->id;
+
+        Expense::create([
+            'expense_category_id' => $expenseCategoryId,
+            'title' => 'Teacher Salary - ' . ($teacher->name ?? 'Teacher') . ' - ' . ($batch->batch_name ?? ''),
+            'details' => 'Payment for ' . date('F', mktime(0, 0, 0, $teachersPayment->month, 1)) . ' ' . $teachersPayment->year,
+            'amount' => $request->amount,
+            'expense_date' => $request->payment_date,
+            'expense_month' => $teachersPayment->month,
+            'expense_year' => $teachersPayment->year,
+            'payment_method' => $request->payment_method,
+            'paid_by' => $request->received_by ?? auth()->user()->name,
+            'teacher_id' => $teachersPayment->teacher_id,
+            'created_by_id' => auth()->id(),
+        ]);
+
         return back()->with('status', 'Payment transaction added successfully.');
     }
 
@@ -245,7 +265,19 @@ class TeachersPaymentController extends Controller
             abort(403, 'Transaction does not belong to this payment.');
         }
 
+        $amountDeleted = $transaction->amount;
+        $transactionDate = $transaction->payment_date;
+        $month = $teachersPayment->month;
+        $year = $teachersPayment->year;
+        $teacherId = $teachersPayment->teacher_id;
+
         $transaction->delete();
+
+        Expense::where('teacher_id', $teacherId)
+            ->where('expense_month', $month)
+            ->where('expense_year', $year)
+            ->where('amount', $amountDeleted)
+            ->delete();
 
         $teachersPayment->updatePaymentStatus();
 
