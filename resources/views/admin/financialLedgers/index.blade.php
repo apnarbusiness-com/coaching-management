@@ -64,6 +64,17 @@
 
         <!-- Dashboard Content Container -->
         <div class="max-w-6xl mx-auto space-y-6">
+            <!-- Year Filter -->
+            <div class="flex justify-between items-center">
+                <h1 class="text-2xl font-bold text-gray-800">Financial Ledger</h1>
+                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2" style="min-width: 24%">
+                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()" style="width: 100%">
+                        @for($y = date('Y'); $y >= date('Y') - 5; $y--)
+                            <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}</option>
+                        @endfor
+                    </select>
+                </form>
+            </div>
             <!-- Top Bento Row -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
@@ -91,21 +102,12 @@
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
                     <span class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-success' : 'text-warning' }}">{{ number_format($netProfit) }} BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
-                </div>
+</div>
             </div>
             <!-- MAIN CORE TABLE: EXCEL RECREATION -->
             <div class="bg-white border-2 border-primary-container shadow-lg">
                 <div class="p-4 bg-[#1F4E79] flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-white">Financial Ledger - {{ $year }}</h2>
-                    <form action="{{ route('admin.financial-ledgers.index') }}" method="GET"
-                        class="flex items-center gap-2 text-sky-900">
-                        <select name="year" class="form-select text-sm" onchange="this.form.submit()">
-                            @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
-                                <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}
-                                </option>
-                            @endfor
-                        </select>
-                    </form>
+                    <h2 class="text-lg font-bold text-white">Batch Earnings - {{ $year }}</h2>
                 </div>
                 <div class="table-wrapper">
                     <table class="excel-table min-w-full" id="financialLedgerTable">
@@ -162,59 +164,7 @@
                     </table>
                 </div>
             </div>
-            <!-- Secondary Data Row (Visual Density Improvement) -->
-            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                <div class="bg-white border border-outline-variant p-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-primary flex items-center gap-2">
-                            <span class="material-symbols-outlined" data-icon="analytics">analytics</span>
-                            Trend Analysis
-                        </h3>
-                        <span class="text-[10px] bg-sky-100 text-sky-800 px-2 py-0.5 rounded-full font-bold">LIVE
-                            DATA</span>
-                    </div>
-                    <div class="h-32 bg-slate-50 flex items-end justify-between px-6 pb-2 gap-2">
-                        <div class="w-full bg-sky-300 h-[40%]" title="Jan"></div>
-                        <div class="w-full bg-sky-400 h-[50%]" title="Feb"></div>
-                        <div class="w-full bg-sky-500 h-[60%]" title="Mar"></div>
-                        <div class="w-full bg-sky-600 h-[70%]" title="Apr"></div>
-                        <div class="w-full bg-sky-700 h-[85%]" title="May"></div>
-                        <div class="w-full bg-primary h-[100%]" title="Jun"></div>
-                    </div>
-                    <div class="flex justify-between mt-2 text-[10px] font-bold text-slate-400 px-2">
-                        <span>JAN</span><span>FEB</span><span>MAR</span><span>APR</span><span>MAY</span><span>JUN</span>
-                    </div>
-                </div>
-                <div class="bg-white border border-outline-variant p-4">
-                    <div class="flex items-center justify-between mb-4">
-                        <h3 class="font-bold text-primary flex items-center gap-2">
-                            <span class="material-symbols-outlined" data-icon="description">description</span>
-                            Key Documents
-                        </h3>
-                        <button class="text-xs text-primary underline">View All</button>
-                    </div>
-                    <div class="space-y-2">
-                        <div
-                            class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-red-500"
-                                    data-icon="picture_as_pdf">picture_as_pdf</span>
-                                <span class="text-cell-data">Q2_Forecast_Summary.pdf</span>
-                            </div>
-                            <span class="text-label-sm text-slate-400">1.2 MB</span>
-                        </div>
-                        <div
-                            class="flex items-center justify-between p-2 hover:bg-slate-50 border border-transparent hover:border-slate-200 transition-all">
-                            <div class="flex items-center gap-2">
-                                <span class="material-symbols-outlined text-green-600"
-                                    data-icon="table_view">table_view</span>
-                                <span class="text-cell-data">Raw_Export_June_2024.csv</span>
-                            </div>
-                            <span class="text-label-sm text-slate-400">452 KB</span>
-                        </div>
-                    </div>
-                </div>
-            </div>
+            
         </div>
     </main>
 

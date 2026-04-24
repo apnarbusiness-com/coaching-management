@@ -1,2 +1,3 @@
-http://dev-coaching-management.test/admin/earnings earnings er moddhe jegulo student er sathe connected. i meanm jegulo due-payment theke generate hoiche oi gulo delete korte caile sundor ekta modern alert box asbe j eitar sathe umuk student er umuk month er umuk batch er eto amount due related ache jodi earning delete kore deya hoy tahole oi paid again unpaid hoye jabe.
- 
+http://dev-coaching-management.test/admin/financial-ledgers?year=2025 
+
+ei page e year filter ta upore tule dao jehetu puro page er uporei filter hoy. 
