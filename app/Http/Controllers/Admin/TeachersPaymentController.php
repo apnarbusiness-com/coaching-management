@@ -251,6 +251,7 @@ class TeachersPaymentController extends Controller
             'payment_method' => $request->payment_method,
             'paid_by' => $request->received_by ?? auth()->user()->name,
             'teacher_id' => $teachersPayment->teacher_id,
+            'batch_id' => $teachersPayment->batch_id,
             'created_by_id' => auth()->id(),
         ]);
 
@@ -274,6 +275,7 @@ class TeachersPaymentController extends Controller
         $transaction->delete();
 
         Expense::where('teacher_id', $teacherId)
+            ->where('batch_id', $teachersPayment->batch_id)
             ->where('expense_month', $month)
             ->where('expense_year', $year)
             ->where('amount', $amountDeleted)
