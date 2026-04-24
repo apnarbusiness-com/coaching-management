@@ -43,6 +43,7 @@ class Expense extends Model implements HasMedia
         'created_by_id',
         'updated_by_id',
         'teacher_id',
+        'batch_id',
         'created_at',
         'updated_at',
         'deleted_at',

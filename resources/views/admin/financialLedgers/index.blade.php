@@ -176,8 +176,8 @@
             <!-- Year Filter -->
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800">Financial Ledger</h1>
-                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2">
-                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()">
+                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2" style="min-width: 10%">
+                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()" style="width: 100%">
                         @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
                             <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}
                             </option>
