@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\Expense;
+use App\Models\TeachersPayment;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -60,15 +61,78 @@ class FinancialLedgerController extends Controller
             $grandTotal += $amount;
         }
 
-        $activeBatches = Batch::where('status', 1)->count();
-        $totalExpense = Expense::whereYear('expense_date', $year)->sum('amount');
-        $netProfit = $grandTotal - $totalExpense;
-        $profitMargin = $grandTotal > 0 ? round(($netProfit / $grandTotal) * 100, 1) : 0;
+        $batchExpenses = [];
+        foreach ($batches as $batch) {
+            $batchTeacherPivot = $batch->teachers()->get();
+            $teachersData = [];
 
-        $currentMonth = date('n');
-        $currentQuarter = ceil($currentMonth / 3);
-        $fiscalMonth = date('M');
-        $fiscalCycle = 'Q' . $currentQuarter . ' - ' . $fiscalMonth;
+            $batchTotalMonthly = [];
+            for ($m = 1; $m <= 12; $m++) {
+                $batchTotalMonthly[$m] = 0;
+            }
+
+            foreach ($batchTeacherPivot as $teacherPivot) {
+                $teacher = $teacherPivot;
+                $salaryAmount = $teacherPivot->pivot->salary_amount ?? 0;
+                $teacherRole = $teacherPivot->pivot->role ?? 'Teacher';
+
+                $monthlySalary = [];
+                $totalSalary = 0;
+
+                for ($m = 1; $m <= 12; $m++) {
+                    $payments = TeachersPayment::where('teacher_id', $teacher->id)
+                        ->where('batch_id', $batch->id)
+                        ->whereYear('created_at', $year)
+                        ->whereMonth('created_at', $m)
+                        ->get();
+
+                    $amount = $payments->sum('paid_amount');
+                    $monthlySalary[$m] = $amount;
+                    $totalSalary += $amount;
+                    $batchTotalMonthly[$m] += $amount;
+                }
+
+                $teacherName = trim(($teacher->name ?? '') . ' ' . ($teacher->last_name ?? ''));
+                $teacherName = $teacher->name ?? ($teacher->first_name ?? '') . ' ' . ($teacher->last_name ?? '');
+                $teacherName = trim($teacherName);
+
+                if ($totalSalary > 0 || $salaryAmount > 0) {
+                    $teachersData[] = [
+                        'teacher_id' => $teacher->id,
+                        'teacher_name' => $teacherName,
+                        'role' => $teacherRole,
+                        'salary_amount' => $salaryAmount,
+                        'monthly' => $monthlySalary,
+                        'total' => $totalSalary,
+                    ];
+                }
+            }
+
+            if (!empty($teachersData)) {
+                $batchExpenses[] = [
+                    'batch_id' => $batch->id,
+                    'batch_name' => $batch->batch_name,
+                    'teachers' => $teachersData,
+                    'monthly' => $batchTotalMonthly,
+                    'total' => array_sum($batchTotalMonthly),
+                ];
+            }
+        }
+
+        $totalExpensePerMonth = [];
+        $grandTotalExpense = 0;
+        for ($m = 1; $m <= 12; $m++) {
+            $amount = DB::table('teacher_payment_transactions')
+                ->whereYear('created_at', $year)
+                ->whereMonth('created_at', $m)
+                ->sum('amount');
+            $totalExpensePerMonth[$m] = $amount;
+            $grandTotalExpense += $amount;
+        }
+
+        $activeBatches = Batch::where('status', 1)->count();
+        $netProfit = $grandTotal - $grandTotalExpense;
+        $profitMargin = $grandTotal > 0 ? round(($netProfit / $grandTotal) * 100, 1) : 0;
 
         $previousYear = $year - 1;
         $previousYearEarning = Earning::whereYear('earning_date', $previousYear)->sum('amount');
@@ -80,11 +144,12 @@ class FinancialLedgerController extends Controller
             'grandTotal',
             'months',
             'year',
+            'batchExpenses',
+            'totalExpensePerMonth',
+            'grandTotalExpense',
             'activeBatches',
-            'totalExpense',
             'netProfit',
             'profitMargin',
-            'fiscalCycle',
             'percentChange'
         ));
     }

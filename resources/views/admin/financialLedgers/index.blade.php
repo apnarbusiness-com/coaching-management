@@ -47,12 +47,24 @@
             background: #1F4E79;
         }
 
+        .expense-table thead .fixed-col {
+            background: #b91c1c;
+        }
+
+        .expense-table thead {
+            background: #b91c1c;
+        }
+
         tbody .fixed-col {
             background: #fff;
         }
 
         tfoot .fixed-col {
             background: #d8e0f1;
+        }
+
+        .expense-table tfoot .fixed-col {
+            background: #fecaca;
         }
     </style>
 @endpush
@@ -95,7 +107,7 @@
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Expense</span>
-                    <span class="text-2xl font-bold text-danger">{{ number_format($totalExpense) }} BDT</span>
+                    <span class="text-2xl font-bold text-danger">{{ number_format($grandTotalExpense) }} BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
@@ -160,11 +172,78 @@
                                     class="grid-cell px-4 py-3 text-right bg-primary text-white text-lg fixed-col fixed-right">
                                     {{ number_format($grandTotal) }}</td>
                             </tr>
+</tfoot>
+                    </table>
+                </div>
+            </div>
+
+            <!-- Batch Expenses Table -->
+            <div class="bg-white border-2 border-red-800 shadow-lg mt-6">
+                <div class="p-4 bg-red-800 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Batch Expenses (Teachers Salary) - {{ $year }}</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="excel-table min-w-full expense-table" id="financialExpenseTable">
+                        <thead>
+                            <tr class="bg-red-800">
+                                <th class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-red-900 fixed-col fixed-left">
+                                    Batch / Teacher
+                                </th>
+                                @foreach($months as $month)
+                                    <th class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-red-900">
+                                        {{ $month }}
+                                    </th>
+                                @endforeach
+                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">
+                                    Total
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-cell-data font-cell-data text-on-surface">
+                            @forelse($batchExpenses as $batch)
+                                @foreach($batch['teachers'] as $teacher)
+                                    <tr class="bg-white hover:bg-slate-50 text-red-900">
+                                        <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">
+                                            <span class="font-bold">{{ $batch['batch_name'] }}</span> - {{ $teacher['teacher_name'] }} ({{ $teacher['role'] }})
+                                        </td>
+                                        @for($m = 1; $m <= 12; $m++)
+                                            <td class="grid-cell px-4 py-1.5 text-right">
+                                                {{ number_format($teacher['monthly'][$m] ?? 0) }}
+                                            </td>
+                                        @endfor
+                                        <td class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
+                                            {{ number_format($teacher['total']) }}
+                                        </td>
+                                    </tr>
+                                @endforeach
+                                <tr class="bg-gray-100 font-bold text-red-900">
+                                    <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">{{ $batch['batch_name'] }} Total</td>
+                                    @for($m = 1; $m <= 12; $m++)
+                                        <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($batch['monthly'][$m] ?? 0) }}</td>
+                                    @endfor
+                                    <td class="grid-cell px-4 py-1.5 text-right bg-red-400 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
+                                        {{ number_format($batch['total']) }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="14" class="text-center py-4">No teacher salaries found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-red-100 text-red-900 font-bold border-t-2 border-red-800">
+                                <td class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">Total</td>
+                                @for($m = 1; $m <= 12; $m++)
+                                    <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($totalExpensePerMonth[$m] ?? 0) }}</td>
+                                @endfor
+                                <td class="grid-cell px-4 py-3 text-right bg-red-600 text-white text-lg fixed-col fixed-right">{{ number_format($grandTotalExpense) }}</td>
+                            </tr>
                         </tfoot>
                     </table>
                 </div>
             </div>
-            
+             
         </div>
     </main>
 

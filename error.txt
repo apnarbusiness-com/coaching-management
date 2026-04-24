@@ -1,1 +1,0 @@
-Try deleting a student-linked earning now. Should show warning with student/batch info.
