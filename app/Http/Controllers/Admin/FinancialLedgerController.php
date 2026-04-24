@@ -7,6 +7,7 @@ use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\Expense;
 use App\Models\StudentBasicInfo;
+use App\Models\StudentMonthlyDue;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -181,11 +182,20 @@ class FinancialLedgerController extends Controller
             $studentName = $student ? trim($student->first_name . ' ' . $student->last_name) : 'Unknown';
             $idNo = $student ? $student->id_no : '';
 
+            $discountAmount = 0;
+            if ($earning->student_monthly_due_id) {
+                $due = StudentMonthlyDue::find($earning->student_monthly_due_id);
+                if ($due) {
+                    $discountAmount = (float) $due->discount_amount;
+                }
+            }
+
             $payments[] = [
                 'student_id' => $earning->student_id,
                 'student_name' => $studentName,
                 'id_no' => $idNo,
                 'amount' => (float) $earning->amount,
+                'discount_amount' => $discountAmount,
             ];
         }
 

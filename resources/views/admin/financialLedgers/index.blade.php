@@ -32,9 +32,10 @@
             top: 8px;
             right: 0px;
             transform: translateY(-50%);
+            /* background: #b91c1c; */
             border: 1px solid #b91c1c !important;
             border-radius: 50% !important;
-            /* color: #fff; */
+            /* color: #b91c1c; */
             border: none;
             border-radius: 3px;
             width: 20px;
@@ -44,12 +45,28 @@
             display: flex;
             align-items: center;
             justify-content: center;
+            opacity: 0;
+            transition: opacity 0.2s;
             z-index: 5;
         }
 
-        .expense-info-btn-cell:hover {
-            background: #991b1b;
+        .grid-cell:hover .expense-info-btn-cell,
+        td:hover .expense-info-btn-cell {
+            opacity: 1;
         }
+
+        .grid-cell:hover .earning-info-btn-cell,
+        td:hover .earning-info-btn-cell {
+            opacity: 1;
+        }
+
+        .expense-info-btn-cell:hover {
+            background: #991b1b61;
+        }
+
+        /* .expense-info-btn-cell:hover {
+            background: #991b1b;
+        } */
 
 
         .earning-info-btn-cell {
@@ -70,10 +87,11 @@
             align-items: center;
             justify-content: center;
             z-index: 5;
+            opacity: 0;
         }
 
         .earning-info-btn-cell:hover {
-            background: #196ff8;
+            background: #196ff865;
         }
 
 
@@ -142,7 +160,7 @@
             background: #fff;
         }
 
-        tbody{
+        tbody {
             color: #1F4E79;
         }
 
@@ -235,15 +253,16 @@
                                     @for ($m = 1; $m <= 12; $m++)
                                         <td class="grid-cell px-4 py-1.5 text-right relative">
                                             {{ number_format($batch['monthly'][$m] ?? 0) }}
-                                            @if(($batch['monthly'][$m] ?? 0) > 0)
-                                                <button type="button" class="earning-info-btn-cell" 
+                                            @if (($batch['monthly'][$m] ?? 0) > 0)
+                                                <button type="button" class="earning-info-btn-cell"
                                                     onclick="loadEarningDetails('{{ $batch['id'] }}', '{{ addslashes($batch['batch_name']) }}', {{ $m }}, {{ $year }})">
                                                     <i class="fas fa-info-circle"></i>
                                                 </button>
                                             @endif
                                         </td>
                                     @endfor
-                                    <td class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
+                                    <td
+                                        class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
                                         {{ number_format($batch['total']) }}
                                     </td>
                                 </tr>
@@ -298,23 +317,24 @@
                             </tr>
                         </thead>
                         <tbody class="text-cell-data font-cell-data text-on-surface">
-@forelse($batchExpenses as $batch)
+                            @forelse($batchExpenses as $batch)
                                 <tr class="bg-white hover:bg-slate-50 text-red-900">
                                     <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">
                                         <span class="font-bold">{{ $batch['batch_name'] }}</span>
                                     </td>
-                                    @for($m = 1; $m <= 12; $m++)
+                                    @for ($m = 1; $m <= 12; $m++)
                                         <td class="grid-cell px-4 py-1.5 text-right relative">
                                             {{ number_format($batch['monthly'][$m] ?? 0) }}
-                                            @if(($batch['monthly'][$m] ?? 0) > 0)
-                                                <button type="button" class="expense-info-btn-cell" 
+                                            @if (($batch['monthly'][$m] ?? 0) > 0)
+                                                <button type="button" class="expense-info-btn-cell"
                                                     onclick="loadExpenseDetails('{{ $batch['batch_id'] }}', '{{ addslashes($batch['batch_name']) }}', {{ $m }}, {{ $year }})">
                                                     <i class="fas fa-info-circle"></i>
                                                 </button>
                                             @endif
                                         </td>
                                     @endfor
-                                    <td class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
+                                    <td
+                                        class="grid-cell px-4 py-1.5 text-right bg-red-200 font-bold text-black border-l-2 border-red-900 fixed-col fixed-right">
                                         {{ number_format($batch['total']) }}
                                     </td>
                                 </tr>
@@ -358,102 +378,136 @@
 @endsection
 
 @push('scripts')
-<script>
-    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    <script>
+        const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-    // Earnings details loader
-    function loadEarningDetails(batchId, batchName, month, year) {
-        const drawer = document.getElementById('expenseDrawer');
-        const overlay = document.getElementById('expenseDrawerOverlay');
-        const title = document.getElementById('drawerTitle');
-        const content = document.getElementById('drawerContent');
+        // Earnings details loader
+        function loadEarningDetails(batchId, batchName, month, year) {
+            const drawer = document.getElementById('expenseDrawer');
+            const overlay = document.getElementById('expenseDrawerOverlay');
+            const title = document.getElementById('drawerTitle');
+            const content = document.getElementById('drawerContent');
 
-        title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Earnings';
-        title.parentElement.style.background = '#1F4E79';
-        content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+            title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Earnings';
+            title.parentElement.style.background = '#1F4E79';
+            content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
 
-        drawer.classList.add('open');
-        overlay.classList.add('open');
+            drawer.classList.add('open');
+            overlay.classList.add('open');
 
-        fetch("{{ route('admin.financial-ledgers.earning-details') }}?batch_id=" + batchId + "&month=" + month + "&year=" + year)
-            .then(response => response.json())
-            .then(data => {
-                let html = '<div class="space-y-4">';
-                
-                if (data.payments && data.payments.length > 0) {
-                    data.payments.forEach(payment => {
-                        html += '<div class="border rounded-lg p-3">';
-                        html += '<div class="flex justify-between items-center mb-2">';
-                        html += '<h4 class="font-bold text-sky-800">' + payment.student_name + '</h4>';
-                        html += '<span class="text-xs bg-sky-100 text-sky-800 px-2 py-1 rounded">' + payment.id_no + '</span>';
-                        html += '</div>';
-                        html += '<table class="w-full text-sm">';
-                        html += '<tr><td class="py-1 text-gray-600">Amount Paid:</td><td class="py-1 text-right font-bold">' + payment.amount.toLocaleString() + ' BDT</td></tr>';
+            fetch("{{ route('admin.financial-ledgers.earning-details') }}?batch_id=" + batchId + "&month=" + month +
+                    "&year=" + year)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<div class="space-y-4">';
+
+                    if (data.payments && data.payments.length > 0) {
+                        let totalAmount = 0;
+                        let totalDiscount = 0;
+
+                        data.payments.forEach(payment => {
+                            totalAmount += payment.amount;
+                            totalDiscount += payment.discount_amount;
+
+                            html += '<div class="border rounded-lg p-3">';
+                            html += '<div class="flex justify-between items-center mb-2">';
+                            html += '<h4 class="font-bold text-sky-800">' + payment.student_name + '</h4>';
+                            html += '<span class="text-xs bg-sky-100 text-sky-800 px-2 py-1 rounded">' + payment
+                                .id_no + '</span>';
+                            html += '</div>';
+                            html += '<table class="w-full text-sm">';
+                            html +=
+                                '<tr><td class="py-1 text-gray-600">Amount Paid:</td><td class="py-1 text-right font-bold">' +
+                                payment.amount.toLocaleString() + ' BDT</td></tr>';
+                            if (payment.discount_amount > 0) {
+                                html +=
+                                    '<tr><td class="py-1 text-gray-600">Discount:</td><td class="py-1 text-right text-green-600">' +
+                                    payment.discount_amount.toLocaleString() + ' BDT</td></tr>';
+                            }
+                            html += '</table></div>';
+                        });
+
+                        html += '<div class="border-t-2 border-sky-800 pt-2 mt-2">';
+                        html += '<table class="w-full text-sm font-bold">';
+                        html += '<tr><td class="py-1">Total Paid:</td><td class="py-1 text-right">' + totalAmount
+                            .toLocaleString() + ' BDT</td></tr>';
+                        if (totalDiscount > 0) {
+                            html +=
+                                '<tr><td class="py-1 text-green-600">Total Discount:</td><td class="py-1 text-right text-green-600">' +
+                                totalDiscount.toLocaleString() + ' BDT</td></tr>';
+                        }
                         html += '</table></div>';
-                    });
-                } else {
-                    html += '<p class="text-gray-500">No earnings for this month.</p>';
-                }
+                    } else {
+                        html += '<p class="text-gray-500">No earnings for this month.</p>';
+                    }
 
-                html += '</div>';
-                content.innerHTML = html;
-            })
-            .catch(error => {
-                content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
-            });
-    }
+                    html += '</div>';
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+                });
+        }
 
-    // Expense details loader
-    function loadExpenseDetails(batchId, batchName, month, year) {
-        const drawer = document.getElementById('expenseDrawer');
-        const overlay = document.getElementById('expenseDrawerOverlay');
-        const title = document.getElementById('drawerTitle');
-        const content = document.getElementById('drawerContent');
+        // Expense details loader
+        function loadExpenseDetails(batchId, batchName, month, year) {
+            const drawer = document.getElementById('expenseDrawer');
+            const overlay = document.getElementById('expenseDrawerOverlay');
+            const title = document.getElementById('drawerTitle');
+            const content = document.getElementById('drawerContent');
 
-        title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Expenses';
-        title.parentElement.style.background = '#b91c1c';
-        content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+            title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Expenses';
+            title.parentElement.style.background = '#b91c1c';
+            content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
 
-        drawer.classList.add('open');
-        overlay.classList.add('open');
+            drawer.classList.add('open');
+            overlay.classList.add('open');
 
-        fetch("{{ route('admin.financial-ledgers.expense-details') }}?batch_id=" + batchId + "&month=" + month + "&year=" + year)
-            .then(response => response.json())
-            .then(data => {
-                let html = '<div class="space-y-4">';
-                
-                if (data.teachers && data.teachers.length > 0) {
-                    data.teachers.forEach(teacher => {
-                        const salaryLabel = teacher.salary_type === 'percentage' 
-                            ? teacher.salary_amount + '%' 
-                            : teacher.salary_amount.toLocaleString() + ' BDT';
-                        
-                        html += '<div class="border rounded-lg p-3">';
-                        html += '<div class="flex justify-between items-center mb-2">';
-                        html += '<h4 class="font-bold text-red-800">' + teacher.teacher_name + '</h4>';
-                        html += '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">' + teacher.salary_type + '</span>';
-                        html += '</div>';
-                        html += '<table class="w-full text-sm">';
-                        html += '<tr><td class="py-1 text-gray-600">Salary Type:</td><td class="py-1 text-right">' + teacher.salary_type + '</td></tr>';
-                        html += '<tr><td class="py-1 text-gray-600">Salary Amount:</td><td class="py-1 text-right">' + salaryLabel + '</td></tr>';
-                        html += '<tr class="font-bold"><td class="py-1">Paid This Month:</td><td class="py-1 text-right">' + teacher.amount.toLocaleString() + ' BDT</td></tr>';
-                        html += '</table></div>';
-                    });
-                } else {
-                    html += '<p class="text-gray-500">No expenses for this month.</p>';
-                }
+            fetch("{{ route('admin.financial-ledgers.expense-details') }}?batch_id=" + batchId + "&month=" + month +
+                    "&year=" + year)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<div class="space-y-4">';
 
-                html += '</div>';
-                content.innerHTML = html;
-            })
-            .catch(error => {
-                content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
-            });
-    }
+                    if (data.teachers && data.teachers.length > 0) {
+                        data.teachers.forEach(teacher => {
+                            const salaryLabel = teacher.salary_type === 'percentage' ?
+                                teacher.salary_amount + '%' :
+                                teacher.salary_amount.toLocaleString() + ' BDT';
 
-    function closeExpenseDrawer() {
-        document.getElementById('expenseDrawer').classList.remove('open');
-        document.getElementById('expenseDrawerOverlay').classList.remove('open');
-    }
-</script>
+                            html += '<div class="border rounded-lg p-3">';
+                            html += '<div class="flex justify-between items-center mb-2">';
+                            html += '<h4 class="font-bold text-red-800">' + teacher.teacher_name + '</h4>';
+                            html += '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">' + teacher
+                                .salary_type + '</span>';
+                            html += '</div>';
+                            html += '<table class="w-full text-sm">';
+                            html +=
+                                '<tr><td class="py-1 text-gray-600">Salary Type:</td><td class="py-1 text-right">' +
+                                teacher.salary_type + '</td></tr>';
+                            html +=
+                                '<tr><td class="py-1 text-gray-600">Salary Amount:</td><td class="py-1 text-right">' +
+                                salaryLabel + '</td></tr>';
+                            html +=
+                                '<tr class="font-bold"><td class="py-1">Paid This Month:</td><td class="py-1 text-right">' +
+                                teacher.amount.toLocaleString() + ' BDT</td></tr>';
+                            html += '</table></div>';
+                        });
+                    } else {
+                        html += '<p class="text-gray-500">No expenses for this month.</p>';
+                    }
+
+                    html += '</div>';
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+                });
+        }
+
+        function closeExpenseDrawer() {
+            document.getElementById('expenseDrawer').classList.remove('open');
+            document.getElementById('expenseDrawerOverlay').classList.remove('open');
+        }
+    </script>
 @endpush
