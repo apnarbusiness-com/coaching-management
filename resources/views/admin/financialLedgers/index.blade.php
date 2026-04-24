@@ -67,24 +67,30 @@
             <!-- Top Bento Row -->
             <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Portfolio Value</span>
-                    <span class="text-2xl font-bold text-primary">$39,925.00</span>
-                    <div class="text-[10px] text-green-600 font-bold mt-1">▲ +4.2% from last month</div>
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Earning</span>
+                    <span class="text-2xl font-bold text-primary">{{ number_format($grandTotal) }} BDT</span>
+                    @if($percentChange != 0)
+                        <div class="text-[10px] {{ $percentChange >= 0 ? 'text-green-600' : 'text-red-600' }} font-bold mt-1">
+                            {{ $percentChange >= 0 ? '▲' : '▼' }} {{ abs($percentChange) }}% from last year
+                        </div>
+                    @else
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">No previous data</div>
+                    @endif
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Active Accounts</span>
-                    <span class="text-2xl font-bold text-primary">14</span>
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Active Batches</span>
+                    <span class="text-2xl font-bold text-primary">{{ $activeBatches }}</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Operational status: Stable</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Risk Exposure</span>
-                    <span class="text-2xl font-bold text-error">Low</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Diversification: High</div>
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Expense</span>
+                    <span class="text-2xl font-bold text-danger">{{ number_format($totalExpense) }} BDT</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Fiscal Cycle</span>
-                    <span class="text-2xl font-bold text-primary">Q1 - Jun</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Next report in 12 days</div>
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
+                    <span class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-success' : 'text-warning' }}">{{ number_format($netProfit) }} BDT</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
                 </div>
             </div>
             <!-- MAIN CORE TABLE: EXCEL RECREATION -->
@@ -92,7 +98,7 @@
                 <div class="p-4 bg-[#1F4E79] flex justify-between items-center">
                     <h2 class="text-lg font-bold text-white">Financial Ledger - {{ $year }}</h2>
                     <form action="{{ route('admin.financial-ledgers.index') }}" method="GET"
-                        class="flex items-center gap-2">
+                        class="flex items-center gap-2 text-sky-900">
                         <select name="year" class="form-select text-sm" onchange="this.form.submit()">
                             @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
                                 <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}

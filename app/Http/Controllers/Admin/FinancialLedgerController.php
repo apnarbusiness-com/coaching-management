@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Earning;
+use App\Models\Expense;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -59,12 +60,32 @@ class FinancialLedgerController extends Controller
             $grandTotal += $amount;
         }
 
+        $activeBatches = Batch::where('status', 1)->count();
+        $totalExpense = Expense::whereYear('expense_date', $year)->sum('amount');
+        $netProfit = $grandTotal - $totalExpense;
+        $profitMargin = $grandTotal > 0 ? round(($netProfit / $grandTotal) * 100, 1) : 0;
+
+        $currentMonth = date('n');
+        $currentQuarter = ceil($currentMonth / 3);
+        $fiscalMonth = date('M');
+        $fiscalCycle = 'Q' . $currentQuarter . ' - ' . $fiscalMonth;
+
+        $previousYear = $year - 1;
+        $previousYearEarning = Earning::whereYear('earning_date', $previousYear)->sum('amount');
+        $percentChange = $previousYearEarning > 0 ? round((($grandTotal - $previousYearEarning) / $previousYearEarning) * 100, 1) : 0;
+
         return view('admin.financialLedgers.index', compact(
             'batchEarnings',
             'totalPerMonth',
             'grandTotal',
             'months',
-            'year'
+            'year',
+            'activeBatches',
+            'totalExpense',
+            'netProfit',
+            'profitMargin',
+            'fiscalCycle',
+            'percentChange'
         ));
     }
 }
