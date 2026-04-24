@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\Expense;
+use App\Models\StudentBasicInfo;
 use App\Models\Teacher;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -135,17 +136,12 @@ class FinancialLedgerController extends Controller
 
         $batchTeachers = $batch->teachers()->get()->keyBy('id');
 
-        // dd($batchTeachers);
-
         $teachers = [];
         foreach ($expenses as $exp) {
             $teacher = Teacher::find($exp->teacher_id);
             $teacherName = $teacher ? trim($teacher->name ?? $teacher->first_name . ' ' . $teacher->last_name) : 'Unknown';
 
             $batchTeacher = $batchTeachers->get($exp->teacher_id);
-
-            // dd($batchTeacher->pivot);
-
             $salaryType = $batchTeacher ? ($batchTeacher->pivot->salary_amount_type ?? 'fixed') : 'fixed';
             $salaryAmount = $batchTeacher ? ($batchTeacher->pivot->salary_amount ?? 0) : 0;
 
@@ -162,6 +158,41 @@ class FinancialLedgerController extends Controller
             'batch_name' => $batch->batch_name,
             'month' => $month,
             'teachers' => $teachers
+        ]);
+    }
+
+    public function getEarningDetails(Request $request)
+    {
+        abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batchId = $request->input('batch_id');
+        $month = $request->input('month');
+        $year = $request->input('year', date('Y'));
+
+        $batch = Batch::findOrFail($batchId);
+        $earnings = Earning::where('batch_id', $batchId)
+            ->whereYear('earning_date', $year)
+            ->whereMonth('earning_date', $month)
+            ->get();
+
+        $payments = [];
+        foreach ($earnings as $earning) {
+            $student = StudentBasicInfo::find($earning->student_id);
+            $studentName = $student ? trim($student->first_name . ' ' . $student->last_name) : 'Unknown';
+            $idNo = $student ? $student->id_no : '';
+
+            $payments[] = [
+                'student_id' => $earning->student_id,
+                'student_name' => $studentName,
+                'id_no' => $idNo,
+                'amount' => (float) $earning->amount,
+            ];
+        }
+
+        return response()->json([
+            'batch_name' => $batch->batch_name,
+            'month' => $month,
+            'payments' => $payments
         ]);
     }
 }

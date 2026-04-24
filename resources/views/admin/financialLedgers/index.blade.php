@@ -51,6 +51,32 @@
             background: #991b1b;
         }
 
+
+        .earning-info-btn-cell {
+            position: absolute;
+            top: 8px;
+            right: 0px;
+            transform: translateY(-50%);
+            border: 1px solid #196ff8 !important;
+            border-radius: 50% !important;
+            /* color: #fff; */
+            border: none;
+            border-radius: 3px;
+            width: 20px;
+            height: 20px;
+            font-size: 10px;
+            cursor: pointer;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            z-index: 5;
+        }
+
+        .earning-info-btn-cell:hover {
+            background: #196ff8;
+        }
+
+
         .expense-drawer {
             position: fixed;
             top: 0;
@@ -207,11 +233,17 @@
                                 <tr class="bg-white hover:bg-slate-50 text-sky-900">
                                     <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">{{ $batch['batch_name'] }}</td>
                                     @for ($m = 1; $m <= 12; $m++)
-                                        <td class="grid-cell px-4 py-1.5 text-right">
-                                            {{ number_format($batch['monthly'][$m] ?? 0) }}</td>
+                                        <td class="grid-cell px-4 py-1.5 text-right relative">
+                                            {{ number_format($batch['monthly'][$m] ?? 0) }}
+                                            @if(($batch['monthly'][$m] ?? 0) > 0)
+                                                <button type="button" class="earning-info-btn-cell" 
+                                                    onclick="loadEarningDetails('{{ $batch['id'] }}', '{{ addslashes($batch['batch_name']) }}', {{ $m }}, {{ $year }})">
+                                                    <i class="fas fa-info-circle"></i>
+                                                </button>
+                                            @endif
+                                        </td>
                                     @endfor
-                                    <td
-                                        class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
+                                    <td class="grid-cell px-4 py-1.5 text-right bg-[#00FF00] font-bold text-black border-l-2 border-black fixed-col fixed-right">
                                         {{ number_format($batch['total']) }}
                                     </td>
                                 </tr>
@@ -329,6 +361,49 @@
 <script>
     const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
+    // Earnings details loader
+    function loadEarningDetails(batchId, batchName, month, year) {
+        const drawer = document.getElementById('expenseDrawer');
+        const overlay = document.getElementById('expenseDrawerOverlay');
+        const title = document.getElementById('drawerTitle');
+        const content = document.getElementById('drawerContent');
+
+        title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Earnings';
+        title.parentElement.style.background = '#1F4E79';
+        content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+
+        drawer.classList.add('open');
+        overlay.classList.add('open');
+
+        fetch("{{ route('admin.financial-ledgers.earning-details') }}?batch_id=" + batchId + "&month=" + month + "&year=" + year)
+            .then(response => response.json())
+            .then(data => {
+                let html = '<div class="space-y-4">';
+                
+                if (data.payments && data.payments.length > 0) {
+                    data.payments.forEach(payment => {
+                        html += '<div class="border rounded-lg p-3">';
+                        html += '<div class="flex justify-between items-center mb-2">';
+                        html += '<h4 class="font-bold text-sky-800">' + payment.student_name + '</h4>';
+                        html += '<span class="text-xs bg-sky-100 text-sky-800 px-2 py-1 rounded">' + payment.id_no + '</span>';
+                        html += '</div>';
+                        html += '<table class="w-full text-sm">';
+                        html += '<tr><td class="py-1 text-gray-600">Amount Paid:</td><td class="py-1 text-right font-bold">' + payment.amount.toLocaleString() + ' BDT</td></tr>';
+                        html += '</table></div>';
+                    });
+                } else {
+                    html += '<p class="text-gray-500">No earnings for this month.</p>';
+                }
+
+                html += '</div>';
+                content.innerHTML = html;
+            })
+            .catch(error => {
+                content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+            });
+    }
+
+    // Expense details loader
     function loadExpenseDetails(batchId, batchName, month, year) {
         const drawer = document.getElementById('expenseDrawer');
         const overlay = document.getElementById('expenseDrawerOverlay');
@@ -336,6 +411,7 @@
         const content = document.getElementById('drawerContent');
 
         title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Expenses';
+        title.parentElement.style.background = '#b91c1c';
         content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
 
         drawer.classList.add('open');
@@ -344,10 +420,6 @@
         fetch("{{ route('admin.financial-ledgers.expense-details') }}?batch_id=" + batchId + "&month=" + month + "&year=" + year)
             .then(response => response.json())
             .then(data => {
-
-                console.log(data);
-                
-
                 let html = '<div class="space-y-4">';
                 
                 if (data.teachers && data.teachers.length > 0) {

@@ -32,6 +32,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('/', 'HomeController@index')->name('home');
     Route::get('financial-ledgers', 'FinancialLedgerController@index')->name('financial-ledgers.index');
     Route::get('financial-ledgers/expense-details', 'FinancialLedgerController@getExpenseDetails')->name('financial-ledgers.expense-details');
+    Route::get('financial-ledgers/earning-details', 'FinancialLedgerController@getEarningDetails')->name('financial-ledgers.earning-details');
     Route::get('student/profile', 'HomeController@studentProfile')->name('student.profile');
     Route::get('student/batches', 'HomeController@myBatches')->name('student.myBatches');
     Route::get('teacher/profile', 'HomeController@teacherProfile')->name('teacher.profile');
