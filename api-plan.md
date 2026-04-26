@@ -3,7 +3,40 @@
 ## Project Overview
 - **Framework**: Laravel 10
 - **Purpose**: Coaching center management for mobile app
-- **Auth**: Token-based (Sanctum)
+- **Auth**: Token-based (Laravel Sanctum)
+
+---
+
+## Response Format (REST API Standard)
+
+### Success Response (200, 201)
+```json
+{
+  "code": 200,
+  "message": "Login successful",
+  "access_token": "token",
+  "token_type": "Bearer",
+  "data": {}
+}
+```
+
+### Error Response (400, 401, 422)
+```json
+{
+  "code": 401,
+  "message": "Error description",
+  "errors": {}
+}
+```
+
+### Not Found (404)
+```json
+{
+  "code": 404,
+  "message": "Resource not found",
+  "errors": {}
+}
+```
 
 ---
 
@@ -11,11 +44,117 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/auth/login` | Login (admission_id + password) |
-| POST | `/api/auth/logout` | Logout |
-| GET | `/api/auth/me` | Get current user profile |
-| PUT | `/api/auth/profile` | Update profile |
-| POST | `/api/auth/change-password` | Change password |
+| POST | `/api/v1/auth/login` | Login (username + password) |
+| POST | `/api/v1/auth/logout` | Logout |
+| GET | `/api/v1/auth/me` | Get current user profile |
+| PUT | `/api/v1/auth/profile` | Update profile |
+| POST | `/api/v1/auth/change-password` | Change password |
+
+### Login Request
+```json
+{
+  "username": "email or user_name or admission_id",
+  "password": "password"
+}
+```
+
+### Login Validation Error (422)
+```json
+{
+  "code": 422,
+  "message": "Validation failed",
+  "errors": {
+    "username": ["The username field is required."],
+    "password": ["The password field is required."]
+  }
+}
+```
+
+### Login Response (200)
+```json
+{
+  "code": 200,
+  "message": "Login successful",
+  "access_token": "5|CMTDusyiSShAfdFb8RcZjSwSGEXXeYtfWKgsJzdP1957fbe7",
+  "token_type": "Bearer",
+  "data": {
+    "user": {
+      "id": 1,
+      "name": "John Doe",
+      "email": "john@example.com",
+      "admission_id": "AD001",
+      "roles": ["Admin", "Teacher"],
+      "is_admin": true,
+      "is_teacher": true,
+      "is_student": false
+    }
+  }
+}
+```
+
+### Login Error Response (401)
+```json
+{
+  "code": 401,
+  "message": "Invalid credentials",
+  "errors": {
+    "username": ["Invalid username or password"]
+  }
+}
+```
+
+### Logout Response (200)
+```json
+{
+  "code": 200,
+  "message": "Logout successful"
+}
+```
+
+### Me Response (200)
+```json
+{
+  "code": 200,
+  "message": "User data retrieved successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "admission_id": "AD001",
+    "roles": ["Admin"],
+    "is_admin": true,
+    "is_teacher": false,
+    "is_student": false,
+    "student": null,
+    "teacher": null
+  }
+}
+```
+
+### Update Profile Response (200)
+```json
+{
+  "code": 200,
+  "message": "Profile updated successfully",
+  "data": {
+    "id": 1,
+    "name": "John Doe",
+    "email": "john@example.com",
+    "admission_id": "AD001"
+  }
+}
+```
+
+### Change Password Error Response (401)
+```json
+{
+  "code": 401,
+  "message": "The current password is incorrect.",
+  "errors": {
+    "current_password": ["The current password is incorrect."]
+  }
+}
+```
 
 ---
 
@@ -23,11 +162,11 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/students/me` | Current student profile |
-| GET | `/api/students/me/batches` | Enrolled batches |
-| GET | `/api/students/me/due` | Monthly dues & payment history |
-| GET | `/api/students/me/attendance` | Attendance records |
-| GET | `/api/students/me/payments` | Payment history |
+| GET | `/api/v1/students/me` | Current student profile |
+| GET | `/api/v1/students/me/batches` | Enrolled batches |
+| GET | `/api/v1/students/me/dues` | Monthly dues & payment history |
+| GET | `/api/v1/students/me/attendance` | Attendance records |
+| GET | `/api/v1/students/me/payments` | Payment history |
 
 ---
 
@@ -35,10 +174,10 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/teachers/me` | Current teacher profile |
-| GET | `/api/teachers/me/batches` | Assigned batches |
-| GET | `/api/teachers/me/salary` | Salary & payment history |
-| GET | `/api/teachers/me/attendance` | Teacher attendance |
+| GET | `/api/v1/teachers/me` | Current teacher profile |
+| GET | `/api/v1/teachers/me/batches` | Assigned batches |
+| GET | `/api/v1/teachers/me/salary` | Salary & payment history |
+| GET | `/api/v1/teachers/me/attendance` | Teacher attendance |
 
 ---
 
@@ -46,11 +185,11 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/batches` | List all batches |
-| GET | `/api/batches/{id}` | Batch details |
-| GET | `/api/batches/{id}/students` | Students in batch |
-| GET | `/api/batches/{id}/schedule` | Batch schedule |
-| GET | `/api/batches/{id}/attendance` | Batch attendance records |
+| GET | `/api/v1/batches` | List all batches |
+| GET | `/api/v1/batches/{id}` | Batch details |
+| GET | `/api/v1/batches/{id}/students` | Students in batch |
+| GET | `/api/v1/batches/{id}/schedule` | Batch schedule |
+| GET | `/api/v1/batches/{id}/attendance` | Batch attendance records |
 
 ---
 
@@ -58,9 +197,9 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/attendance/batch/{batchId}` | Batch attendance |
-| POST | `/api/attendance/batch/{batchId}` | Take attendance (Teacher only) |
-| GET | `/api/attendance/student/{studentId}` | Student attendance history |
+| GET | `/api/v1/attendance/batch/{batchId}` | Batch attendance |
+| POST | `/api/v1/attendance/batch/{batchId}` | Take attendance (Teacher only) |
+| GET | `/api/v1/attendance/student/{studentId}` | Student attendance history |
 
 ---
 
@@ -68,11 +207,11 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/dues` | All dues (filter by student, month) |
-| GET | `/api/dues/{id}` | Due details |
-| POST | `/api/dues/{id}/pay` | Record payment |
-| GET | `/api/earnings` | Payment records |
-| GET | `/api/earnings/student/{studentId}` | Student payments |
+| GET | `/api/v1/dues` | All dues (filter by student, month) |
+| GET | `/api/v1/dues/{id}` | Due details |
+| POST | `/api/v1/dues/{id}/pay` | Record payment |
+| GET | `/api/v1/earnings` | Payment records |
+| GET | `/api/v1/earnings/student/{studentId}` | Student payments |
 
 ---
 
@@ -80,10 +219,10 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/teachers-payments` | List all payments |
-| GET | `/api/teachers-payments/{id}` | Payment details |
-| POST | `/api/teachers-payments/generate` | Generate monthly payments |
-| POST | `/api/teachers-payments/{id}/pay` | Record salary payment |
+| GET | `/api/v1/teachers-payments` | List all payments |
+| GET | `/api/v1/teachers-payments/{id}` | Payment details |
+| POST | `/api/v1/teachers-payments/generate` | Generate monthly payments |
+| POST | `/api/v1/teachers-payments/{id}/pay` | Record salary payment |
 
 ---
 
@@ -91,11 +230,11 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/classes` | List academic classes |
-| GET | `/api/sections` | List sections |
-| GET | `/api/shifts` | List shifts |
-| GET | `/api/subjects` | List subjects |
-| GET | `/api/rooms` | List classrooms |
+| GET | `/api/v1/classes` | List academic classes |
+| GET | `/api/v1/sections` | List sections |
+| GET | `/api/v1/shifts` | List shifts |
+| GET | `/api/v1/subjects` | List subjects |
+| GET | `/api/v1/rooms` | List classrooms |
 
 ---
 
@@ -103,9 +242,9 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/dashboard/stats` | Total students, teachers, earnings |
-| GET | `/api/dashboard/recent-payments` | Recent payments |
-| GET | `/api/dashboard/due-summary` | Due summary |
+| GET | `/api/v1/dashboard/stats` | Total students, teachers, earnings |
+| GET | `/api/v1/dashboard/recent-payments` | Recent payments |
+| GET | `/api/v1/dashboard/due-summary` | Due summary |
 
 ---
 
@@ -113,11 +252,11 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/reports/students` | Student report |
-| GET | `/api/reports/attendance` | Attendance report |
-| GET | `/api/reports/earnings` | Earnings report |
-| GET | `/api/reports/expenses` | Expenses report |
-| GET | `/api/reports/profit-loss` | Profit/Loss report |
+| GET | `/api/v1/reports/students` | Student report |
+| GET | `/api/v1/reports/attendance` | Attendance report |
+| GET | `/api/v1/reports/earnings` | Earnings report |
+| GET | `/api/v1/reports/expenses` | Expenses report |
+| GET | `/api/v1/reports/profit-loss` | Profit/Loss report |
 
 ---
 
@@ -125,35 +264,16 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| POST | `/api/admission/apply` | Submit admission application |
-| GET | `/api/admission/status/{id}` | Check application status |
+| POST | `/api/v1/admission/apply` | Submit admission application |
+| GET | `/api/v1/admission/status/{id}` | Check application status |
 
 ---
 
 ## Authentication Flow
 
-1. **Login**: `POST /api/auth/login` with `admission_id` and `password`
-2. **Response**: Returns access token with user role (Student/Teacher/Admin)
-3. **Protected Routes**: Use `Authorization: Bearer {token}` header
-
----
-
-## Response Format
-
-```json
-{
-  "success": true,
-  "data": {},
-  "message": "Success"
-}
-```
-
-```json
-{
-  "success": false,
-  "errors": {}
-}
-```
+1. **Login**: `POST /api/v1/auth/login` with `username` and `password`
+2. **Response**: Returns access token with user data and roles
+3. **Protected Routes**: Use `Authorization: Bearer {access_token}` header
 
 ---
 
@@ -172,3 +292,17 @@ Common filters:
 - `?month=2026-04` - Filter by month
 - `?batch_id=1` - Filter by batch
 - `?from_date=2026-01-01&to_date=2026-04-30` - Date range
+
+---
+
+## HTTP Status Codes
+
+| Code | Description |
+|------|-------------|
+| 200 | OK - Success |
+| 201 | Created - Resource created |
+| 400 | Bad Request - Invalid input |
+| 401 | Unauthorized - Invalid credentials |
+| 404 | Not Found - Resource not found |
+| 422 | Unprocessable Entity - Validation failed |
+| 500 | Server Error - Internal error |

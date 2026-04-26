@@ -20,7 +20,7 @@ class Authenticate extends Middleware
     {
         if ($request->expectsJson() || $request->is('api/*')) {
             abort(response()->json([
-                'success' => false,
+                'code' => JsonResponse::HTTP_UNAUTHORIZED,
                 'message' => 'Unauthenticated'
             ], JsonResponse::HTTP_UNAUTHORIZED));
         }

@@ -1,23 +1,5 @@
-{{local}}/api/v1/auth/login
-eikhane admission_id & password diye login kora jacche.
-kintu ami cai username & password field e data/value pathabo from my app.
-and loginController e dekho 
-protected function attemptLogin(\Illuminate\Http\Request $request)
-    {
-        $loginValue = $request->input($this->username());
-        $password = $request->input('password');
-
-        $user = \App\Models\User::where('email', $loginValue)
-            ->orWhere('user_name', $loginValue)
-            ->orWhere('admission_id', $loginValue)
-            ->first();
-
-        if ($user && \Hash::check($password, $user->password)) {
-            \Illuminate\Support\Facades\Auth::login($user, $request->boolean('remember'));
-            return true;
-        }
-
-        return false;
-    }
-
-emon kore kora so tumu username & password niye   email,user_name or admission_id diye login korao. 
+DONE - API updated with REST standards:
+- Uses "code" field for HTTP status (200, 401, 422, etc)
+- access_token at top level
+- roles array in user data
+- Updated api-plan.md

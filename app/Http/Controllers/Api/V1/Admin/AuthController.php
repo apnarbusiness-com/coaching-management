@@ -14,14 +14,14 @@ class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
-        $validator = \Validator::make($request->all(), [
+        $validator = Validator::make($request->all(), [
             'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
         if ($validator->fails()) {
             return response()->json([
-                'success' => false,
+                'code' => Response::HTTP_UNPROCESSABLE_ENTITY,
                 'message' => 'Validation failed',
                 'errors' => $validator->errors(),
             ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
@@ -36,7 +36,7 @@ class AuthController extends Controller
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
             return response()->json([
-                'success' => false,
+                'code' => Response::HTTP_UNAUTHORIZED,
                 'message' => 'Invalid credentials',
                 'errors' => [
                     'username' => ['Invalid username or password'],
@@ -46,23 +46,26 @@ class AuthController extends Controller
 
         $token = $user->createToken('auth-token')->plainTextToken;
 
+        $roles = $user->roles()->pluck('title')->toArray();
+
         return response()->json([
-            'success' => true,
+            'code' => Response::HTTP_OK,
             'message' => 'Login successful',
+            'access_token' => $token,
+            'token_type' => 'Bearer',
             'data' => [
                 'user' => [
                     'id' => $user->id,
                     'name' => $user->name,
                     'email' => $user->email,
                     'admission_id' => $user->admission_id,
+                    'roles' => $roles,
                     'is_admin' => $user->isAdmin(),
                     'is_teacher' => $user->isTeacher(),
                     'is_student' => $user->isStudent(),
                 ],
-                'token' => $token,
-                'token_type' => 'Bearer',
             ],
-        ]);
+        ], JsonResponse::HTTP_OK);
     }
 
     public function logout(Request $request): JsonResponse
@@ -70,20 +73,23 @@ class AuthController extends Controller
         $request->user()->currentAccessToken()->delete();
 
         return response()->json([
-            'success' => true,
+            'code' => Response::HTTP_OK,
             'message' => 'Logout successful',
-        ]);
+        ], JsonResponse::HTTP_OK);
     }
 
     public function me(Request $request): JsonResponse
     {
         $user = $request->user();
 
+        $roles = $user->roles()->pluck('title')->toArray();
+
         $userData = [
             'id' => $user->id,
             'name' => $user->name,
             'email' => $user->email,
             'admission_id' => $user->admission_id,
+            'roles' => $roles,
             'is_admin' => $user->isAdmin(),
             'is_teacher' => $user->isTeacher(),
             'is_student' => $user->isStudent(),
@@ -120,10 +126,10 @@ class AuthController extends Controller
         }
 
         return response()->json([
-            'success' => true,
-            'message' => 'User profile retrieved successfully',
+            'code' => Response::HTTP_OK,
+            'message' => 'User data retrieved successfully',
             'data' => $userData,
-        ]);
+        ], JsonResponse::HTTP_OK);
     }
 
     public function updateProfile(Request $request): JsonResponse
@@ -132,13 +138,13 @@ class AuthController extends Controller
 
         $request->validate([
             'name' => 'sometimes|string|max:255',
-            'email' => 'sometimes|string|email|max:255|unique:users,email,'.$user->id,
+            'email' => 'sometimes|string|email|max:255|unique:users,email,' . $user->id,
         ]);
 
         $user->update($request->only(['name', 'email']));
 
         return response()->json([
-            'success' => true,
+            'code' => Response::HTTP_OK,
             'message' => 'Profile updated successfully',
             'data' => [
                 'id' => $user->id,
@@ -146,7 +152,7 @@ class AuthController extends Controller
                 'email' => $user->email,
                 'admission_id' => $user->admission_id,
             ],
-        ]);
+        ], JsonResponse::HTTP_OK);
     }
 
     public function changePassword(Request $request): JsonResponse
@@ -159,9 +165,13 @@ class AuthController extends Controller
         $user = $request->user();
 
         if (! Hash::check($request->current_password, $user->password)) {
-            throw ValidationException::withMessages([
-                'current_password' => ['The current password is incorrect.'],
-            ]);
+            return response()->json([
+                'code' => Response::HTTP_UNAUTHORIZED,
+                'message' => 'The current password is incorrect.',
+                'errors' => [
+                    'current_password' => ['The current password is incorrect.'],
+                ],
+            ], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
         $user->update([
@@ -171,8 +181,8 @@ class AuthController extends Controller
         $user->tokens()->delete();
 
         return response()->json([
-            'success' => true,
+            'code' => Response::HTTP_OK,
             'message' => 'Password changed successfully. Please login again.',
-        ]);
+        ], JsonResponse::HTTP_OK);
     }
 }
