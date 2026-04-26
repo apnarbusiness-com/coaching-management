@@ -1,4 +1,23 @@
-teacher er salary pay korle database er expenses e j optional teacher_id boseteche oikhane aro lagbe batch_teacher_id(optional) karon eikhan theke amra total jinis pabo j oi earning kon batch er kon month er kon teacher er and fixed naki percenatge and all thing.
+{{local}}/api/v1/auth/login
+eikhane admission_id & password diye login kora jacche.
+kintu ami cai username & password field e data/value pathabo from my app.
+and loginController e dekho 
+protected function attemptLogin(\Illuminate\Http\Request $request)
+    {
+        $loginValue = $request->input($this->username());
+        $password = $request->input('password');
 
-accha ek kaj koro.
-'teachers_payments', 'teacher_payment_transactions', 'batch_teacher', 'expenses' & 'teachers' sob gulo table analyse koro and amake suggest koro better ki hobe? expense e kon id rakha better hobe 
+        $user = \App\Models\User::where('email', $loginValue)
+            ->orWhere('user_name', $loginValue)
+            ->orWhere('admission_id', $loginValue)
+            ->first();
+
+        if ($user && \Hash::check($password, $user->password)) {
+            \Illuminate\Support\Facades\Auth::login($user, $request->boolean('remember'));
+            return true;
+        }
+
+        return false;
+    }
+
+emon kore kora so tumu username & password niye   email,user_name or admission_id diye login korao. 

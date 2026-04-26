@@ -7,23 +7,41 @@ use App\Models\User;
 use Illuminate\Http\JsonResponse;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Hash;
-use Illuminate\Validation\ValidationException;
+use Illuminate\Support\Facades\Validator;
+use Symfony\Component\HttpFoundation\Response;
 
 class AuthController extends Controller
 {
     public function login(Request $request): JsonResponse
     {
-        $request->validate([
-            'admission_id' => 'required|string',
+        $validator = \Validator::make($request->all(), [
+            'username' => 'required|string',
             'password' => 'required|string',
         ]);
 
-        $user = User::where('admission_id', $request->admission_id)->first();
+        if ($validator->fails()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'Validation failed',
+                'errors' => $validator->errors(),
+            ], JsonResponse::HTTP_UNPROCESSABLE_ENTITY);
+        }
+
+        $loginValue = $request->username;
+
+        $user = User::where('email', $loginValue)
+            ->orWhere('user_name', $loginValue)
+            ->orWhere('admission_id', $loginValue)
+            ->first();
 
         if (! $user || ! Hash::check($request->password, $user->password)) {
-            throw ValidationException::withMessages([
-                'admission_id' => ['The provided credentials are incorrect.'],
-            ]);
+            return response()->json([
+                'success' => false,
+                'message' => 'Invalid credentials',
+                'errors' => [
+                    'username' => ['Invalid username or password'],
+                ],
+            ], JsonResponse::HTTP_UNAUTHORIZED);
         }
 
         $token = $user->createToken('auth-token')->plainTextToken;

@@ -1,5 +1,0 @@
-http://dev-coaching-management.test/admin/financial-ledgers ei page e 'Batch Expenses (Teachers Salary)' table tar functionality change kora lagbe.
-teacher rakhar karone calculateion dekhte  ektu messy lagteche.
-better ek kaj koro. teacher bad dao. main cocept hobe. batch wise monthly expenses
-1. ICT-8 : Jan: 200, Feb: 500, March: 400 ... Dec: 400 .. Total: 5000 emon.
-2. every month er datar pase oi td er top-right corner e ekta info icon dao .. oi icon e click korle right side diye sundor ekta android er moto drawer ber hobe oikhane modern style e details thakbe
