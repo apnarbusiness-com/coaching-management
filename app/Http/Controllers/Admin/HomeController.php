@@ -10,6 +10,7 @@ use App\Services\DueCalculationService;
 use App\Services\DashboardWidgetService;
 use Carbon\Carbon;
 use App\Models\TeachersPayment;
+use App\Services\TeacherSalaryCalculationService;
 use Illuminate\Http\Request;
 
 class HomeController
@@ -59,7 +60,9 @@ class HomeController
             ]);
         }
 
-        $dueService = new DueCalculationService();
+        $salaryService = new TeacherSalaryCalculationService();
+
+        $dueService = new DueCalculationService($salaryService);
         $dueInfo = $dueService->calculateStudentTotalDue($student->id);
 
         $unpaidDues = StudentMonthlyDue::where('student_id', $student->id)

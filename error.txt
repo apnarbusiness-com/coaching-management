@@ -1,0 +1,4 @@
+{{local}}/api/v1/auth/login in this url when click then eror shows
+
+
+BadMethodCallException: Call to undefined method App\Models\User::createToken() in file D:\software_install\Laragons\2025_01_laragon\laragon\www\dev-coaching-manageme
