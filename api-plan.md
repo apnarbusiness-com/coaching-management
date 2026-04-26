@@ -174,10 +174,128 @@
 
 | Method | Endpoint | Description |
 |--------|----------|-------------|
-| GET | `/api/v1/teachers/me` | Current teacher profile |
-| GET | `/api/v1/teachers/me/batches` | Assigned batches |
-| GET | `/api/v1/teachers/me/salary` | Salary & payment history |
-| GET | `/api/v1/teachers/me/attendance` | Teacher attendance |
+| GET | `/api/v1/teachers/me/batches` | Assigned batches (for attendance) |
+| GET | `/api/v1/batches/{id}/students` | Students in batch |
+| POST | `/api/v1/attendance/batch/{id}` | Mark attendance |
+| GET | `/api/v1/attendance/batch/{id}` | View attendance (single date or range) |
+
+### Teacher Attendance API Endpoints
+
+#### GET /api/v1/teachers/me/batches
+Get assigned batches for the logged-in teacher.
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Batches retrieved successfully",
+  "data": [
+    {"id": 1, "batch_name": "ICT-8", "subject": "ICT", "students_count": 20},
+    {"id": 2, "batch_name": "ICT-9", "subject": "ICT", "students_count": 15}
+  ]
+}
+```
+
+#### GET /api/v1/batches/{id}/students
+Get students in a batch for attendance.
+
+**Query Parameters:**
+- `date` (optional, default: today, format: Y-m-d)
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Students retrieved successfully",
+  "data": {
+    "batch": {"id": 1, "batch_name": "ICT-8"},
+    "date": "2026-04-26",
+    "students": [
+      {"id": 1, "name": "Rahim", "roll": 1, "status": "present", "due_amount": 0, "has_due": false},
+      {"id": 2, "name": "Karim", "roll": 2, "status": null, "due_amount": 500, "has_due": true}
+    ]
+  }
+}
+```
+
+#### POST /api/v1/attendance/batch/{id}
+Mark or update attendance for students.
+
+**Request Body:**
+```json
+{
+  "date": "2026-04-26",
+  "attendance": {
+    "1": "present",
+    "2": "absent",
+    "3": "late"
+  }
+}
+```
+
+**Rules:**
+- `date`: Required, must be today or up to 30 days back
+- `attendance.*`: student_id => status (present/absent/late)
+
+**Response (200):**
+```json
+{
+  "code": 200,
+  "message": "Attendance saved successfully",
+  "data": {
+    "marked_count": 3,
+    "date": "2026-04-26"
+  }
+}
+```
+
+**Error Response (422):**
+```json
+{
+  "code": 422,
+  "message": "Attendance can only be marked for today or up to 30 days back",
+  "errors": {
+    "date": ["Date must be within the last 30 days"]
+  }
+}
+```
+
+#### GET /api/v1/attendance/batch/{id}
+View attendance records.
+
+**Query Parameters:**
+- `date` (single date, format: Y-m-d) OR
+- `start_date` + `end_date` (date range)
+
+**Response (200) - Single Date:**
+```json
+{
+  "code": 200,
+  "message": "Attendance retrieved successfully",
+  "data": {
+    "date": "2026-04-26",
+    "attendances": [
+      {"student_id": 1, "student_name": "Rahim", "status": "present", "attendance_date": "2026-04-26"}
+    ]
+  }
+}
+```
+
+**Response (200) - Date Range:**
+```json
+{
+  "code": 200,
+  "message": "Attendance retrieved successfully",
+  "data": {
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30",
+    "summary": [
+      {"date": "2026-04-01", "present": 18, "absent": 2, "late": 0},
+      {"date": "2026-04-02", "present": 15, "absent": 3, "late": 2}
+    ]
+  }
+}
+```
 
 ---
 

@@ -393,9 +393,346 @@ curl -X POST http://your-domain.com/api/v1/auth/change-password \
 | 201 | Created - Resource created |
 | 400 | Bad Request - Invalid input |
 | 401 | Unauthorized - Invalid credentials |
+| 403 | Forbidden - Access denied |
 | 404 | Not Found - Resource not found |
 | 422 | Unprocessable Entity - Validation failed |
 | 500 | Server Error - Internal error |
+
+---
+
+## Teacher Attendance APIs
+
+These endpoints allow teachers to mark and view student attendance for their assigned batches.
+
+### Base Setup
+- All endpoints require `Authorization: Bearer {access_token}` header
+- Only users with Teacher role can access these endpoints
+- Date format: `YYYY-MM-DD` (e.g., 2026-04-26)
+- Attendance can be marked for today or up to 30 days back
+- Same-day attendance can be updated (upsert)
+
+---
+
+### 1. Get My Batches
+
+Get the list of batches assigned to the logged-in teacher.
+
+**Endpoint:** `GET /api/v1/teachers/me/batches`
+
+**Headers:**
+| Key | Value |
+|-----|-------|
+| Authorization | Bearer {access_token} |
+
+**Example Request:**
+
+```bash
+curl -X GET http://your-domain.com/api/v1/teachers/me/batches \
+  -H "Authorization: Bearer 5|CMTDusyiSShAfdFb8RcZjSwSGEXXeYtfWKgsJzdP1957fbe7"
+```
+
+**Success Response (200):**
+
+```json
+{
+  "code": 200,
+  "message": "Batches retrieved successfully",
+  "data": [
+    {
+      "id": 1,
+      "batch_name": "ICT-8",
+      "subject": "ICT",
+      "students_count": 20
+    },
+    {
+      "id": 2,
+      "batch_name": "ICT-9",
+      "subject": "ICT",
+      "students_count": 15
+    }
+  ]
+}
+```
+
+**Error Response (403):**
+
+```json
+{
+  "code": 403,
+  "message": "Only teachers can access this resource",
+  "errors": {}
+}
+```
+
+---
+
+### 2. Get Batch Students
+
+Get students in a specific batch for marking attendance.
+
+**Endpoint:** `GET /api/v1/batches/{id}/students`
+
+**Headers:**
+| Key | Value |
+|-----|-------|
+| Authorization | Bearer {access_token} |
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| date | string | No | Date (default: today), format: Y-m-d |
+
+**Example Request:**
+
+```bash
+curl -X GET "http://your-domain.com/api/v1/batches/1/students?date=2026-04-26" \
+  -H "Authorization: Bearer 5|CMTDusyiSShAfdFb8RcZjSwSGEXXeYtfWKgsJzdP1957fbe7"
+```
+
+**Success Response (200):**
+
+```json
+{
+  "code": 200,
+  "message": "Students retrieved successfully",
+  "data": {
+    "batch": {
+      "id": 1,
+      "batch_name": "ICT-8"
+    },
+    "date": "2026-04-26",
+    "students": [
+      {
+        "id": 1,
+        "name": "Rahim",
+        "roll": 1,
+        "id_no": "STU-001",
+        "image": null,
+        "status": "present",
+        "due_amount": 0,
+        "has_due": false
+      },
+      {
+        "id": 2,
+        "name": "Karim",
+        "roll": 2,
+        "id_no": "STU-002",
+        "image": null,
+        "status": null,
+        "due_amount": 500,
+        "has_due": true
+      }
+    ]
+  }
+}
+```
+
+**Error Response (404):**
+
+```json
+{
+  "code": 404,
+  "message": "Batch not found or not assigned to you",
+  "errors": {}
+}
+```
+
+---
+
+### 3. Mark Attendance
+
+Mark or update attendance for students in a batch.
+
+**Endpoint:** `POST /api/v1/attendance/batch/{id}`
+
+**Headers:**
+| Key | Value |
+|-----|-------|
+| Authorization | Bearer {access_token} |
+| Content-Type | application/json |
+
+**Request Body:**
+
+```json
+{
+  "date": "2026-04-26",
+  "attendance": {
+    "1": "present",
+    "2": "absent",
+    "3": "late"
+  }
+}
+```
+
+**Rules:**
+- `date`: Required, must be today or up to 30 days back
+- `attendance`: Required, object with student_id => status
+- `status`: Must be one of: `present`, `absent`, `late`
+
+**Example Request:**
+
+```bash
+curl -X POST http://your-domain.com/api/v1/attendance/batch/1 \
+  -H "Authorization: Bearer 5|CMTDusyiSShAfdFb8RcZjSwSGEXXeYtfWKgsJzdP1957fbe7" \
+  -H "Content-Type: application/json" \
+  -d '{
+    "date": "2026-04-26",
+    "attendance": {
+      "1": "present",
+      "2": "absent",
+      "3": "late"
+    }
+  }'
+```
+
+**Success Response (200):**
+
+```json
+{
+  "code": 200,
+  "message": "Attendance saved successfully",
+  "data": {
+    "marked_count": 3,
+    "date": "2026-04-26"
+  }
+}
+```
+
+**Error Response (422) - Date Validation:**
+
+```json
+{
+  "code": 422,
+  "message": "Attendance can only be marked for today or up to 30 days back",
+  "errors": {
+    "date": ["Date must be within the last 30 days"]
+  }
+}
+```
+
+**Error Response (422) - Invalid Status:**
+
+```json
+{
+  "code": 422,
+  "message": "Validation failed",
+  "errors": {
+    "attendance.1": ["The selected attendance.1 is invalid."]
+  }
+}
+```
+
+---
+
+### 4. View Attendance
+
+View attendance records for a batch (single date or date range).
+
+**Endpoint:** `GET /api/v1/attendance/batch/{id}`
+
+**Headers:**
+| Key | Value |
+|-----|-------|
+| Authorization | Bearer {access_token} |
+
+**Query Parameters:**
+| Parameter | Type | Required | Description |
+|-----------|------|----------|-------------|
+| date | string | No* | Single date, format: Y-m-d |
+| start_date | string | No* | Start date for range |
+| end_date | string | No* | End date for range |
+
+*Either `date` OR `start_date` + `end_date` is required
+
+**Example Request - Single Date:**
+
+```bash
+curl -X GET "http://your-domain.com/api/v1/attendance/batch/1?date=2026-04-26" \
+  -H "Authorization: Bearer 5|CMTDusyiSShAfdFb8RcZjSwSGEXXeYtfWKgsJzdP1957fbe7"
+```
+
+**Success Response (200) - Single Date:**
+
+```json
+{
+  "code": 200,
+  "message": "Attendance retrieved successfully",
+  "data": {
+    "date": "2026-04-26",
+    "attendances": [
+      {
+        "student_id": 1,
+        "student_name": "Rahim",
+        "status": "present",
+        "attendance_date": "2026-04-26"
+      },
+      {
+        "student_id": 2,
+        "student_name": "Karim",
+        "status": "absent",
+        "attendance_date": "2026-04-26"
+      }
+    ]
+  }
+}
+```
+
+**Example Request - Date Range:**
+
+```bash
+curl -X GET "http://your-domain.com/api/v1/attendance/batch/1?start_date=2026-04-01&end_date=2026-04-30" \
+  -H "Authorization: Bearer 5|CMTDusyiSShAfdFb8RcZjSwSGEXXeYtfWKgsJzdP1957fbe7"
+```
+
+**Success Response (200) - Date Range:**
+
+```json
+{
+  "code": 200,
+  "message": "Attendance retrieved successfully",
+  "data": {
+    "start_date": "2026-04-01",
+    "end_date": "2026-04-30",
+    "summary": [
+      {
+        "date": "2026-04-01",
+        "present": 18,
+        "absent": 2,
+        "late": 0
+      },
+      {
+        "date": "2026-04-02",
+        "present": 15,
+        "absent": 3,
+        "late": 2
+      }
+    ]
+  }
+}
+```
+
+**Error Response (422) - Missing Parameters:**
+
+```json
+{
+  "code": 422,
+  "message": "Please provide date or date range",
+  "errors": {
+    "date": ["Required: ?date=2026-04-26"],
+    "start_date": ["Optional: ?start_date=2026-04-01&end_date=2026-04-30"]
+  }
+}
+```
+
+---
+
+## Notes
+
+- Teacher attendance APIs use the same `BatchAttendance` table as the web panel
+- Teachers can only access batches assigned to them
+- Same-day attendance can be updated (uses upsert)
+- Only 30 days of backdated attendance allowed
+- Student due information is included in the student list
 
 ---
 
