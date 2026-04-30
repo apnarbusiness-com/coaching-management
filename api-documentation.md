@@ -6,6 +6,26 @@ Base URL: `http://your-domain.com/api`
 
 ---
 
+## Table of Contents
+
+1. [Response Format](#response-format)
+2. [Authentication](#authentication)
+   - [1. Login](#1-login)
+   - [2. Logout](#2-logout)
+   - [3. Get Current User](#3-get-current-user)
+   - [4. Update Profile](#4-update-profile)
+   - [5. Change Password](#5-change-password)
+3. [Teacher Attendance APIs](#teacher-attendance-apis)
+   - [1. Get My Batches](#1-get-my-batches)
+   - [2. Get Batch Students](#2-get-batch-students)
+   - [3. Mark Attendance](#3-mark-attendance)
+   - [4. View Attendance](#4-view-attendance)
+4. [HTTP Status Codes](#http-status-codes)
+5. [Authentication Flow](#authentication-flow)
+6. [Notes](#notes)
+
+---
+
 ## Response Format
 
 ### Success Response (200, 201)
@@ -34,11 +54,13 @@ Base URL: `http://your-domain.com/api`
 
 ## Authentication
 
-### 1. Login
+### 1. Login {#login}
 
 Login to get access token.
 
 **Endpoint:** `POST /api/v1/auth/login`
+
+[Back to top](#table-of-contents)
 
 **Request Body:**
 
@@ -110,11 +132,13 @@ curl -X POST http://your-domain.com/api/v1/auth/login \
 
 ---
 
-### 2. Logout
+### 2. Logout {#logout}
 
 Logout and invalidate the current token.
 
 **Endpoint:** `POST /api/v1/auth/logout`
+
+[Back to top](#table-of-contents)
 
 **Headers:**
 
@@ -140,11 +164,13 @@ curl -X POST http://your-domain.com/api/v1/auth/logout \
 
 ---
 
-### 3. Get Current User
+### 3. Get Current User {#me}
 
 Get the currently authenticated user profile.
 
 **Endpoint:** `GET /api/v1/auth/me`
+
+[Back to top](#table-of-contents)
 
 **Headers:**
 
@@ -254,11 +280,13 @@ curl -X GET http://your-domain.com/api/v1/auth/me \
 
 ---
 
-### 4. Update Profile
+### 4. Update Profile {#update-profile}
 
 Update the authenticated user's profile information.
 
 **Endpoint:** `PUT /api/v1/auth/profile`
+
+[Back to top](#table-of-contents)
 
 **Headers:**
 
@@ -317,11 +345,13 @@ curl -X PUT http://your-domain.com/api/v1/auth/profile \
 
 ---
 
-### 5. Change Password
+### 5. Change Password {#change-password}
 
 Change the authenticated user's password.
 
 **Endpoint:** `POST /api/v1/auth/change-password`
+
+[Back to top](#table-of-contents)
 
 **Headers:**
 
@@ -376,7 +406,7 @@ curl -X POST http://your-domain.com/api/v1/auth/change-password \
 
 ---
 
-## Authentication Flow
+## Authentication Flow {#authentication-flow}
 
 1. **Login**: Call `POST /api/v1/auth/login` with `username` and `password`
 2. **Get Token**: Extract `access_token` from the response
@@ -385,7 +415,11 @@ curl -X POST http://your-domain.com/api/v1/auth/change-password \
 
 ---
 
-## HTTP Status Codes
+[Back to top](#table-of-contents)
+
+---
+
+## HTTP Status Codes {#http-status-codes}
 
 | Code | Description |
 |------|-------------|
@@ -400,20 +434,11 @@ curl -X POST http://your-domain.com/api/v1/auth/change-password \
 
 ---
 
-## Teacher Attendance APIs
+## Teacher Attendance APIs {#teacher-attendance-apis}
 
 These endpoints allow teachers to mark and view student attendance for their assigned batches.
 
-### Base Setup
-- All endpoints require `Authorization: Bearer {access_token}` header
-- Only users with Teacher role can access these endpoints
-- Date format: `YYYY-MM-DD` (e.g., 2026-04-26)
-- Attendance can be marked for today or up to 30 days back
-- Same-day attendance can be updated (upsert)
-
----
-
-### 1. Get My Batches
+### 1. Get My Batches {#get-my-batches}
 
 Get the list of batches assigned to the logged-in teacher.
 
@@ -466,7 +491,7 @@ curl -X GET http://your-domain.com/api/v1/teachers/me/batches \
 
 ---
 
-### 2. Get Batch Students
+### 2. Get Batch Students {#get-batch-students}
 
 Get students in a specific batch for marking attendance.
 
@@ -539,7 +564,7 @@ curl -X GET "http://your-domain.com/api/v1/batches/1/students?date=2026-04-26" \
 
 ---
 
-### 3. Mark Attendance
+### 3. Mark Attendance {#mark-attendance}
 
 Mark or update attendance for students in a batch.
 
@@ -624,7 +649,7 @@ curl -X POST http://your-domain.com/api/v1/attendance/batch/1 \
 
 ---
 
-### 4. View Attendance
+### 4. View Attendance {#view-attendance}
 
 View attendance records for a batch (single date or date range).
 
@@ -726,7 +751,7 @@ curl -X GET "http://your-domain.com/api/v1/attendance/batch/1?start_date=2026-04
 
 ---
 
-## Notes
+## Notes {#notes}
 
 - Teacher attendance APIs use the same `BatchAttendance` table as the web panel
 - Teachers can only access batches assigned to them
@@ -770,3 +795,7 @@ Based on roles, user can have additional data:
 - Token expiration is handled by Laravel Sanctum (default: no expiration, invalidated on logout)
 - Login accepts any of: `email`, `user_name`, or `admission_id` as username
 - The `roles` array can contain multiple roles for a user
+
+---
+
+[Back to top](#table-of-contents)
