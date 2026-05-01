@@ -77,6 +77,21 @@
 
 
 
+
+    <script>
+        @can('due_collection_access')
+            document.addEventListener('keydown', function(e) {
+                const tag = e.target.tagName.toLowerCase();
+
+                if (e.ctrlKey && (e.key === 'Enter' || e.keyCode === 13) && tag !== 'input' && tag !== 'textarea') {
+                    e.preventDefault();
+                    window.location.href = '{{ route("admin.due-collections.checker") }}';
+                }
+            });
+        @endcan
+    </script>
+
+
     {{-- Page specific scripts --}}
     @yield('scripts')
 

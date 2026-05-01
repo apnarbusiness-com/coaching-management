@@ -1,5 +1,3 @@
-DONE - API updated with REST standards:
-- Uses "code" field for HTTP status (200, 401, 422, etc)
-- access_token at top level
-- roles array in user data
-- Updated api-plan.md
+https://excellentors.com/admin/due-collections/checker ei page dekho.
+ami cai website er login er por jekono page theke "cntrl+shift+f" press korle ei page e redirect korbe with target="_blank" i mean new tab open kore.
+and obviously redirect korar time e logged in user er role e oi page er permission ache ki na check korbe.
