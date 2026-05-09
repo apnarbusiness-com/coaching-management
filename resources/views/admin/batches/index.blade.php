@@ -120,6 +120,42 @@
             </table>
         </div>
     </div>
+
+    <!-- Batch Delete Dependency Modal -->
+    <div id="batchDeleteModal" class="fixed inset-0 z-50 hidden overflow-y-auto" aria-labelledby="modal-title" role="dialog" aria-modal="true">
+        <div class="flex items-center justify-center min-h-screen px-4 pt-4 pb-20 text-center sm:p-0">
+            <div class="fixed inset-0 bg-black/50 transition-opacity" onclick="closeBatchDeleteModal()"></div>
+            <div class="relative inline-block w-full max-w-lg p-6 my-8 text-left bg-white dark:bg-slate-900 rounded-2xl shadow-2xl border border-slate-200 dark:border-slate-700 transform transition-all">
+                <div class="flex items-center gap-3 mb-6 pb-4 border-b border-slate-200 dark:border-slate-700">
+                    <span class="material-symbols-outlined text-3xl text-red-500">delete_forever</span>
+                    <div>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Delete Batch</h3>
+                        <p class="text-sm text-slate-500 dark:text-slate-400" id="modal-batch-name"></p>
+                    </div>
+                </div>
+
+                <div class="mb-4">
+                    <p class="text-sm font-medium text-slate-700 dark:text-slate-300 mb-3">Resolve all dependencies before deletion:</p>
+                    <div id="dependencies-list" class="space-y-2"></div>
+                </div>
+
+                <div class="flex items-center justify-end gap-3 pt-4 border-t border-slate-200 dark:border-slate-700">
+                    <button type="button" onclick="closeBatchDeleteModal()" class="px-5 py-2.5 text-sm font-medium text-slate-700 dark:text-slate-300 bg-slate-100 dark:bg-slate-800 hover:bg-slate-200 dark:hover:bg-slate-700 rounded-lg transition-colors">Cancel</button>
+                    <button type="button" id="confirm-batch-delete-btn" disabled
+                        class="px-5 py-2.5 text-sm font-medium text-white bg-red-600 rounded-lg opacity-50 cursor-not-allowed transition-all flex items-center gap-2"
+                        onclick="submitBatchDelete()">
+                        <span class="material-symbols-outlined text-[18px]">delete</span>
+                        Delete Batch
+                    </button>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <form id="batch-delete-form" method="POST" style="display:none;">
+        @csrf
+        @method('DELETE')
+    </form>
 @endsection
 @section('scripts')
     @parent
@@ -346,45 +382,6 @@
     <script>
         $(function() {
             let dtButtons = $.extend(true, [], $.fn.dataTable.defaults.buttons)
-            @can('batch_delete')
-                let deleteButtonTrans = '{{ trans('global.datatables.delete') }}';
-                let deleteButton = {
-                    text: deleteButtonTrans,
-                    url: "{{ route('admin.batches.massDestroy') }}",
-                    className: 'btn-danger',
-                    action: function(e, dt, node, config) {
-                        var ids = $.map(dt.rows({
-                            selected: true
-                        }).data(), function(entry) {
-                            return entry.id
-                        });
-
-                        if (ids.length === 0) {
-                            alert('{{ trans('global.datatables.zero_selected') }}')
-
-                            return
-                        }
-
-                        if (confirm('{{ trans('global.areYouSure') }}')) {
-                            $.ajax({
-                                    headers: {
-                                        'x-csrf-token': _token
-                                    },
-                                    method: 'POST',
-                                    url: config.url,
-                                    data: {
-                                        ids: ids,
-                                        _method: 'DELETE'
-                                    }
-                                })
-                                .done(function() {
-                                    location.reload()
-                                })
-                        }
-                    }
-                }
-                dtButtons.push(deleteButton)
-            @endcan
 
             let dtOverrideGlobals = {
                 buttons: dtButtons,
@@ -752,6 +749,139 @@
                     });
                 });
             }
+
+            window.batchDeleteId = null;
+
+            window.openBatchDeleteModal = function(batchId, batchName) {
+                batchDeleteId = batchId;
+                document.getElementById('modal-batch-name').textContent = '"' + (batchName || 'Batch #' + batchId) + '"';
+
+                const list = document.getElementById('dependencies-list');
+                list.innerHTML = '<div class="flex justify-center py-8"><div class="animate-spin rounded-full h-8 w-8 border-b-2 border-red-500"></div></div>';
+
+                document.getElementById('confirm-batch-delete-btn').disabled = true;
+                document.getElementById('confirm-batch-delete-btn').classList.add('opacity-50', 'cursor-not-allowed');
+                document.getElementById('confirm-batch-delete-btn').classList.remove('opacity-100', 'cursor-pointer');
+
+                document.getElementById('batchDeleteModal').classList.remove('hidden');
+
+                fetch('{{ route('admin.batches.dependencies', 'PLACEHOLDER') }}'.replace('PLACEHOLDER', batchId))
+                    .then(res => res.json())
+                    .then(data => {
+                        renderDependencies(data);
+                    })
+                    .catch(() => {
+                        list.innerHTML = '<p class="text-sm text-red-500 text-center py-4">Failed to load dependencies.</p>';
+                    });
+            };
+
+            window.closeBatchDeleteModal = function() {
+                document.getElementById('batchDeleteModal').classList.add('hidden');
+                batchDeleteId = null;
+            };
+
+            window.renderDependencies = function(data) {
+                const items = [
+                    { key: 'enrollments', label: 'Student Enrollments', icon: 'group', warning: false },
+                    { key: 'dues', label: 'Student Monthly Dues', icon: 'receipt_long', warning: false },
+                    { key: 'teachers', label: 'Teacher Assignments', icon: 'school', warning: false },
+                    { key: 'subjects', label: 'Batch Subjects', icon: 'menu_book', warning: false },
+                    { key: 'payments', label: 'Teacher Payments', icon: 'payments', warning: false },
+                    { key: 'attendances', label: 'Batch Attendances', icon: 'calendar_month', warning: false },
+                    { key: 'earnings', label: 'Student Earnings', icon: 'account_balance', warning: true },
+                    { key: 'expenses', label: 'Expenses', icon: 'receipt', warning: true },
+                ];
+
+                const list = document.getElementById('dependencies-list');
+                list.innerHTML = '';
+
+                let allResolved = true;
+
+                items.forEach(item => {
+                    const count = data[item.key] || 0;
+                    const resolved = count === 0;
+                    if (!resolved) allResolved = false;
+
+                    const row = document.createElement('div');
+                    row.id = 'dep-row-' + item.key;
+                    row.className = 'flex items-center justify-between p-3 rounded-lg border ' + (resolved ? 'border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20' : 'border-slate-200 bg-slate-50 dark:border-slate-700 dark:bg-slate-800/50');
+
+                    const checkbox = document.createElement('span');
+                    checkbox.className = 'material-symbols-outlined ' + (resolved ? 'text-green-600' : 'text-slate-300 dark:text-slate-600');
+                    checkbox.textContent = resolved ? 'check_circle' : 'radio_button_unchecked';
+
+                    const labelWrap = document.createElement('div');
+                    labelWrap.className = 'flex-1 ml-3';
+                    labelWrap.innerHTML = '<div class="flex items-center gap-1.5"><span class="material-symbols-outlined text-[18px] text-slate-500">' + item.icon + '</span><span class="text-sm font-medium text-slate-700 dark:text-slate-300">' + item.label + '</span>' + (item.warning ? '<span class="material-symbols-outlined text-[16px] text-amber-500" title="Financial record - permanent deletion">warning</span>' : '') + '</div><div class="text-xs ' + (resolved ? 'text-green-600' : 'text-slate-500') + ' mt-0.5 ml-6">' + (resolved ? 'Cleared' : count + ' record' + (count > 1 ? 's' : '') + ' found') + '</div>';
+
+                    const actionBtn = document.createElement('button');
+                    if (resolved) {
+                        actionBtn.className = 'px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40 rounded-lg cursor-default';
+                        actionBtn.textContent = 'Done';
+                        actionBtn.disabled = true;
+                    } else {
+                        actionBtn.className = 'px-3 py-1.5 text-xs font-medium text-white bg-red-600 hover:bg-red-700 rounded-lg transition-colors flex items-center gap-1';
+                        actionBtn.innerHTML = '<span class="material-symbols-outlined text-[14px]">delete</span> Delete ' + count;
+                        actionBtn.onclick = function() { deleteDependency(item.key, actionBtn, row); };
+                    }
+
+                    row.appendChild(checkbox);
+                    row.appendChild(labelWrap);
+                    row.appendChild(actionBtn);
+                    list.appendChild(row);
+                });
+
+                if (allResolved) {
+                    const btn = document.getElementById('confirm-batch-delete-btn');
+                    btn.disabled = false;
+                    btn.classList.remove('opacity-50', 'cursor-not-allowed');
+                    btn.classList.add('opacity-100', 'cursor-pointer');
+                }
+            };
+
+            window.deleteDependency = function(type, btn, row) {
+                btn.disabled = true;
+                btn.innerHTML = '<div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>';
+
+                fetch('{{ route('admin.batches.dependencies.delete', ['batch' => 'BATCH_ID', 'type' => 'TYPE_ID']) }}'.replace('BATCH_ID', batchDeleteId).replace('TYPE_ID', type), {
+                    method: 'DELETE',
+                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                })
+                .then(res => res.json())
+                .then(data => {
+                    if (data.success) {
+                        const checkbox = row.querySelector('.material-symbols-outlined');
+                        checkbox.textContent = 'check_circle';
+                        checkbox.className = 'material-symbols-outlined text-green-600';
+                        row.className = 'flex items-center justify-between p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20';
+                        const labelDiv = row.querySelector('.text-xs');
+                        labelDiv.textContent = 'Cleared';
+                        labelDiv.className = 'text-xs text-green-600 mt-0.5 ml-6';
+                        btn.className = 'px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40 rounded-lg cursor-default';
+                        btn.textContent = 'Done';
+                        btn.disabled = true;
+
+                        const remaining = document.querySelectorAll('#dependencies-list .flex.items-center.justify-between .bg-red-600');
+                        if (remaining.length === 0) {
+                            const deleteBtn = document.getElementById('confirm-batch-delete-btn');
+                            deleteBtn.disabled = false;
+                            deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                            deleteBtn.classList.add('opacity-100', 'cursor-pointer');
+                        }
+                    }
+                })
+                .catch(() => {
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">delete</span> Retry';
+                });
+            };
+
+            window.submitBatchDelete = function() {
+                if (!batchDeleteId) return;
+                const form = document.getElementById('batch-delete-form');
+                form.action = '{{ route('admin.batches.destroy', 'REPLACE_ID') }}'.replace('REPLACE_ID', batchDeleteId);
+                form.submit();
+            };
         });
     </script>
 @endsection

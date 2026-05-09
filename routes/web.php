@@ -101,7 +101,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('batches/{batch}/assign-teachers', [BatchController::class, 'assignTeachers'])->name('batches.assignTeachers');
     Route::post('batches/{batch}/assign-teachers', [BatchController::class, 'storeAssignedTeacher'])->name('batches.assignTeachers.store');
     Route::delete('batches/{batch}/assign-teachers/{teacher}', [BatchController::class, 'removeAssignedTeacher'])->name('batches.assignTeachers.remove');
-    Route::delete('batches/destroy', 'BatchController@massDestroy')->name('batches.massDestroy');
+    Route::get('batches/{batch}/dependencies', [BatchController::class, 'dependencies'])->name('batches.dependencies');
+    Route::delete('batches/{batch}/dependencies/{type}', [BatchController::class, 'deleteDependency'])->name('batches.dependencies.delete');
     Route::post('batches/{batch}/toggle-status', [BatchController::class, 'toggleStatus'])->name('batches.toggleStatus');
     Route::resource('batches', 'BatchController');
 

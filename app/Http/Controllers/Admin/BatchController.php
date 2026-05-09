@@ -3,13 +3,14 @@
 namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
-use App\Http\Requests\MassDestroyBatchRequest;
 use App\Http\Requests\StoreBatchRequest;
 use App\Http\Requests\UpdateBatchRequest;
 use App\Models\AcademicClass;
 use App\Models\Batch;
 use App\Models\ClassRoom;
+use App\Models\BatchAttendance;
 use App\Models\Earning;
+use App\Models\Expense;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
 use App\Models\Subject;
@@ -73,13 +74,15 @@ class BatchController extends Controller
                 $editGate = 'batch_edit';
                 $deleteGate = 'batch_delete';
                 $crudRoutePart = 'batches';
+                $deleteHandler = 'openBatchDeleteModal';
 
                 return view('partials.datatablesActions', compact(
                     'viewGate',
                     'editGate',
                     'deleteGate',
                     'crudRoutePart',
-                    'row'
+                    'row',
+                    'deleteHandler'
                 ));
             });
 
@@ -308,15 +311,56 @@ class BatchController extends Controller
         return back();
     }
 
-    public function massDestroy(MassDestroyBatchRequest $request)
+    public function dependencies(Batch $batch)
     {
-        $batches = Batch::find(request('ids'));
+        abort_if(Gate::denies('batch_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        foreach ($batches as $batch) {
-            $batch->delete();
+        return response()->json([
+            'enrollments' => DB::table('batch_student_basic_info')->where('batch_id', $batch->id)->count(),
+            'dues' => StudentMonthlyDue::where('batch_id', $batch->id)->count(),
+            'teachers' => DB::table('batch_teacher')->where('batch_id', $batch->id)->count(),
+            'subjects' => DB::table('batch_subject')->where('batch_id', $batch->id)->count(),
+            'payments' => TeachersPayment::where('batch_id', $batch->id)->count(),
+            'attendances' => BatchAttendance::where('batch_id', $batch->id)->count(),
+            'earnings' => Earning::where('batch_id', $batch->id)->count(),
+            'expenses' => Expense::where('batch_id', $batch->id)->count(),
+        ]);
+    }
+
+    public function deleteDependency(Batch $batch, $type)
+    {
+        abort_if(Gate::denies('batch_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        switch ($type) {
+            case 'enrollments':
+                DB::table('batch_student_basic_info')->where('batch_id', $batch->id)->delete();
+                break;
+            case 'dues':
+                StudentMonthlyDue::where('batch_id', $batch->id)->delete();
+                break;
+            case 'teachers':
+                DB::table('batch_teacher')->where('batch_id', $batch->id)->delete();
+                break;
+            case 'subjects':
+                DB::table('batch_subject')->where('batch_id', $batch->id)->delete();
+                break;
+            case 'payments':
+                TeachersPayment::where('batch_id', $batch->id)->delete();
+                break;
+            case 'attendances':
+                BatchAttendance::where('batch_id', $batch->id)->delete();
+                break;
+            case 'earnings':
+                Earning::where('batch_id', $batch->id)->delete();
+                break;
+            case 'expenses':
+                Expense::where('batch_id', $batch->id)->delete();
+                break;
+            default:
+                return response()->json(['error' => 'Invalid type'], 400);
         }
 
-        return response(null, Response::HTTP_NO_CONTENT);
+        return response()->json(['success' => true]);
     }
 
     // Custom method for batch management

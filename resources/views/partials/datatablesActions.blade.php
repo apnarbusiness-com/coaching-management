@@ -14,7 +14,11 @@
     @endif
 @endcan
 @can($deleteGate)
-    @if(isset($studentInfo) && !empty($studentInfo))
+    @if(isset($deleteHandler))
+    <button type="button" class="btn btn-xs btn-danger" onclick="{{ $deleteHandler }}({{ $row->id }}, '{{ addslashes($row->batch_name ?? '') }}')">
+        {{ trans('global.delete') }}
+    </button>
+    @elseif(isset($studentInfo) && !empty($studentInfo))
     <form action="{{ route('admin.' . $crudRoutePart . '.destroy', $row->id) }}" method="POST" id="delete-form-{{ $row->id }}">
         <input type="hidden" name="_method" value="DELETE">
         <input type="hidden" name="_token" value="{{ csrf_token() }}">
