@@ -1,0 +1,5 @@
+Teacher Registration	Personal Information	Name, Fathers Name, Mothers Name, DOB, Present Address,
+		
+	Educational Qualification	Name of University, Department, Session (session অনুযায়ী কোন বর্ষে আছে তা জেনারেট হবে।)
+		
+	Interested Subject: 	আমাদের ডেটাবেসে থাকা Subject হতে Select করবে।

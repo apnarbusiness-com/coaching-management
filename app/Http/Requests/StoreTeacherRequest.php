@@ -25,6 +25,18 @@ class StoreTeacherRequest extends FormRequest
                 'string',
                 'required',
             ],
+            'father_name' => [
+                'string',
+                'nullable',
+            ],
+            'mother_name' => [
+                'string',
+                'nullable',
+            ],
+            'dob' => [
+                'date',
+                'nullable',
+            ],
             'phone' => [
                 'string',
                 'required',
@@ -36,6 +48,22 @@ class StoreTeacherRequest extends FormRequest
             'joining_date' => [
                 'date',
                 'nullable',
+            ],
+            'qualifications' => [
+                'nullable',
+                'array',
+            ],
+            'qualifications.*.university' => [
+                'string',
+                'required',
+            ],
+            'qualifications.*.department' => [
+                'string',
+                'required',
+            ],
+            'qualifications.*.session' => [
+                'string',
+                'required',
             ],
             'salary_amount' => [
                 'nullable',

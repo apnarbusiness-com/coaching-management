@@ -23,6 +23,7 @@ class Teacher extends Model implements HasMedia
 
     protected $dates = [
         'joining_date',
+        'dob',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -47,6 +48,9 @@ class Teacher extends Model implements HasMedia
     protected $fillable = [
         'emloyee_code',
         'name',
+        'father_name',
+        'mother_name',
+        'dob',
         'phone',
         'email',
         'address',
@@ -108,6 +112,21 @@ class Teacher extends Model implements HasMedia
     public function setJoiningDateAttribute($value)
     {
         $this->attributes['joining_date'] = $value ? Carbon::parse($value)->format('Y-m-d H:i:s') : null;
+    }
+
+    public function getDobAttribute($value)
+    {
+        return $value ? Carbon::parse($value)->format('d-M-Y') : null;
+    }
+
+    public function setDobAttribute($value)
+    {
+        $this->attributes['dob'] = $value ? Carbon::parse($value)->format('Y-m-d') : null;
+    }
+
+    public function qualifications()
+    {
+        return $this->hasMany(TeacherQualification::class, 'teacher_id');
     }
 
     public function subjects()

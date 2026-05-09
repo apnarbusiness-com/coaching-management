@@ -85,6 +85,18 @@
                         </div>
                         <div class="p-5 flex flex-col gap-4">
                             <div>
+                                <label class="text-[11px] font-semibold text-text-secondary dark:text-gray-500 uppercase tracking-wider">Father's Name</label>
+                                <p class="text-sm text-text-main dark:text-white mt-0.5">{{ $teacher->father_name ?? 'N/A' }}</p>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-text-secondary dark:text-gray-500 uppercase tracking-wider">Mother's Name</label>
+                                <p class="text-sm text-text-main dark:text-white mt-0.5">{{ $teacher->mother_name ?? 'N/A' }}</p>
+                            </div>
+                            <div>
+                                <label class="text-[11px] font-semibold text-text-secondary dark:text-gray-500 uppercase tracking-wider">Date of Birth</label>
+                                <p class="text-sm text-text-main dark:text-white mt-0.5">{{ $teacher->dob ?? 'N/A' }}</p>
+                            </div>
+                            <div>
                                 <label class="text-[11px] font-semibold text-text-secondary dark:text-gray-500 uppercase tracking-wider">Gender</label>
                                 <p class="text-sm text-text-main dark:text-white mt-0.5">{{ App\Models\Teacher::GENDER_SELECT[$teacher->gender] ?? 'N/A' }}</p>
                             </div>
@@ -123,6 +135,31 @@
                                 <span class="text-sm text-text-secondary dark:text-gray-400">Base Amount</span>
                                 <span class="text-lg font-bold text-primary">${{ number_format($teacher->salary_amount, 2) }}</span>
                             </div>
+                        </div>
+                    </div>
+
+                    <!-- Qualifications Card -->
+                    <div class="bg-card-light dark:bg-card-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden transition-colors duration-200">
+                        <div class="p-5 border-b border-border-light dark:border-border-dark bg-background-light/50 dark:bg-black/10">
+                            <h2 class="text-sm font-bold text-text-main dark:text-white uppercase tracking-wider flex items-center gap-2">
+                                <span class="material-symbols-outlined text-primary text-[20px]">school</span>
+                                Educational Qualifications
+                            </h2>
+                        </div>
+                        <div class="p-5">
+                            @forelse($teacher->qualifications as $qual)
+                                <div class="mb-4 pb-4 border-b border-border-light dark:border-border-dark/50 last:border-0 last:mb-0 last:pb-0">
+                                    <div class="flex items-start justify-between">
+                                        <div>
+                                            <p class="text-sm font-semibold text-text-main dark:text-white">{{ $qual->university }}</p>
+                                            <p class="text-xs text-text-secondary dark:text-gray-400 mt-0.5">{{ $qual->department }}</p>
+                                        </div>
+                                        <span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full uppercase tracking-wider">{{ $qual->session }}</span>
+                                    </div>
+                                </div>
+                            @empty
+                                <p class="text-sm text-text-secondary dark:text-gray-500 italic text-center w-full py-4">No qualifications recorded</p>
+                            @endforelse
                         </div>
                     </div>
 

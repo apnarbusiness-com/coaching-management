@@ -40,6 +40,18 @@
                                     <p class="text-sm font-medium text-slate-900 dark:text-slate-50">{{ $teacher->phone }}</p>
                                 </div>
                                 <div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Father's Name</p>
+                                    <p class="text-sm font-medium text-slate-900 dark:text-slate-50">{{ $teacher->father_name ?? 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Mother's Name</p>
+                                    <p class="text-sm font-medium text-slate-900 dark:text-slate-50">{{ $teacher->mother_name ?? 'N/A' }}</p>
+                                </div>
+                                <div>
+                                    <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Date of Birth</p>
+                                    <p class="text-sm font-medium text-slate-900 dark:text-slate-50">{{ $teacher->dob ?? 'N/A' }}</p>
+                                </div>
+                                <div>
                                     <p class="text-xs text-slate-500 dark:text-slate-400 uppercase tracking-wider">Gender</p>
                                     <p class="text-sm font-medium text-slate-900 dark:text-slate-50">{{ $teacher->gender ?? 'N/A' }}</p>
                                 </div>
@@ -73,6 +85,23 @@
                             </div>
                         </div>
                     </div>
+
+                    @if($teacher->qualifications->isNotEmpty())
+                    <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">
+                        <h3 class="font-bold text-slate-900 dark:text-slate-50 mb-4">Educational Qualifications</h3>
+                        <div class="space-y-3">
+                            @foreach($teacher->qualifications as $qual)
+                                <div class="flex items-start justify-between p-3 bg-slate-50 dark:bg-slate-800/50 rounded-lg">
+                                    <div>
+                                        <p class="text-sm font-semibold text-slate-900 dark:text-slate-50">{{ $qual->university }}</p>
+                                        <p class="text-xs text-slate-500 dark:text-slate-400">{{ $qual->department }}</p>
+                                    </div>
+                                    <span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full uppercase tracking-wider">{{ $qual->session }}</span>
+                                </div>
+                            @endforeach
+                        </div>
+                    </div>
+                    @endif
 
                     @if($teacher->subjects->isNotEmpty())
                     <div class="mt-6 pt-6 border-t border-slate-100 dark:border-slate-800">

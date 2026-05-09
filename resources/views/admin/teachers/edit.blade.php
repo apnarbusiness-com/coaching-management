@@ -72,6 +72,39 @@
                                 @endif
                             </div>
                             <div>
+                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Father's
+                                    Name</label>
+                                <input
+                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('father_name') ? 'ring-2 ring-red-500' : '' }}"
+                                    placeholder="Father's full name" type="text" name="father_name"
+                                    value="{{ old('father_name', $teacher->father_name) }}" />
+                                @if($errors->has('father_name'))
+                                    <p class="mt-1 text-xs text-red-500">{{ $errors->first('father_name') }}</p>
+                                @endif
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Mother's
+                                    Name</label>
+                                <input
+                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('mother_name') ? 'ring-2 ring-red-500' : '' }}"
+                                    placeholder="Mother's full name" type="text" name="mother_name"
+                                    value="{{ old('mother_name', $teacher->mother_name) }}" />
+                                @if($errors->has('mother_name'))
+                                    <p class="mt-1 text-xs text-red-500">{{ $errors->first('mother_name') }}</p>
+                                @endif
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Date of
+                                    Birth</label>
+                                <input
+                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary [color-scheme:light] dark:[color-scheme:dark] {{ $errors->has('dob') ? 'ring-2 ring-red-500' : '' }}"
+                                    type="text" name="dob" id="dob"
+                                    value="{{ old('dob', $teacher->dob) }}" />
+                                @if($errors->has('dob'))
+                                    <p class="mt-1 text-xs text-red-500">{{ $errors->first('dob') }}</p>
+                                @endif
+                            </div>
+                            <div>
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Email
                                     Address <span class="text-red-500">*</span></label>
                                 <input
@@ -210,7 +243,67 @@
                     </div>
                 </div>
 
-                <!-- Section 3: Academic Assignment -->
+                <!-- Section 3: Educational Qualification -->
+                <div class="p-6 lg:p-8 border-b border-border-light dark:border-border-dark bg-background-light/30 dark:bg-background-dark/30">
+                    <h2 class="text-xl font-bold text-text-main dark:text-white mb-6 flex items-center gap-2">
+                        <span class="material-symbols-outlined text-primary">school</span>
+                        Educational Qualification
+                    </h2>
+                    <div id="qualifications-container">
+                        @forelse($teacher->qualifications as $i => $qual)
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 qualification-row mb-4">
+                                <div>
+                                    <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">University <span class="text-red-500">*</span></label>
+                                    <input type="text" name="qualifications[{{ $i }}][university]" placeholder="University name" value="{{ $qual->university }}"
+                                        class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Department <span class="text-red-500">*</span></label>
+                                    <input type="text" name="qualifications[{{ $i }}][department]" placeholder="Department name" value="{{ $qual->department }}"
+                                        class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Session <span class="text-red-500">*</span></label>
+                                    <input type="text" name="qualifications[{{ $i }}][session]" placeholder="e.g. 2020-21" value="{{ $qual->session }}" class="session-input w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
+                                    <p class="mt-1 text-[10px] text-text-secondary session-year-label"></p>
+                                </div>
+                                <div class="flex items-end pb-2.5">
+                                    <button type="button" class="remove-qualification-row px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 shadow-sm flex items-center gap-1">
+                                        <span class="material-symbols-outlined !text-[18px]">close</span> Remove
+                                    </button>
+                                </div>
+                            </div>
+                        @empty
+                            <div class="grid grid-cols-1 md:grid-cols-4 gap-4 qualification-row">
+                                <div>
+                                    <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">University <span class="text-red-500">*</span></label>
+                                    <input type="text" name="qualifications[0][university]" placeholder="University name"
+                                        class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Department <span class="text-red-500">*</span></label>
+                                    <input type="text" name="qualifications[0][department]" placeholder="Department name"
+                                        class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
+                                </div>
+                                <div>
+                                    <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Session <span class="text-red-500">*</span></label>
+                                    <input type="text" name="qualifications[0][session]" placeholder="e.g. 2020-21" class="session-input w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
+                                    <p class="mt-1 text-[10px] text-text-secondary session-year-label"></p>
+                                </div>
+                                <div class="flex items-end pb-2.5">
+                                    <button type="button" class="add-qualification-row px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover shadow-sm flex items-center gap-1">
+                                        <span class="material-symbols-outlined !text-[18px]">add</span> Add
+                                    </button>
+                                </div>
+                            </div>
+                        @endforelse
+                    </div>
+                    @if($errors->has('qualifications'))
+                        <p class="mt-1 text-xs text-red-500">{{ $errors->first('qualifications') }}</p>
+                    @endif
+                    <p class="mt-2 text-xs text-text-secondary">Add one or more educational qualifications. Session format: startYear-endYear (e.g., 2020-21).</p>
+                </div>
+                <!-- Section 4: Academic Assignment -->
                 <div class="p-6 lg:p-8">
                     <h2 class="text-xl font-bold text-text-main dark:text-white mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">menu_book</span>
@@ -263,7 +356,7 @@
                 width: '100%'
             });
 
-            // Initialize Datetimepicker
+            // Initialize Datetimepickers
             if ($.fn.datetimepicker) {
                 $('#joining_date').datetimepicker({
                     format: 'DD-MMM-YYYY',
@@ -279,7 +372,91 @@
                         close: 'fa fa-times'
                     }
                 });
+
+                $('#dob').datetimepicker({
+                    format: 'DD-MMM-YYYY',
+                    locale: 'en',
+                    sideBySide: true,
+                    icons: {
+                        up: 'fas fa-chevron-up',
+                        down: 'fas fa-chevron-down',
+                        previous: 'fas fa-chevron-left',
+                        next: 'fas fa-chevron-right',
+                        today: 'fa fa-arrows-alt',
+                        clear: 'fa fa-trash',
+                        close: 'fa fa-times'
+                    }
+                });
             }
+
+            // Educational Qualification - Dynamic Rows
+            let qualIndex = {{ max(count($teacher->qualifications), 1) }};
+
+            function updateSessionYear(input) {
+                const val = input.value.trim();
+                const label = input.closest('.qualification-row').querySelector('.session-year-label');
+                const match = val.match(/^(\d{4})/);
+                if (match) {
+                    const startYear = parseInt(match[1]);
+                    const currentYear = new Date().getFullYear();
+                    const yearDiff = currentYear - startYear;
+                    if (yearDiff > 0) {
+                        const yearNames = ['1st', '2nd', '3rd', '4th', '5th', '6th', '7th', '8th', '9th', '10th'];
+                        const yearText = yearNames[Math.min(yearDiff, yearNames.length - 1)] || (yearDiff + 'th');
+                        label.textContent = 'Currently in ' + yearText + ' year';
+                    } else {
+                        label.textContent = '';
+                    }
+                } else {
+                    label.textContent = '';
+                }
+            }
+
+            $(document).on('input', '.session-input', function() {
+                updateSessionYear(this);
+            });
+
+            $('.session-input').each(function() {
+                updateSessionYear(this);
+            });
+
+            $(document).on('click', '.add-qualification-row', function() {
+                const container = document.getElementById('qualifications-container');
+                const template = container.querySelector('.qualification-row').cloneNode(true);
+                const inputs = template.querySelectorAll('input');
+
+                inputs.forEach(input => {
+                    const name = input.getAttribute('name');
+                    if (name) {
+                        input.setAttribute('name', name.replace(/\[\d+\]/, '[' + qualIndex + ']'));
+                    }
+                    input.value = '';
+                });
+
+                const label = template.querySelector('.session-year-label');
+                if (label) label.textContent = '';
+
+                const addBtn = template.querySelector('.add-qualification-row');
+                if (addBtn) {
+                    addBtn.textContent = 'Remove';
+                    addBtn.className = 'remove-qualification-row px-4 py-2.5 rounded-lg text-sm font-medium text-red-600 bg-red-50 hover:bg-red-100 dark:bg-red-900/20 dark:text-red-400 dark:hover:bg-red-900/40 shadow-sm flex items-center gap-1';
+                    addBtn.innerHTML = '<span class="material-symbols-outlined !text-[18px]">close</span> Remove';
+                }
+
+                container.appendChild(template);
+                qualIndex++;
+            });
+
+            $(document).on('click', '.remove-qualification-row', function() {
+                const row = this.closest('.qualification-row');
+                if (document.querySelectorAll('.qualification-row').length > 1) {
+                    row.remove();
+                } else {
+                    row.querySelectorAll('input').forEach(input => input.value = '');
+                    const label = row.querySelector('.session-year-label');
+                    if (label) label.textContent = '';
+                }
+            });
 
             // Photo Upload Logic
             const fileUpload = document.getElementById('file-upload');
