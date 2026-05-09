@@ -34,7 +34,7 @@ class StoreTeacherRequest extends FormRequest
                 'nullable',
             ],
             'joining_date' => [
-                'date_format:' . config('panel.date_format') . ' ' . config('panel.time_format'),
+                'date',
                 'nullable',
             ],
             'salary_amount' => [

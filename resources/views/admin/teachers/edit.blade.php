@@ -134,7 +134,7 @@
                                 <input
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary [color-scheme:light] dark:[color-scheme:dark] {{ $errors->has('joining_date') ? 'ring-2 ring-red-500' : '' }}"
                                     type="text" name="joining_date" id="joining_date"
-                                    value="{{ old('joining_date', $teacher->joining_date) }}" />
+                                    value="{{ old('joining_date', $teacher->joining_date ? \Carbon\Carbon::parse($teacher->joining_date)->format('d-M-Y') : '') }}" />
                                 @if($errors->has('joining_date'))
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('joining_date') }}</p>
                                 @endif
@@ -266,7 +266,7 @@
             // Initialize Datetimepicker
             if ($.fn.datetimepicker) {
                 $('#joining_date').datetimepicker({
-                    format: 'YYYY-MM-DD HH:mm:ss',
+                    format: 'DD-MMM-YYYY',
                     locale: 'en',
                     sideBySide: true,
                     icons: {

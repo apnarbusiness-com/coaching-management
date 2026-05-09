@@ -125,7 +125,7 @@
                                 {{ $teacher->id ?? '' }}
                             </td>
                             <td>
-                                {{ $teacher->emloyee_code ?? '' }}
+                                {{ $teacher->user->user_name ?? $teacher->emloyee_code ?? '' }}
                             </td>
                             <td>
                                 {{ $teacher->name ?? '' }}
@@ -137,7 +137,7 @@
                                 {{ $teacher->email ?? '' }}
                             </td>
                             <td>
-                                {{ $teacher->joining_date ?? '' }}
+                                {{ $teacher->joining_date ? \Carbon\Carbon::parse($teacher->joining_date)->format('d-M-Y') : '' }}
                             </td>
                             <td>
                                 <span style="display:none">{{ $teacher->status ? 1 : 0 }}</span>
