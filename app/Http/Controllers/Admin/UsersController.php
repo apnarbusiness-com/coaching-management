@@ -54,6 +54,11 @@ class UsersController extends Controller
 
         $roles = Role::pluck('title', 'id');
 
+        if (is_null($user->admission_id) && is_null($user->user_name)) {
+            $user->user_name = generateUserName();
+            $user->save();
+        }
+
         $user->load('roles');
 
         return view('admin.users.edit', compact('roles', 'user'));
