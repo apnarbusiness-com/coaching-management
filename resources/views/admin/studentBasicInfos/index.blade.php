@@ -417,32 +417,56 @@
                 const url = checkbox.data('url');
                 const nextStatus = checkbox.is(':checked') ? 1 : 0;
                 const label = checkbox.closest('.status-toggle').find('.status-label');
+                const rowData = table.row(checkbox.closest('tr')).data();
+                const studentName = rowData ? rowData.first_name : 'this student';
+                const actionText = nextStatus ? 'activate' : 'deactivate';
 
-                checkbox.prop('disabled', true);
+                checkbox.prop('checked', !nextStatus);
 
-                $.ajax({
-                        headers: {
-                            'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
-                        },
-                        method: 'POST',
-                        url: url,
-                        data: {
-                            status: nextStatus
-                        }
-                    })
-                    .done(function(res) {
-                        const isActive = !!res.status;
-                        checkbox.prop('checked', isActive);
-                        label.text(isActive ? 'Active' : 'Inactive');
-                        label.toggleClass('is-active', isActive);
-                    })
-                    .fail(function() {
-                        checkbox.prop('checked', !nextStatus);
-                        alert('Status update failed. Please try again.');
-                    })
-                    .always(function() {
-                        checkbox.prop('disabled', false);
-                    });
+                Swal.fire({
+                    title: 'Are you sure?',
+                    text: 'Do you want to ' + actionText + ' "' + studentName + '"?',
+                    icon: 'question',
+                    showCancelButton: true,
+                    confirmButtonColor: nextStatus ? '#16a34a' : '#ef4444',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes, ' + actionText + '!',
+                    cancelButtonText: 'Cancel'
+                }).then((result) => {
+                    if (result.isConfirmed) {
+                        checkbox.prop('disabled', true);
+
+                        $.ajax({
+                                headers: {
+                                    'X-CSRF-TOKEN': $('meta[name="csrf-token"]').attr('content')
+                                },
+                                method: 'POST',
+                                url: url,
+                                data: {
+                                    status: nextStatus
+                                }
+                            })
+                            .done(function(res) {
+                                const isActive = !!res.status;
+                                checkbox.prop('checked', isActive);
+                                label.text(isActive ? 'Active' : 'Inactive');
+                                label.toggleClass('is-active', isActive);
+                                Swal.fire({
+                                    title: 'Success!',
+                                    text: 'Student has been ' + (isActive ? 'activated' : 'deactivated') + '.',
+                                    icon: 'success',
+                                    timer: 1500,
+                                    showConfirmButton: false
+                                });
+                            })
+                            .fail(function() {
+                                Swal.fire('Error!', 'Status update failed. Please try again.', 'error');
+                            })
+                            .always(function() {
+                                checkbox.prop('disabled', false);
+                            });
+                    }
+                });
             });
 
         });
