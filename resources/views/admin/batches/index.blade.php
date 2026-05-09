@@ -283,6 +283,65 @@
         .batch-accordion-item.active .batch-accordion-content {
             display: block;
         }
+        .status-toggle {
+            display: inline-flex;
+            align-items: center;
+            gap: 8px;
+        }
+        .status-switch {
+            position: relative;
+            display: inline-block;
+            width: 44px;
+            height: 24px;
+            flex-shrink: 0;
+        }
+        .status-switch input {
+            opacity: 0;
+            width: 0;
+            height: 0;
+            position: absolute;
+        }
+        .status-slider {
+            position: absolute;
+            cursor: pointer;
+            inset: 0;
+            background: #e2e8f0;
+            border-radius: 999px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
+        }
+        .status-slider::before {
+            content: '';
+            position: absolute;
+            height: 18px;
+            width: 18px;
+            left: 3px;
+            bottom: 3px;
+            background: #ffffff;
+            border-radius: 999px;
+            transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+            box-shadow: 0 1px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
+        }
+        .status-switch input:checked + .status-slider {
+            background: linear-gradient(135deg, #16a34a, #15803d);
+            box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
+        }
+        .status-switch input:checked + .status-slider::before {
+            transform: translateX(20px);
+        }
+        .status-switch input:focus-visible + .status-slider {
+            outline: 2px solid #137fec;
+            outline-offset: 2px;
+        }
+        .status-label {
+            font-size: 12px;
+            font-weight: 600;
+            color: #94a3b8;
+            transition: color 0.2s ease;
+        }
+        .status-label.is-active {
+            color: #16a34a;
+        }
     </style>
     <script>
         $(function() {
@@ -646,19 +705,49 @@
                     const label = checkbox.closest('.status-toggle').find('.status-label');
                     const nextStatus = checkbox.is(':checked') ? 1 : 0;
                     const url = checkbox.data('url');
+                    const rowData = table.row(checkbox.closest('tr')).data();
+                    const batchName = rowData ? rowData.batch_name : 'this batch';
+                    const actionText = nextStatus ? 'activate' : 'deactivate';
 
-                    $.ajax({
-                        url: url,
-                        type: 'POST',
-                        data: { status: nextStatus, _token: '{{ csrf_token() }}' },
-                        success: function(res) {
-                            const isActive = !!res.status;
-                            checkbox.prop('checked', isActive);
-                            label.text(isActive ? 'Active' : 'Inactive');
-                            label.toggleClass('is-active', isActive);
-                        },
-                        error: function() {
-                            checkbox.prop('checked', !nextStatus);
+                    checkbox.prop('checked', !nextStatus);
+
+                    Swal.fire({
+                        title: 'Are you sure?',
+                        text: 'Do you want to ' + actionText + ' "' + batchName + '"?',
+                        icon: 'question',
+                        showCancelButton: true,
+                        confirmButtonColor: nextStatus ? '#16a34a' : '#ef4444',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, ' + actionText + '!',
+                        cancelButtonText: 'Cancel'
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            checkbox.prop('disabled', true);
+
+                            $.ajax({
+                                url: url,
+                                type: 'POST',
+                                data: { status: nextStatus, _token: '{{ csrf_token() }}' },
+                                success: function(res) {
+                                    const isActive = !!res.status;
+                                    checkbox.prop('checked', isActive);
+                                    label.text(isActive ? 'Active' : 'Inactive');
+                                    label.toggleClass('is-active', isActive);
+                                    Swal.fire({
+                                        title: 'Success!',
+                                        text: 'Batch has been ' + (isActive ? 'activated' : 'deactivated') + '.',
+                                        icon: 'success',
+                                        timer: 1500,
+                                        showConfirmButton: false
+                                    });
+                                },
+                                error: function() {
+                                    Swal.fire('Error!', 'Status update failed. Please try again.', 'error');
+                                },
+                                complete: function() {
+                                    checkbox.prop('disabled', false);
+                                }
+                            });
                         }
                     });
                 });

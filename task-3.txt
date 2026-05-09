@@ -1,1 +1,0 @@
-http://dev-coaching-management.test/admin/student-basic-infos teacher er moto student list eo active/inactive toggle e swtalert diye dite hobe.

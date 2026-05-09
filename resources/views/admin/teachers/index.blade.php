@@ -4,70 +4,58 @@
     .status-toggle {
         display: inline-flex;
         align-items: center;
-        gap: 10px;
+        gap: 8px;
     }
     .status-switch {
         position: relative;
         display: inline-block;
-        width: 60px;
-        height: 28px;
+        width: 44px;
+        height: 24px;
+        flex-shrink: 0;
     }
     .status-switch input {
         opacity: 0;
         width: 0;
         height: 0;
+        position: absolute;
     }
     .status-slider {
         position: absolute;
         cursor: pointer;
         inset: 0;
-        background: #cbd5e1;
+        background: #e2e8f0;
         border-radius: 999px;
-        transition: all 0.2s ease;
-        box-shadow: inset 0 0 0 1px #b6c2d1;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.1);
     }
     .status-slider::before {
         content: '';
         position: absolute;
-        height: 22px;
-        width: 22px;
+        height: 18px;
+        width: 18px;
         left: 3px;
-        top: 3px;
+        bottom: 3px;
         background: #ffffff;
         border-radius: 999px;
-        transition: all 0.2s ease;
-        box-shadow: 0 1px 2px rgba(0,0,0,0.15);
-    }
-    .status-slider::after {
-        content: 'OFF';
-        position: absolute;
-        right: 8px;
-        top: 50%;
-        transform: translateY(-50%);
-        font-size: 10px;
-        font-weight: 700;
-        color: #64748b;
-        letter-spacing: 0.4px;
+        transition: all 0.3s cubic-bezier(0.4, 0, 0.2, 1);
+        box-shadow: 0 1px 3px rgba(0,0,0,0.15), 0 1px 2px rgba(0,0,0,0.1);
     }
     .status-switch input:checked + .status-slider {
-        background: #16a34a;
-        box-shadow: inset 0 0 0 1px #15803d;
+        background: linear-gradient(135deg, #16a34a, #15803d);
+        box-shadow: inset 0 1px 3px rgba(0,0,0,0.2);
     }
     .status-switch input:checked + .status-slider::before {
-        transform: translateX(32px);
+        transform: translateX(20px);
     }
-    .status-switch input:checked + .status-slider::after {
-        content: 'ON';
-        left: 8px;
-        right: auto;
-        color: #dcfce7;
+    .status-switch input:focus-visible + .status-slider {
+        outline: 2px solid #137fec;
+        outline-offset: 2px;
     }
     .status-label {
         font-size: 12px;
-        font-weight: 700;
-        text-transform: uppercase;
-        letter-spacing: 0.6px;
-        color: #64748b;
+        font-weight: 600;
+        color: #94a3b8;
+        transition: color 0.2s ease;
     }
     .status-label.is-active {
         color: #16a34a;
