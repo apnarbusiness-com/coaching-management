@@ -48,6 +48,7 @@ class TeacherController extends Controller
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
+                'user_name' => generateUserName(),
                 'password' => bcrypt($password), // Use password if provided, else email
             ]);
             $teacherRole = Role::where('title', 'Teacher')->first();

@@ -15,7 +15,23 @@ if (!function_exists('generateAdmissionID')) {
 if (!function_exists('generateUserName')) {
     function generateUserName()
     {
-        $count = User::whereNull('admission_id')->count();
-        return 'EXC-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+        $prefix = 'EXC-';
+        $prefixLen = strlen($prefix);
+
+        $numbers = User::withTrashed()
+            ->where('user_name', 'like', $prefix . '%')
+            ->pluck('user_name')
+            ->map(fn($name) => (int) substr($name, $prefixLen))
+            ->toArray();
+
+        $num = $numbers ? max($numbers) + 1 : 1;
+        $name = $prefix . str_pad($num, 3, '0', STR_PAD_LEFT);
+
+        while (User::withTrashed()->where('user_name', $name)->exists()) {
+            $num++;
+            $name = $prefix . str_pad($num, 3, '0', STR_PAD_LEFT);
+        }
+
+        return $name;
     }
 }
