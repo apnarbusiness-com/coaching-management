@@ -17,12 +17,21 @@
             </nav>
 
             <!-- Page Heading -->
-            <div class="flex flex-col gap-2">
-                <h1 class="text-3xl font-bold text-text-main dark:text-white tracking-tight">Edit Teacher:
-                    {{ $teacher->name }}
-                </h1>
-                <p class="text-text-secondary dark:text-gray-400 max-w-2xl">Update the details for this faculty member.
-                    Ensure all mandatory fields marked with * are filled correctly.</p>
+            <div class="flex items-start justify-between gap-4">
+                <div class="flex flex-col gap-2">
+                    <h1 class="text-3xl font-bold text-text-main dark:text-white tracking-tight">Edit Teacher:
+                        {{ $teacher->name }}
+                    </h1>
+                    <p class="text-text-secondary dark:text-gray-400 max-w-2xl">Update the details for this faculty member.
+                        Ensure all mandatory fields marked with * are filled correctly.</p>
+                </div>
+                @if($teacher->user)
+                    <a href="{{ route('admin.users.edit', $teacher->user_id) }}"
+                        class="shrink-0 px-4 py-2 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover shadow-lg shadow-primary/30 transition-all flex items-center gap-2">
+                        <span class="material-symbols-outlined text-[18px]">manage_accounts</span>
+                        Edit User
+                    </a>
+                @endif
             </div>
 
             <!-- Main Form Card -->
@@ -32,7 +41,7 @@
                 @method('PUT')
 
                 <!-- Section 1: Personal Details -->
-                <div class="p-6 lg:p-8 border-b border-border-light dark:border-border-dark">
+                <div class="p-6 lg:p-8 border-b border-border-light dark:border-border-dark bg-background-light/30 dark:bg-background-dark/30">
                     <h2 class="text-xl font-bold text-text-main dark:text-white mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">person</span>
                         Personal Information
@@ -64,7 +73,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Full
                                     Name <span class="text-red-500">*</span></label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('name') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('name') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="e.g. John Doe" type="text" name="name"
                                     value="{{ old('name', $teacher->name) }}" required />
                                 @if($errors->has('name'))
@@ -75,7 +84,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Father's
                                     Name</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('father_name') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('father_name') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="Father's full name" type="text" name="father_name"
                                     value="{{ old('father_name', $teacher->father_name) }}" />
                                 @if($errors->has('father_name'))
@@ -86,7 +95,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Mother's
                                     Name</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('mother_name') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('mother_name') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="Mother's full name" type="text" name="mother_name"
                                     value="{{ old('mother_name', $teacher->mother_name) }}" />
                                 @if($errors->has('mother_name'))
@@ -97,7 +106,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Date of
                                     Birth</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary [color-scheme:light] dark:[color-scheme:dark] {{ $errors->has('dob') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary [color-scheme:light] dark:[color-scheme:dark] {{ $errors->has('dob') ? 'ring-2 ring-red-500' : '' }}"
                                     type="text" name="dob" id="dob"
                                     value="{{ old('dob', $teacher->dob) }}" />
                                 @if($errors->has('dob'))
@@ -108,7 +117,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Email
                                     Address <span class="text-red-500">*</span></label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('email') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('email') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="john.doe@school.edu" type="email" name="email"
                                     value="{{ old('email', $teacher->email) }}" required />
                                 @if($errors->has('email'))
@@ -119,7 +128,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Phone
                                     Number <span class="text-red-500">*</span></label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('phone') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('phone') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="+1 (555) 000-0000" type="tel" name="phone"
                                     value="{{ old('phone', $teacher->phone) }}" required />
                                 @if($errors->has('phone'))
@@ -131,7 +140,7 @@
                                     class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Residential
                                     Address</label>
                                 <textarea name="address"
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary resize-none {{ $errors->has('address') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary resize-none {{ $errors->has('address') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="Street address, city, state, zip code"
                                     rows="2">{{ old('address', $teacher->address) }}</textarea>
                                 @if($errors->has('address'))
@@ -157,8 +166,9 @@
                                 <input
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary font-mono text-sm {{ $errors->has('emloyee_code') ? 'ring-2 ring-red-500' : '' }}"
                                     readonly="" type="text" name="emloyee_code"
-                                    value="{{ old('emloyee_code', $teacher->emloyee_code) }}" />
+                                    value="{{ old('emloyee_code', $teacher->user->user_name ?? generateUserName()) }}" />
                             </div>
+                            <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">Auto-generated on submission. Final code may differ if another user registers simultaneously.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Joining

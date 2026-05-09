@@ -104,6 +104,11 @@ class TeacherController extends Controller
     public function update(UpdateTeacherRequest $request, Teacher $teacher)
     {
         $teacher->update($request->all());
+
+        if ($teacher->user && !$teacher->user->user_name) {
+            $teacher->user->update(['user_name' => $teacher->emloyee_code]);
+        }
+
         $teacher->subjects()->sync($request->input('subjects', []));
 
         if ($request->has('qualifications')) {

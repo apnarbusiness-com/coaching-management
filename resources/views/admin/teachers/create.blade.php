@@ -27,7 +27,7 @@
                 class="bg-card-light dark:bg-card-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden transition-colors duration-200">
                 @csrf
                 <!-- Section 1: Personal Details -->
-                <div class="p-6 lg:p-8 border-b border-border-light dark:border-border-dark">
+                <div class="p-6 lg:p-8 border-b border-border-light dark:border-border-dark bg-background-light/30 dark:bg-background-dark/30">
                     <h2 class="text-xl font-bold text-text-main dark:text-white mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">person</span>
                         Personal Information
@@ -56,7 +56,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Full
                                     Name <span class="text-red-500">*</span></label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('name') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('name') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="e.g. John Doe" type="text" name="name" value="{{ old('name', '') }}"
                                     required />
                                 @if($errors->has('name'))
@@ -67,7 +67,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Father's
                                     Name</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('father_name') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('father_name') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="Father's full name" type="text" name="father_name" value="{{ old('father_name', '') }}" />
                                 @if($errors->has('father_name'))
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('father_name') }}</p>
@@ -77,7 +77,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Mother's
                                     Name</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('mother_name') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('mother_name') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="Mother's full name" type="text" name="mother_name" value="{{ old('mother_name', '') }}" />
                                 @if($errors->has('mother_name'))
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('mother_name') }}</p>
@@ -87,7 +87,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Date of
                                     Birth</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary [color-scheme:light] dark:[color-scheme:dark] {{ $errors->has('dob') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary [color-scheme:light] dark:[color-scheme:dark] {{ $errors->has('dob') ? 'ring-2 ring-red-500' : '' }}"
                                     type="text" name="dob" id="dob" value="{{ old('dob', '') }}" />
                                 @if($errors->has('dob'))
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('dob') }}</p>
@@ -97,7 +97,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Email
                                     Address <span class="text-red-500">*</span></label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('email') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('email') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="john.doe@school.edu" type="email" name="email"
                                     value="{{ old('email', '') }}" required />
                                 @if($errors->has('email'))
@@ -108,7 +108,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Phone
                                     Number <span class="text-red-500">*</span></label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('phone') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('phone') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="+1 (555) 000-0000" type="tel" name="phone" value="{{ old('phone', '') }}"
                                     required />
                                 @if($errors->has('phone'))
@@ -119,7 +119,7 @@
                                 <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Default
                                     Password</label>
                                 <input
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary"
                                     placeholder="Leave blank to use email" type="password" name="password" />
                                 <p class="mt-1 text-[10px] text-text-secondary">Used for the initial login of the new
                                     teacher account.</p>
@@ -129,7 +129,7 @@
                                     class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Residential
                                     Address</label>
                                 <textarea name="address"
-                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary resize-none {{ $errors->has('address') ? 'ring-2 ring-red-500' : '' }}"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary resize-none {{ $errors->has('address') ? 'ring-2 ring-red-500' : '' }}"
                                     placeholder="Street address, city, state, zip code"
                                     rows="2">{{ old('address', '') }}</textarea>
                                 @if($errors->has('address'))
@@ -158,6 +158,7 @@
                                 <span
                                     class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-medium cursor-pointer">Auto</span>
                             </div>
+                            <p class="mt-1 text-xs text-amber-600 dark:text-amber-400">Auto-generated on submission. Final code may differ if another user registers simultaneously.</p>
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Joining
