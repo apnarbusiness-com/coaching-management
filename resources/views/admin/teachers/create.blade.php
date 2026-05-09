@@ -154,7 +154,7 @@
                                 <input
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary font-mono text-sm {{ $errors->has('emloyee_code') ? 'ring-2 ring-red-500' : '' }}"
                                     readonly="" type="text" name="emloyee_code"
-                                    value="TCH-{{ date('Y') }}-{{ sprintf('%03d', \App\Models\Teacher::count() + 1) }}" />
+                                    value="{{ old('emloyee_code', generateUserName()) }}" />
                                 <span
                                     class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-medium cursor-pointer">Auto</span>
                             </div>

@@ -45,10 +45,11 @@ class TeacherController extends Controller
         $user = User::where('email', $request->email)->first();
         if (!$user) {
             $password = $request->password ?? $request->email; // Use password if provided, else email
+            $userName = generateUserName();
             $user = User::create([
                 'name' => $request->name,
                 'email' => $request->email,
-                'user_name' => generateUserName(),
+                'user_name' => $userName,
                 'password' => bcrypt($password), // Use password if provided, else email
             ]);
             $teacherRole = Role::where('title', 'Teacher')->first();
@@ -62,9 +63,10 @@ class TeacherController extends Controller
         }
 
         // 2. Create Teacher and link to User
-        $teacherData = $request->all();
+        $teacherData = $request->except('emloyee_code');
         $teacherData['user_id'] = $user->id;
         $teacherData['status'] = 1; // Always active by default
+        $teacherData['emloyee_code'] = $user->user_name;
 
         $teacher = Teacher::create($teacherData);
         $teacher->subjects()->sync($request->input('subjects', []));
