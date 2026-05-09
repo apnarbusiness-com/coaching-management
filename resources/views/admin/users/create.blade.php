@@ -65,6 +65,19 @@
                                 <span class="text-xs text-slate-400 mt-1 block">{{ trans('cruds.user.fields.name_helper') }}</span>
                             </div>
 
+                            {{-- user_name --}}
+                            <div class="col-span-1">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    for="user_name">Username</label>
+                                <div class="relative mt-1">
+                                    <input
+                                        class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-slate-100 dark:bg-slate-700 text-slate-500 dark:text-slate-400 shadow-sm sm:text-sm py-2.5 px-3 cursor-not-allowed"
+                                        id="user_name" type="text" value="{{ $userName }}" disabled readonly />
+                                    <input type="hidden" name="user_name" value="{{ $userName }}" />
+                                </div>
+                                <span class="text-xs text-slate-400 mt-1 block">Auto-generated, starts with EXC-</span>
+                            </div>
+
                             {{-- email --}}
                             <div class="col-span-1">
                                 <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 required"

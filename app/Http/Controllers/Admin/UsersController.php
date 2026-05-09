@@ -31,13 +31,18 @@ class UsersController extends Controller
         abort_if(Gate::denies('user_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $roles = Role::pluck('title', 'id');
+        $userName = generateUserName();
 
-        return view('admin.users.create', compact('roles'));
+        return view('admin.users.create', compact('roles', 'userName'));
     }
 
     public function store(StoreUserRequest $request)
     {
-        $user = User::create($request->all());
+        $data = $request->all();
+        if (empty($data['user_name'])) {
+            $data['user_name'] = generateUserName();
+        }
+        $user = User::create($data);
         $user->roles()->sync($request->input('roles', []));
 
         return redirect()->route('admin.users.index');
