@@ -187,7 +187,7 @@
             </div>
 
             <!-- Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-4 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Earning</span>
                     <span class="text-2xl font-bold text-primary">{{ number_format($grandTotal) }} BDT</span>
@@ -206,8 +206,13 @@
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Operational status: Stable</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Expense</span>
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Teacher Salary</span>
                     <span class="text-2xl font-bold text-danger">{{ number_format($grandTotalExpense) }} BDT</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
+                </div>
+                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Other Expenses</span>
+                    <span class="text-2xl font-bold text-orange-600">{{ number_format($grandTotalOtherExpense) }} BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
@@ -362,6 +367,78 @@
                 </div>
             </div>
 
+            <!-- Other Expenses Table -->
+            <div class="bg-white border-2 border-orange-600 shadow-lg mt-6">
+                <div class="p-4 bg-orange-600 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Batch Other Expenses - {{ $year }}</h2>
+                </div>
+                <div class="table-wrapper">
+                    <table class="excel-table min-w-full expense-table" id="financialOtherExpenseTable">
+                        <thead>
+                            <tr class="bg-orange-600">
+                                <th
+                                    class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-orange-700 fixed-col fixed-left">
+                                    Batch
+                                </th>
+                                @foreach ($months as $month)
+                                    <th
+                                        class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-orange-700">
+                                        {{ $month }}
+                                    </th>
+                                @endforeach
+                                <th
+                                    class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">
+                                    Total
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-cell-data font-cell-data text-on-surface">
+                            @forelse($batchOtherExpenses as $batch)
+                                <tr class="bg-white hover:bg-slate-50 text-orange-900">
+                                    <td class="grid-cell px-4 py-1.5 fixed-col fixed-left">
+                                        <span class="font-bold">{{ $batch['batch_name'] }}</span>
+                                    </td>
+                                    @for ($m = 1; $m <= 12; $m++)
+                                        <td class="grid-cell px-4 py-1.5 text-right relative">
+                                            {{ number_format($batch['monthly'][$m] ?? 0) }}
+                                            @if (($batch['monthly'][$m] ?? 0) > 0)
+                                                <button type="button" class="expense-info-btn-cell"
+                                                    onclick="loadOtherExpenseDetails('{{ $batch['batch_id'] }}', '{{ addslashes($batch['batch_name']) }}', {{ $m }}, {{ $year }})"
+                                                    style="border-color: #ea580c !important;">
+                                                    <i class="fas fa-info-circle"></i>
+                                                </button>
+                                            @endif
+                                        </td>
+                                    @endfor
+                                    <td
+                                        class="grid-cell px-4 py-1.5 text-right bg-orange-200 font-bold text-black border-l-2 border-orange-600 fixed-col fixed-right">
+                                        {{ number_format($batch['total']) }}
+                                    </td>
+                                </tr>
+                            @empty
+                                <tr>
+                                    <td colspan="14" class="text-center py-4">No other expenses found</td>
+                                </tr>
+                            @endforelse
+                        </tbody>
+                        <tfoot>
+                            <tr class="bg-orange-100 text-orange-900 font-bold border-t-2 border-orange-600">
+                                <td
+                                    class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">
+                                    Total</td>
+                                @for ($m = 1; $m <= 12; $m++)
+                                    <td class="grid-cell px-4 py-1.5 text-right">
+                                        {{ number_format($totalOtherExpensePerMonth[$m] ?? 0) }}</td>
+                                @endfor
+                                <td
+                                    class="grid-cell px-4 py-3 text-right bg-orange-600 text-white text-lg fixed-col fixed-right">
+                                    {{ number_format($grandTotalOtherExpense) }}</td>
+                            </tr>
+                        </tfoot>
+                    </table>
+                </div>
+            </div>
+
             <!-- Expense Drawer -->
             <div class="expense-drawer-overlay" id="expenseDrawerOverlay" onclick="closeExpenseDrawer()"></div>
             <div class="expense-drawer" id="expenseDrawer">
@@ -495,6 +572,64 @@
                         });
                     } else {
                         html += '<p class="text-gray-500">No expenses for this month.</p>';
+                    }
+
+                    html += '</div>';
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+                });
+        }
+
+        // Other Expense details loader
+        function loadOtherExpenseDetails(batchId, batchName, month, year) {
+            const drawer = document.getElementById('expenseDrawer');
+            const overlay = document.getElementById('expenseDrawerOverlay');
+            const title = document.getElementById('drawerTitle');
+            const content = document.getElementById('drawerContent');
+
+            title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Other Expenses';
+            title.parentElement.style.background = '#ea580c';
+            content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+
+            fetch("{{ route('admin.financial-ledgers.other-expense-details') }}?batch_id=" + batchId + "&month=" + month +
+                    "&year=" + year)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<div class="space-y-4">';
+
+                    if (data.expenses && data.expenses.length > 0) {
+                        let totalAmount = 0;
+
+                        data.expenses.forEach(expense => {
+                            totalAmount += expense.amount;
+
+                            html += '<div class="border rounded-lg p-3 border-orange-300">';
+                            html += '<div class="flex justify-between items-center mb-2">';
+                            html += '<h4 class="font-bold text-orange-800">' + expense.title + '</h4>';
+                            html += '<span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">' + expense.category + '</span>';
+                            html += '</div>';
+                            if (expense.details) {
+                                html += '<p class="text-sm text-gray-600 mb-2">' + expense.details + '</p>';
+                            }
+                            html += '<table class="w-full text-sm">';
+                            html +=
+                                '<tr class="font-bold"><td class="py-1">Amount:</td><td class="py-1 text-right">' +
+                                expense.amount.toLocaleString() + ' BDT</td></tr>';
+                            html += '</table></div>';
+                        });
+
+                        html += '<div class="border-t-2 border-orange-600 pt-2 mt-2">';
+                        html += '<table class="w-full text-sm font-bold">';
+                        html += '<tr><td class="py-1">Total:</td><td class="py-1 text-right">' + totalAmount
+                            .toLocaleString() + ' BDT</td></tr>';
+                        html += '</table></div>';
+                    } else {
+                        html += '<p class="text-gray-500">No other expenses for this month.</p>';
                     }
 
                     html += '</div>';

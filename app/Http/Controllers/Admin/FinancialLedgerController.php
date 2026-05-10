@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\Earning;
 use App\Models\Expense;
+use App\Models\ExpenseCategory;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentMonthlyDue;
 use App\Models\Teacher;
@@ -61,6 +62,8 @@ class FinancialLedgerController extends Controller
             $grandTotal += $amount;
         }
 
+        // --- Teacher Salary Expenses ---
+
         $batchExpenses = [];
         foreach ($batches as $batch) {
             $monthlyExpenses = [];
@@ -70,6 +73,7 @@ class FinancialLedgerController extends Controller
                 $amount = Expense::where('batch_id', $batch->id)
                     ->where('expense_month', $m)
                     ->where('expense_year', $year)
+                    ->whereNotNull('teacher_id')
                     ->sum('amount');
 
                 $monthlyExpenses[$m] = $amount;
@@ -98,8 +102,31 @@ class FinancialLedgerController extends Controller
             $grandTotalExpense += $amount;
         }
 
+        // --- Other Expenses (non-teacher) ---
+
+        $totalOtherExpensePerMonth = [];
+        $grandTotalOtherExpense = 0;
+        for ($m = 1; $m <= 12; $m++) {
+            $amount = Expense::where('expense_month', $m)
+                ->where('expense_year', $year)
+                ->whereNull('teacher_id')
+                ->sum('amount');
+            $totalOtherExpensePerMonth[$m] = $amount;
+            $grandTotalOtherExpense += $amount;
+        }
+
+        $batchOtherExpenses = $grandTotalOtherExpense > 0
+            ? [[
+                'batch_id' => 0,
+                'batch_name' => 'All Other Expenses',
+                'monthly' => $totalOtherExpensePerMonth,
+                'total' => $grandTotalOtherExpense,
+            ]]
+            : [];
+
         $activeBatches = Batch::where('status', 1)->count();
-        $netProfit = $grandTotal - $grandTotalExpense;
+        $totalExpensesCombined = $grandTotalExpense + $grandTotalOtherExpense;
+        $netProfit = $grandTotal - $totalExpensesCombined;
         $profitMargin = $grandTotal > 0 ? round(($netProfit / $grandTotal) * 100, 1) : 0;
 
         $previousYear = $year - 1;
@@ -115,6 +142,9 @@ class FinancialLedgerController extends Controller
             'batchExpenses',
             'totalExpensePerMonth',
             'grandTotalExpense',
+            'batchOtherExpenses',
+            'totalOtherExpensePerMonth',
+            'grandTotalOtherExpense',
             'activeBatches',
             'netProfit',
             'profitMargin',
@@ -205,6 +235,45 @@ class FinancialLedgerController extends Controller
             'batch_name' => $batch->batch_name,
             'month' => $month,
             'payments' => $payments
+        ]);
+    }
+
+    public function getOtherExpenseDetails(Request $request)
+    {
+        abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $batchId = $request->input('batch_id');
+        $month = $request->input('month');
+        $year = $request->input('year', date('Y'));
+
+        $expensesQuery = Expense::where('expense_month', $month)
+            ->where('expense_year', $year)
+            ->whereNull('teacher_id');
+
+        if ($batchId != 0) {
+            $expensesQuery->where('batch_id', $batchId);
+        }
+
+        $expenses = $expensesQuery->get();
+        $batch = $batchId != 0 ? Batch::find($batchId) : null;
+
+        $items = [];
+        foreach ($expenses as $exp) {
+            $category = $exp->expense_category_id ? ExpenseCategory::find($exp->expense_category_id) : null;
+
+            $items[] = [
+                'id' => $exp->id,
+                'title' => $exp->title ?? 'Untitled',
+                'category' => $category ? $category->name : 'Uncategorized',
+                'details' => $exp->details ?? '',
+                'amount' => (float) $exp->amount,
+            ];
+        }
+
+        return response()->json([
+            'batch_name' => $batch ? $batch->batch_name : 'All Other Expenses',
+            'month' => $month,
+            'expenses' => $items,
         ]);
     }
 }
