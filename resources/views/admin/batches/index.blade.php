@@ -843,38 +843,86 @@
                 btn.disabled = true;
                 btn.innerHTML = '<div class="animate-spin rounded-full h-3.5 w-3.5 border-b-2 border-white"></div>';
 
-                fetch('{{ route('admin.batches.dependencies.delete', ['batch' => 'BATCH_ID', 'type' => 'TYPE_ID']) }}'.replace('BATCH_ID', batchDeleteId).replace('TYPE_ID', type), {
-                    method: 'DELETE',
-                    headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
-                })
+                fetch('{{ route('admin.batches.dependencies.records', ['batch' => 'BATCH_ID', 'type' => 'TYPE_ID']) }}'.replace('BATCH_ID', batchDeleteId).replace('TYPE_ID', type))
                 .then(res => res.json())
                 .then(data => {
-                    if (data.success) {
-                        const checkbox = row.querySelector('.material-symbols-outlined');
-                        checkbox.textContent = 'check_circle';
-                        checkbox.className = 'material-symbols-outlined text-green-600';
-                        row.className = 'flex items-center justify-between p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20';
-                        const labelDiv = row.querySelector('.text-xs');
-                        labelDiv.textContent = 'Cleared';
-                        labelDiv.className = 'text-xs text-green-600 mt-0.5 ml-6';
-                        btn.className = 'px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40 rounded-lg cursor-default';
-                        btn.textContent = 'Done';
-                        btn.disabled = true;
+                    btn.disabled = false;
+                    btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">delete</span> Delete ' + data.total;
 
-                        const remaining = document.querySelectorAll('#dependencies-list .flex.items-center.justify-between .bg-red-600');
-                        if (remaining.length === 0) {
-                            const deleteBtn = document.getElementById('confirm-batch-delete-btn');
-                            deleteBtn.disabled = false;
-                            deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
-                            deleteBtn.classList.add('opacity-100', 'cursor-pointer');
-                        }
+                    let recordsHtml = '<div style="max-height:260px;overflow-y:auto;text-align:left;font-size:13px;">';
+                    data.records.forEach(r => {
+                        recordsHtml += '<div style="padding:6px 0;border-bottom:1px solid #e2e8f0;">';
+                        recordsHtml += '<strong>' + escapeHtml(r.title) + '</strong>';
+                        if (r.subtitle) recordsHtml += '<br><span style="color:#64748b;font-size:12px;">' + escapeHtml(r.subtitle) + '</span>';
+                        recordsHtml += '</div>';
+                    });
+                    if (data.has_more) {
+                        recordsHtml += '<div style="padding:8px 0;text-align:center;color:#64748b;font-style:italic;">...and ' + (data.total - 20) + ' more records</div>';
                     }
+                    recordsHtml += '</div>';
+
+                    Swal.fire({
+                        title: 'Delete ' + data.total + ' ' + data.label + '?',
+                        html: '<p style="text-align:left;margin-bottom:10px;font-size:13px;color:#64748b;">The following records will be deleted:</p>' + recordsHtml +
+                              '<p style="text-align:left;margin-top:10px;font-size:12px;color:#ef4444;">⚠️ This action cannot be undone.</p>',
+                        icon: 'warning',
+                        showCancelButton: true,
+                        confirmButtonColor: '#dc2626',
+                        cancelButtonColor: '#64748b',
+                        confirmButtonText: 'Yes, delete them!',
+                        cancelButtonText: 'Cancel',
+                        showLoaderOnConfirm: true,
+                        preConfirm: () => {
+                            return fetch('{{ route('admin.batches.dependencies.delete', ['batch' => 'BATCH_ID', 'type' => 'TYPE_ID']) }}'.replace('BATCH_ID', batchDeleteId).replace('TYPE_ID', type), {
+                                method: 'DELETE',
+                                headers: { 'X-CSRF-TOKEN': '{{ csrf_token() }}' }
+                            })
+                            .then(res => {
+                                if (!res.ok) throw new Error('Request failed');
+                                return res.json();
+                            })
+                            .then(result => {
+                                if (!result.success) throw new Error('Delete failed');
+                                return result;
+                            })
+                            .catch(error => {
+                                Swal.showValidationMessage('Failed: ' + error.message);
+                            });
+                        }
+                    }).then((result) => {
+                        if (result.isConfirmed) {
+                            const checkbox = row.querySelector('.material-symbols-outlined');
+                            checkbox.textContent = 'check_circle';
+                            checkbox.className = 'material-symbols-outlined text-green-600';
+                            row.className = 'flex items-center justify-between p-3 rounded-lg border border-green-200 bg-green-50 dark:border-green-800 dark:bg-green-900/20';
+                            const labelDiv = row.querySelector('.text-xs');
+                            labelDiv.textContent = 'Cleared (' + data.total + ' deleted)';
+                            labelDiv.className = 'text-xs text-green-600 mt-0.5 ml-6';
+                            btn.className = 'px-3 py-1.5 text-xs font-medium text-green-700 bg-green-100 dark:text-green-300 dark:bg-green-900/40 rounded-lg cursor-default';
+                            btn.textContent = 'Done';
+                            btn.disabled = true;
+
+                            const remaining = document.querySelectorAll('#dependencies-list .flex.items-center.justify-between .bg-red-600');
+                            if (remaining.length === 0) {
+                                const deleteBtn = document.getElementById('confirm-batch-delete-btn');
+                                deleteBtn.disabled = false;
+                                deleteBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+                                deleteBtn.classList.add('opacity-100', 'cursor-pointer');
+                            }
+                        }
+                    });
                 })
                 .catch(() => {
                     btn.disabled = false;
                     btn.innerHTML = '<span class="material-symbols-outlined text-[14px]">delete</span> Retry';
                 });
             };
+
+            function escapeHtml(text) {
+                const div = document.createElement('div');
+                div.textContent = text;
+                return div.innerHTML;
+            }
 
             window.submitBatchDelete = function() {
                 if (!batchDeleteId) return;

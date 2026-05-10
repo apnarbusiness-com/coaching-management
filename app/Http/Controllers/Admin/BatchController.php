@@ -327,6 +327,84 @@ class BatchController extends Controller
         ]);
     }
 
+    public function dependencyRecords(Batch $batch, $type)
+    {
+        abort_if(Gate::denies('batch_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $limit = 20;
+
+        switch ($type) {
+            case 'enrollments':
+                $studentIds = DB::table('batch_student_basic_info')->where('batch_id', $batch->id)->pluck('student_basic_info_id');
+                $students = StudentBasicInfo::whereIn('id', $studentIds)->select('id', 'id_no', 'first_name', 'last_name')->limit($limit)->get();
+                $records = $students->map(fn($s) => ['title' => trim($s->first_name . ' ' . $s->last_name), 'subtitle' => $s->id_no ? 'ID: ' . $s->id_no : '']);
+                break;
+            case 'dues':
+                $dues = StudentMonthlyDue::with('student')->where('batch_id', $batch->id)->limit($limit)->get();
+                $records = $dues->map(fn($d) => ['title' => $d->student ? trim($d->student->first_name . ' ' . $d->student->last_name) : 'Student #' . $d->student_id, 'subtitle' => $d->month . '/' . $d->year . ' | Amount: ' . number_format($d->due_amount, 2)]);
+                break;
+            case 'teachers':
+                $teacherIds = DB::table('batch_teacher')->where('batch_id', $batch->id)->pluck('teacher_id');
+                $teachers = Teacher::whereIn('id', $teacherIds)->select('id', 'name', 'emloyee_code')->limit($limit)->get();
+                $records = $teachers->map(fn($t) => ['title' => $t->name, 'subtitle' => $t->emloyee_code ?? '']);
+                break;
+            case 'subjects':
+                $subjectIds = DB::table('batch_subject')->where('batch_id', $batch->id)->pluck('subject_id');
+                $subjects = Subject::whereIn('id', $subjectIds)->select('id', 'name')->limit($limit)->get();
+                $records = $subjects->map(fn($s) => ['title' => $s->name, 'subtitle' => '']);
+                break;
+            case 'payments':
+                $payments = TeachersPayment::with('teacher')->where('batch_id', $batch->id)->limit($limit)->get();
+                $records = $payments->map(fn($p) => ['title' => $p->teacher->name ?? 'Teacher #' . $p->teacher_id, 'subtitle' => $p->month . '/' . $p->year . ' | Amount: ' . number_format($p->amount, 2)]);
+                break;
+            case 'attendances':
+                $attendances = BatchAttendance::with('student')->where('batch_id', $batch->id)->limit($limit)->get();
+                $records = $attendances->map(fn($a) => ['title' => $a->student ? trim($a->student->first_name . ' ' . $a->student->last_name) : 'Student #' . $a->student_id, 'subtitle' => $a->attendance_date . ' (' . $a->status . ')']);
+                break;
+            case 'earnings':
+                $earnings = Earning::with('student')->where('batch_id', $batch->id)->limit($limit)->get();
+                $records = $earnings->map(fn($e) => ['title' => $e->student ? trim($e->student->first_name . ' ' . $e->student->last_name) : 'Student #' . $e->student_id, 'subtitle' => 'Amount: ' . number_format($e->amount, 2) . ' | ' . ($e->earning_month ? $e->earning_month . '/' . $e->earning_year : '')]);
+                break;
+            case 'expenses':
+                $expenses = Expense::where('batch_id', $batch->id)->limit($limit)->get();
+                $records = $expenses->map(fn($e) => ['title' => $e->title ?? 'Expense', 'subtitle' => 'Amount: ' . number_format($e->amount, 2)]);
+                break;
+            default:
+                return response()->json(['error' => 'Invalid type'], 400);
+        }
+
+        $total = DB::table('batch_student_basic_info')->where('batch_id', $batch->id)->count(); // placeholder, overridden below
+
+        switch ($type) {
+            case 'enrollments': $total = DB::table('batch_student_basic_info')->where('batch_id', $batch->id)->count(); break;
+            case 'dues': $total = StudentMonthlyDue::where('batch_id', $batch->id)->count(); break;
+            case 'teachers': $total = DB::table('batch_teacher')->where('batch_id', $batch->id)->count(); break;
+            case 'subjects': $total = DB::table('batch_subject')->where('batch_id', $batch->id)->count(); break;
+            case 'payments': $total = TeachersPayment::where('batch_id', $batch->id)->count(); break;
+            case 'attendances': $total = BatchAttendance::where('batch_id', $batch->id)->count(); break;
+            case 'earnings': $total = Earning::where('batch_id', $batch->id)->count(); break;
+            case 'expenses': $total = Expense::where('batch_id', $batch->id)->count(); break;
+        }
+
+        $labels = [
+            'enrollments' => 'Student Enrollments',
+            'dues' => 'Student Monthly Dues',
+            'teachers' => 'Teacher Assignments',
+            'subjects' => 'Batch Subjects',
+            'payments' => 'Teacher Payments',
+            'attendances' => 'Batch Attendances',
+            'earnings' => 'Student Earnings',
+            'expenses' => 'Expenses',
+        ];
+
+        return response()->json([
+            'records' => $records,
+            'total' => $total,
+            'label' => $labels[$type] ?? $type,
+            'has_more' => $total > $limit,
+        ]);
+    }
+
     public function deleteDependency(Batch $batch, $type)
     {
         abort_if(Gate::denies('batch_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');

@@ -102,6 +102,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('batches/{batch}/assign-teachers', [BatchController::class, 'storeAssignedTeacher'])->name('batches.assignTeachers.store');
     Route::delete('batches/{batch}/assign-teachers/{teacher}', [BatchController::class, 'removeAssignedTeacher'])->name('batches.assignTeachers.remove');
     Route::get('batches/{batch}/dependencies', [BatchController::class, 'dependencies'])->name('batches.dependencies');
+    Route::get('batches/{batch}/dependencies/{type}/records', [BatchController::class, 'dependencyRecords'])->name('batches.dependencies.records');
     Route::delete('batches/{batch}/dependencies/{type}', [BatchController::class, 'deleteDependency'])->name('batches.dependencies.delete');
     Route::post('batches/{batch}/toggle-status', [BatchController::class, 'toggleStatus'])->name('batches.toggleStatus');
     Route::resource('batches', 'BatchController');
