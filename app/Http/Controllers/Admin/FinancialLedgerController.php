@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\Batch;
+use App\Models\CashBook;
 use App\Models\Earning;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
@@ -124,6 +125,13 @@ class FinancialLedgerController extends Controller
             ]]
             : [];
 
+        // --- Cash Book ---
+
+        $cashBooks = CashBook::where('status', 'active')
+            ->orderBy('title')
+            ->get(['id', 'title', 'amount', 'icon', 'image']);
+        $totalCashInHand = $cashBooks->sum('amount');
+
         $activeBatches = Batch::where('status', 1)->count();
         $totalExpensesCombined = $grandTotalExpense + $grandTotalOtherExpense;
         $netProfit = $grandTotal - $totalExpensesCombined;
@@ -145,6 +153,8 @@ class FinancialLedgerController extends Controller
             'batchOtherExpenses',
             'totalOtherExpensePerMonth',
             'grandTotalOtherExpense',
+            'cashBooks',
+            'totalCashInHand',
             'activeBatches',
             'netProfit',
             'profitMargin',

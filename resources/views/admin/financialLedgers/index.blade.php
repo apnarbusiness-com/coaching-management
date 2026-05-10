@@ -65,8 +65,8 @@
         }
 
         /* .expense-info-btn-cell:hover {
-            background: #991b1b;
-        } */
+                background: #991b1b;
+            } */
 
 
         .earning-info-btn-cell {
@@ -176,8 +176,10 @@
             <!-- Year Filter -->
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800">Financial Ledger</h1>
-                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2" style="min-width: 10%">
-                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()" style="width: 100%">
+                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2"
+                    style="min-width: 10%">
+                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()"
+                        style="width: 100%">
                         @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
                             <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}
                             </option>
@@ -212,9 +214,15 @@
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Other Expenses</span>
-                    <span class="text-2xl font-bold text-orange-600">{{ number_format($grandTotalOtherExpense) }} BDT</span>
+                    <span class="text-2xl font-bold text-orange-600">{{ number_format($grandTotalOtherExpense) }}
+                        BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
                 </div>
+                {{-- <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Cash in Hand</span>
+                    <span class="text-2xl font-bold text-emerald-600">{{ number_format($totalCashInHand) }} BDT</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $cashBooks->count() }} active fund(s)</div>
+                </div> --}}
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
                     <span
@@ -223,6 +231,66 @@
                     <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
                 </div>
             </div>
+
+
+
+
+
+
+            <!-- Cash Book Overview -->
+            <div class="bg-white border-2 border-emerald-700 shadow-lg mt-6">
+                <div class="p-4 bg-emerald-700 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Cash Book</h2>
+                    <a href="{{ route('admin.cash-books.index') }}"
+                        class="text-xs text-white underline opacity-80 hover:opacity-100">Manage →</a>
+                </div>
+                <div class="p-4">
+                    @if ($cashBooks->isNotEmpty())
+                        <div class="grid grid-cols-1 sm:grid-cols-2 md:grid-cols-3 lg:grid-cols-4 gap-4">
+                            @foreach ($cashBooks as $cb)
+                                <div
+                                    class="border border-emerald-200 rounded-lg p-3 flex items-center gap-3 hover:shadow-md transition-shadow">
+                                    <div
+                                        class="w-10 h-10 rounded-full bg-emerald-100 flex items-center justify-center text-emerald-700 text-lg font-bold flex-shrink-0">
+                                        @if ($cb->image)
+                                            <img src="{{ asset('storage/' . $cb->image) }}"
+                                                class="w-10 h-10 rounded-full object-cover">
+                                        @elseif ($cb->icon)
+                                            @php
+                                                $icons = [
+                                                    'wallet' => '👛',
+                                                    'bank' => '🏦',
+                                                    'money' => '💵',
+                                                    'mobile' => '📱',
+                                                    'card' => '💳',
+                                                    'gift' => '🎁',
+                                                    'gold' => '🥇',
+                                                    'dollar' => '💲',
+                                                ];
+                                            @endphp
+                                            {{ $icons[$cb->icon] ?? '💰' }}
+                                        @else
+                                            💰
+                                        @endif
+                                    </div>
+                                    <div class="min-w-0">
+                                        <div class="text-sm font-semibold text-gray-800 truncate">{{ $cb->title }}</div>
+                                        <div class="text-base font-bold text-emerald-700">{{ number_format($cb->amount) }}
+                                            BDT</div>
+                                    </div>
+                                </div>
+                            @endforeach
+                        </div>
+                    @else
+                        <p class="text-gray-500 text-center py-4">No cash book entries yet.</p>
+                    @endif
+                </div>
+            </div>
+
+
+
+
+
 
 
 
@@ -439,6 +507,8 @@
                 </div>
             </div>
 
+
+
             <!-- Expense Drawer -->
             <div class="expense-drawer-overlay" id="expenseDrawerOverlay" onclick="closeExpenseDrawer()"></div>
             <div class="expense-drawer" id="expenseDrawer">
@@ -611,7 +681,8 @@
                             html += '<div class="border rounded-lg p-3 border-orange-300">';
                             html += '<div class="flex justify-between items-center mb-2">';
                             html += '<h4 class="font-bold text-orange-800">' + expense.title + '</h4>';
-                            html += '<span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">' + expense.category + '</span>';
+                            html += '<span class="text-xs bg-orange-100 text-orange-800 px-2 py-1 rounded">' +
+                                expense.category + '</span>';
                             html += '</div>';
                             if (expense.details) {
                                 html += '<p class="text-sm text-gray-600 mb-2">' + expense.details + '</p>';
