@@ -1066,10 +1066,30 @@ class BatchController extends Controller
         }
 
         $grouped = $previousEnrollments->groupBy('batch_id');
+
+        $activeBatchIds = Batch::whereIn('id', $grouped->keys())
+            ->where('status', 1)
+            ->pluck('id')
+            ->toArray();
+
         $enrolledAt = $currentMonthStart->toDateString();
         $totalInserted = 0;
 
         foreach ($grouped as $batchId => $rows) {
+            if (!in_array($batchId, $activeBatchIds)) {
+                continue;
+            }
+
+            $activeStudentIds = StudentBasicInfo::whereIn('id', $rows->pluck('student_basic_info_id'))
+                ->where('status', '1')
+                ->pluck('id')
+                ->toArray();
+
+            $rows = $rows->whereIn('student_basic_info_id', $activeStudentIds);
+            if ($rows->isEmpty()) {
+                continue;
+            }
+
             DB::table('batch_student_basic_info')
                 ->where('batch_id', $batchId)
                 ->whereMonth('enrolled_at', $month)
@@ -1137,6 +1157,31 @@ class BatchController extends Controller
             return response()->json([
                 'success' => false,
                 'message' => 'Previous month has no assigned teachers to copy.',
+                'batches' => [],
+            ]);
+        }
+
+        $batchIds = $previousAssignments->pluck('batch_id')->unique();
+        $teacherIds = $previousAssignments->pluck('teacher_id')->unique();
+
+        $activeBatchIds = Batch::whereIn('id', $batchIds)
+            ->where('status', 1)
+            ->pluck('id')
+            ->toArray();
+
+        $activeTeacherIds = Teacher::whereIn('id', $teacherIds)
+            ->where('status', 1)
+            ->pluck('id')
+            ->toArray();
+
+        $previousAssignments = $previousAssignments->filter(function ($a) use ($activeBatchIds, $activeTeacherIds) {
+            return in_array($a->batch_id, $activeBatchIds) && in_array($a->teacher_id, $activeTeacherIds);
+        });
+
+        if ($previousAssignments->isEmpty()) {
+            return response()->json([
+                'success' => false,
+                'message' => 'No active batches or teachers found from previous month to copy.',
                 'batches' => [],
             ]);
         }
@@ -1248,10 +1293,35 @@ class BatchController extends Controller
                 ->with('error', 'Previous month has no assigned teachers to copy.');
         }
 
+        $batchIds = $previousTeachers->pluck('batch_id')->unique();
+        $teacherIds = $previousTeachers->pluck('teacher_id')->unique();
+
+        $activeBatchIds = Batch::whereIn('id', $batchIds)
+            ->where('status', 1)
+            ->pluck('id')
+            ->toArray();
+
+        $activeTeacherIds = Teacher::whereIn('id', $teacherIds)
+            ->where('status', 1)
+            ->pluck('id')
+            ->toArray();
+
+        $previousTeachers = $previousTeachers->filter(function ($t) use ($activeBatchIds, $activeTeacherIds) {
+            return in_array($t->batch_id, $activeBatchIds) && in_array($t->teacher_id, $activeTeacherIds);
+        });
+
+        if ($previousTeachers->isEmpty()) {
+            if ($request->expectsJson()) {
+                return response()->json(['success' => false, 'message' => 'No active batches or teachers found from previous month to copy.']);
+            }
+
+            return redirect()
+                ->route('admin.batches.index', ['month' => $month, 'year' => $year])
+                ->with('error', 'No active batches or teachers found from previous month to copy.');
+        }
+
         $totalCopied = 0;
         $teacherPaymentsCreated = 0;
-
-        // dd($previousTeachers);
 
         foreach ($previousTeachers as $prevTeacher) {
             $existingAssignment = DB::table('batch_teacher')
