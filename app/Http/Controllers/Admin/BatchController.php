@@ -466,7 +466,7 @@ class BatchController extends Controller
                 $monthlyDues = \App\Models\StudentMonthlyDue::where('batch_id', $ta->batch_id)
                     ->where('month', $ta->month)
                     ->where('year', $ta->year)
-                    ->sum('due_amount');
+                    ->sum('paid_amount');
                 $calculatedSalary = ($monthlyDues * $ta->salary_amount) / 100;
             } else {
                 $calculatedSalary = $ta->salary_amount;

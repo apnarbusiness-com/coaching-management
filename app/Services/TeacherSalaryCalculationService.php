@@ -52,15 +52,10 @@ class TeacherSalaryCalculationService
 
     public function getBatchRevenue(int $batchId, int $month, int $year): float
     {
-        $monthlyDues = StudentMonthlyDue::where('batch_id', $batchId)
+        $totalRevenue = (float) StudentMonthlyDue::where('batch_id', $batchId)
             ->where('month', $month)
             ->where('year', $year)
-            ->get();
-
-        $totalRevenue = 0;
-        foreach ($monthlyDues as $due) {
-            $totalRevenue += (float) $due->due_amount;
-        }
+            ->sum('paid_amount');
 
         return $totalRevenue;
     }
