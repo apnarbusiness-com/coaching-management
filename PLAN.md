@@ -50,7 +50,7 @@ Converts existing `fixed` → `monthly_fixed`, `variable` → `batch_wise`.
 
 ---
 
-## [ ] Step 5: Batch Assignment View
+## [X] Step 5: Batch Assignment View
 
 ### `resources/views/admin/batches/assign_teachers.blade.php`
 - Add data attributes to teacher `<option>`: `data-salary-type`, `data-salary-amount`
@@ -59,7 +59,7 @@ Converts existing `fixed` → `monthly_fixed`, `variable` → `batch_wise`.
 
 ---
 
-## [ ] Step 6: BatchController@storeAssignedTeacher
+## [x] Step 6: BatchController@storeAssignedTeacher
 
 - If teacher is `monthly_fixed`:
   - Store batch_teacher pivot with `salary_amount = 0`, `salary_amount_type = 'fixed'`
@@ -68,7 +68,7 @@ Converts existing `fixed` → `monthly_fixed`, `variable` → `batch_wise`.
 
 ---
 
-## [ ] Step 7: TeacherSalaryCalculationService
+## [x] Step 7: TeacherSalaryCalculationService
 
 ### `calculateMonthlySalary()` — FIX double-addition bug:
 - `monthly_fixed` → return `teacher->salary_amount` only (ignore batch_teacher pivot)
@@ -84,7 +84,7 @@ Converts existing `fixed` → `monthly_fixed`, `variable` → `batch_wise`.
 
 ---
 
-## [ ] Step 8: BatchController@calculateAndCreateTeacherPayment
+## [x] Step 8: BatchController@calculateAndCreateTeacherPayment
 
 - `monthly_fixed` → payment with `amount = teacher->salary_amount`
 - `batch_wise` → keep existing logic
@@ -109,8 +109,8 @@ Manually edit each teacher via Admin UI:
 | 2. Migration (convert data) | ✅ Done |
 | 3. Request validation | ✅ Done |
 | 4. Teacher create/edit views | ✅ Done |
-| 5. Batch assign_teachers view | ⬜ Pending |
-| 6. BatchController@storeAssignedTeacher | ⬜ Pending |
-| 7. TeacherSalaryCalculationService | ⬜ Pending |
-| 8. BatchController@calculateAndCreateTeacherPayment | ⬜ Pending |
+| 5. Batch assign_teachers view | ✅ Done |
+| 6. BatchController@storeAssignedTeacher | ✅ Done |
+| 7. TeacherSalaryCalculationService | ✅ Done |
+| 8. BatchController@calculateAndCreateTeacherPayment | ✅ Done |
 | 9. Manual teacher profile updates | ⬜ Pending |

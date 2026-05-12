@@ -13,13 +13,13 @@ class TeacherSalaryCalculationService
     public function calculateMonthlySalary(int $teacherId, int $month, int $year): float
     {
         $teacher = Teacher::findOrFail($teacherId);
-        $totalSalary = 0;
 
-        if ($teacher->salary_type === 'fixed' && $teacher->salary_amount > 0) {
-            $totalSalary += (float) $teacher->salary_amount;
+        if ($teacher->salary_type === 'monthly_fixed') {
+            return (float) $teacher->salary_amount;
         }
 
-        // Get batch assignments for this specific month/year
+        // batch_wise: sum all batch_teacher assignment salaries
+        $totalSalary = 0;
         $batchTeachers = DB::table('batch_teacher')
             ->where('teacher_id', $teacherId)
             ->where('month', $month)
@@ -95,12 +95,14 @@ class TeacherSalaryCalculationService
             'total' => 0,
         ];
 
-        if ($teacher->salary_type === 'fixed' && $teacher->salary_amount > 0) {
+        if ($teacher->salary_type === 'monthly_fixed') {
             $breakdown['fixed_salary'] = (float) $teacher->salary_amount;
             $breakdown['total'] += $breakdown['fixed_salary'];
+
+            return $breakdown;
         }
 
-        // Get batch assignments for this specific month/year
+        // batch_wise: sum batch assignment salaries
         $batchTeachers = DB::table('batch_teacher')
             ->where('teacher_id', $teacherId)
             ->where('month', $month)
@@ -164,6 +166,10 @@ class TeacherSalaryCalculationService
                 continue;
             }
 
+            if ($teacher->salary_type === 'monthly_fixed') {
+                continue;
+            }
+
             if ($bt->salary_amount_type === 'fixed') {
                 $this->createOrUpdateTeacherPayment($bt->teacher_id, $month, $year);
             } else {
@@ -184,6 +190,10 @@ class TeacherSalaryCalculationService
         foreach ($batchTeachers as $bt) {
             $teacher = Teacher::find($bt->teacher_id);
             if (! $teacher) {
+                continue;
+            }
+
+            if ($teacher->salary_type === 'monthly_fixed') {
                 continue;
             }
 
@@ -249,7 +259,11 @@ class TeacherSalaryCalculationService
             ->where('year', $year)
             ->first();
 
-        $salary = $this->calculateMonthlySalary($teacherId, $month, $year);
+        if ($teacher->salary_type === 'monthly_fixed') {
+            $salary = (float) $teacher->salary_amount;
+        } else {
+            $salary = $this->calculateMonthlySalary($teacherId, $month, $year);
+        }
 
         if ($existingPayment) {
             $existingPayment->update([

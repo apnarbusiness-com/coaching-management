@@ -91,7 +91,11 @@
                                 required>
                                 <option disabled selected value="">Search by name</option>
                                 @foreach ($teachers as $teacher)
-                                    <option value="{{ $teacher->id }}">{{ $teacher->name }} ({{ $teacher->emloyee_code }})</option>
+                                    <option value="{{ $teacher->id }}"
+                                        data-salary-type="{{ $teacher->salary_type }}"
+                                        data-salary-amount="{{ $teacher->salary_amount }}">
+                                        {{ $teacher->name }} ({{ $teacher->emloyee_code }})
+                                    </option>
                                 @endforeach
                             </select>
                         </div>
@@ -106,22 +110,33 @@
                         <h3 class="text-sm font-semibold uppercase tracking-wider text-slate-500 dark:text-slate-400">Assignment Details</h3>
                     </div>
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-                        <div class="flex flex-col gap-1.5">
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Salary Amount</label>
-                            <div class="relative">
-                                <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
-                                <input name="salary_amount" required
-                                    class="w-full pl-8 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
-                                    placeholder="0.00" type="number" step="0.01" min="0" />
+                        <div id="batch_salary_fields" class="contents">
+                            <div class="flex flex-col gap-1.5">
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Salary Amount</label>
+                                <div class="relative">
+                                    <span class="absolute left-4 top-1/2 -translate-y-1/2 text-slate-400 font-medium">$</span>
+                                    <input name="salary_amount"
+                                        class="w-full pl-8 pr-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none"
+                                        placeholder="0.00" type="number" step="0.01" min="0" />
+                                </div>
+                            </div>
+                            <div class="flex flex-col gap-1.5">
+                                <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Salary Amount Type</label>
+                                <select name="salary_amount_type"
+                                    class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none appearance-none">
+                                    <option value="fixed">Fixed Amount</option>
+                                    <option value="percentage">Percentage (%)</option>
+                                </select>
                             </div>
                         </div>
-                        <div class="flex flex-col gap-1.5">
-                            <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Salary Amount Type</label>
-                            <select name="salary_amount_type"
-                                class="w-full px-4 py-3 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary focus:border-transparent transition-all outline-none appearance-none">
-                                <option value="fixed">Fixed Amount</option>
-                                <option value="percentage">Percentage (%)</option>
-                            </select>
+                        <div id="monthly_fixed_badge" class="hidden col-span-2">
+                            <div class="flex items-center gap-3 p-4 bg-blue-50 dark:bg-blue-900/20 border border-blue-200 dark:border-blue-800 rounded-lg">
+                                <span class="material-symbols-outlined text-blue-600 dark:text-blue-400">info</span>
+                                <div>
+                                    <p class="text-sm font-medium text-blue-800 dark:text-blue-300">Monthly Fixed Salary</p>
+                                    <p class="text-xs text-blue-600 dark:text-blue-400">This teacher has a monthly fixed salary. No batch-level salary needed.</p>
+                                </div>
+                            </div>
                         </div>
                         <div class="flex flex-col gap-1.5">
                             <label class="block text-xs font-medium text-slate-500 dark:text-slate-400 ml-1">Role</label>
@@ -220,5 +235,30 @@
 
 @section('scripts')
     @parent
-    <script></script>
+    <script>
+        $(document).ready(function () {
+            const $teacherSelect = $('select[name="teacher_id"]');
+            const $batchSalaryFields = $('#batch_salary_fields');
+            const $monthlyFixedBadge = $('#monthly_fixed_badge');
+            const $salaryAmountInput = $('input[name="salary_amount"]');
+
+            function toggleSalaryFields() {
+                const selected = $teacherSelect.find('option:selected');
+                const salaryType = selected.data('salary-type');
+
+                if (salaryType === 'monthly_fixed') {
+                    $batchSalaryFields.hide();
+                    $monthlyFixedBadge.removeClass('hidden');
+                    $salaryAmountInput.prop('required', false);
+                } else {
+                    $batchSalaryFields.show();
+                    $monthlyFixedBadge.addClass('hidden');
+                    $salaryAmountInput.prop('required', true);
+                }
+            }
+
+            $teacherSelect.on('change', toggleSalaryFields);
+            toggleSalaryFields();
+        });
+    </script>
 @endsection
