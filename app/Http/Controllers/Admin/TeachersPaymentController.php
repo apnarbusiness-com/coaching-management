@@ -6,12 +6,14 @@ use App\Http\Controllers\Controller;
 use App\Http\Requests\MassDestroyTeachersPaymentRequest;
 use App\Http\Requests\StoreTeachersPaymentRequest;
 use App\Http\Requests\UpdateTeachersPaymentRequest;
+use App\Models\Batch;
 use App\Models\Teacher;
 use App\Models\TeacherPaymentTransaction;
 use App\Models\TeachersPayment;
 use App\Models\Expense;
 use App\Services\TeacherSalaryCalculationService;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 
@@ -209,6 +211,94 @@ class TeachersPaymentController extends Controller
             'salary' => $salary,
             'breakdown' => $breakdown,
         ]);
+    }
+
+    public function recalculate(Request $request)
+    {
+        abort_if(Gate::denies('teachers_payment_create'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $request->validate([
+            'month' => ['required', 'integer', 'min:1', 'max:12'],
+            'year' => ['required', 'integer', 'min:2000', 'max:2100'],
+        ]);
+
+        $month = (int) $request->month;
+        $year = (int) $request->year;
+
+        $query = TeachersPayment::where('month', $month)
+            ->where('year', $year)
+            ->whereDoesntHave('transactions');
+
+        if ($request->filled('teacher_id')) {
+            $query->where('teacher_id', $request->teacher_id);
+        }
+
+        if ($request->filled('batch_id')) {
+            $query->where('batch_id', $request->batch_id);
+        }
+
+        $payments = $query->get();
+
+        $updated = 0;
+        foreach ($payments as $payment) {
+            $teacher = Teacher::find($payment->teacher_id);
+            if (! $teacher) {
+                continue;
+            }
+
+            if ($payment->batch_id) {
+                $batchTeacherAssignment = DB::table('batch_teacher')
+                    ->where('batch_id', $payment->batch_id)
+                    ->where('teacher_id', $payment->teacher_id)
+                    ->where('month', $month)
+                    ->where('year', $year)
+                    ->first();
+
+                if (! $batchTeacherAssignment) {
+                    continue;
+                }
+
+                $batch = Batch::find($payment->batch_id);
+                if (! $batch) {
+                    continue;
+                }
+
+                $newAmount = $this->salaryService->calculateBatchTeacherSalary(
+                    $batch,
+                    $month,
+                    $year,
+                    $batchTeacherAssignment->salary_amount ?? 0,
+                    $batchTeacherAssignment->salary_amount_type ?? 'fixed'
+                );
+            } else {
+                $newAmount = $this->salaryService->calculateMonthlySalary($payment->teacher_id, $month, $year);
+            }
+
+            if ($newAmount <= 0) {
+                continue;
+            }
+
+            if ((float) $payment->amount !== $newAmount) {
+                $payment->update([
+                    'amount' => $newAmount,
+                    'payment_details' => json_encode([
+                        'salary_type' => $teacher->salary_type,
+                        'calculated_from' => 'recalculate',
+                        'recalculated_at' => now()->toDateTimeString(),
+                    ]),
+                ]);
+                $updated++;
+            }
+        }
+
+        return redirect()
+            ->route('admin.teachers-payments.index', [
+                'month' => $month,
+                'year' => $year,
+                'teacher_id' => $request->teacher_id,
+                'batch_id' => $request->batch_id,
+            ])
+            ->with('status', "Recalculated {$updated} unpaid salary records for {$month}/{$year}.");
     }
 
     public function storeTransaction(Request $request, TeachersPayment $teachersPayment)

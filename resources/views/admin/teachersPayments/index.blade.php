@@ -88,6 +88,10 @@
                             Clear
                         </a>
                     @endif
+                    <button type="button" onclick="confirmRecalculate()"
+                        class="px-3 py-1.5 bg-amber-500 hover:bg-amber-600 text-white rounded-lg text-sm font-medium">
+                        Recalculate Unpaid
+                    </button>
                 </form>
             </div>
         </div>
@@ -287,5 +291,22 @@
             });
 
         })
+
+        function confirmRecalculate() {
+            const month = $('select[name="month"]').val() || {{ $currentMonth }};
+            const year = $('select[name="year"]').val() || {{ $currentYear }};
+            const teacherId = $('select[name="teacher_id"]').val() || '';
+            const batchId = $('select[name="batch_id"]').val() || '';
+            if (!confirm('Recalculate all unpaid salaries for ' + month + '/' + year + '? Only unpaid records will be updated.')) return;
+            const form = $('<form method="POST" action="{{ route('admin.teachers-payments.recalculate') }}">' +
+                '<input type="hidden" name="_token" value="{{ csrf_token() }}">' +
+                '<input type="hidden" name="month" value="' + month + '">' +
+                '<input type="hidden" name="year" value="' + year + '">' +
+                (teacherId ? '<input type="hidden" name="teacher_id" value="' + teacherId + '">' : '') +
+                (batchId ? '<input type="hidden" name="batch_id" value="' + batchId + '">' : '') +
+                '</form>');
+            $('body').append(form);
+            form.submit();
+        }
     </script>
 @endsection
