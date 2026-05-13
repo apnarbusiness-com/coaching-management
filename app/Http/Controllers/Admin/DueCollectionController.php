@@ -15,6 +15,7 @@ use App\Models\StudentDetailsInformation;
 use App\Models\StudentFlag;
 use App\Models\StudentMonthlyDue;
 use App\Services\DueCalculationService;
+use App\Services\TeacherSalaryCalculationService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
@@ -25,10 +26,12 @@ use Yajra\DataTables\Facades\DataTables;
 class DueCollectionController extends Controller
 {
     protected $dueService;
+    protected $salaryService;
 
-    public function __construct(DueCalculationService $dueService)
+    public function __construct(DueCalculationService $dueService, TeacherSalaryCalculationService $salaryService)
     {
         $this->dueService = $dueService;
+        $this->salaryService = $salaryService;
     }
 
     public function index(Request $request)
@@ -240,6 +243,8 @@ class DueCollectionController extends Controller
             'earning_reference' => $receiptNumber,
         ]);
 
+        $this->salaryService->recalculatePercentageSalaries($due->batch_id, $due->month, $due->year);
+
         return response()->json(['success' => true, 'message' => 'Payment recorded successfully']);
     }
 
@@ -332,6 +337,7 @@ class DueCollectionController extends Controller
         $remainingAmount = $totalAmount;
         $paidDues = [];
         $createdEarnings = [];
+        $recalculatedBatches = [];
 
         foreach ($dues as $due) {
             if ($remainingAmount <= 0) {
@@ -391,6 +397,12 @@ class DueCollectionController extends Controller
 
             $createdEarnings[] = $earning->id;
             $remainingAmount -= $payAmount;
+
+            $recalcKey = $due->batch_id . '-' . $due->month . '-' . $due->year;
+            if (!in_array($recalcKey, $recalculatedBatches)) {
+                $this->salaryService->recalculatePercentageSalaries($due->batch_id, $due->month, $due->year);
+                $recalculatedBatches[] = $recalcKey;
+            }
         }
 
         return response()->json([
