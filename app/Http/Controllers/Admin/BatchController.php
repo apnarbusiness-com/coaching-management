@@ -466,7 +466,7 @@ class BatchController extends Controller
                 $monthlyDues = \App\Models\StudentMonthlyDue::where('batch_id', $ta->batch_id)
                     ->where('month', $ta->month)
                     ->where('year', $ta->year)
-                    ->sum('due_amount');
+                    ->sum('paid_amount');
                 $calculatedSalary = ($monthlyDues * $ta->salary_amount) / 100;
             } else {
                 $calculatedSalary = $ta->salary_amount;
@@ -1392,13 +1392,17 @@ class BatchController extends Controller
             return false;
         }
 
-        $salary = $this->salaryService->calculateBatchTeacherSalary(
-            $batch,
-            $month,
-            $year,
-            $batchTeacherAssignment->salary_amount ?? 0,
-            $batchTeacherAssignment->salary_amount_type ?? 'fixed'
-        );
+        if ($teacher->salary_type === 'monthly_fixed') {
+            $salary = (float) $teacher->salary_amount;
+        } else {
+            $salary = $this->salaryService->calculateBatchTeacherSalary(
+                $batch,
+                $month,
+                $year,
+                $batchTeacherAssignment->salary_amount ?? 0,
+                $batchTeacherAssignment->salary_amount_type ?? 'fixed'
+            );
+        }
 
         $existingPayment = TeachersPayment::where('teacher_id', $teacherId)
             ->where('batch_id', $batchId)
@@ -1474,12 +1478,19 @@ class BatchController extends Controller
 
         $data = $request->validate([
             'teacher_id' => ['required', 'integer', 'exists:teachers,id'],
-            'salary_amount' => ['required', 'numeric', 'min:0'],
-            'salary_amount_type' => ['required', 'string', 'in:fixed,percentage'],
+            'salary_amount' => ['nullable', 'numeric', 'min:0'],
+            'salary_amount_type' => ['nullable', 'string', 'in:fixed,percentage'],
             'role' => ['nullable', 'string', 'in:primary,assistant'],
             'month' => ['required', 'integer', 'min:1', 'max:12'],
             'year' => ['required', 'integer', 'min:2000', 'max:2100'],
         ]);
+
+        $teacher = Teacher::findOrFail($data['teacher_id']);
+
+        if ($teacher->salary_type === 'monthly_fixed') {
+            $data['salary_amount'] = 0;
+            $data['salary_amount_type'] = 'fixed';
+        }
 
         // Check if assignment exists for this month/year
         $exists = DB::table('batch_teacher')

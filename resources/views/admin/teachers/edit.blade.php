@@ -210,8 +210,7 @@
                             </div>
                         </div>
                         <div>
-                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Salary
-                                Type</label>
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Salary Calculation Type</label>
                             <select name="salary_type" id="salary_type"
                                 class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary {{ $errors->has('salary_type') ? 'ring-2 ring-red-500' : '' }}">
                                 @foreach(App\Models\Teacher::SALARY_TYPE_SELECT as $key => $label)
@@ -223,9 +222,8 @@
                                 <p class="mt-1 text-xs text-red-500">{{ $errors->first('salary_type') }}</p>
                             @endif
                         </div>
-                        <div>
-                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Base
-                                Salary / Rate</label>
+                        <div id="salary_amount_wrapper">
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Monthly Salary Amount</label>
                             <div class="relative">
                                 <span
                                     class="absolute left-4 top-1/2 -translate-y-1/2 text-text-secondary symbol-of-tk">৳</span>
@@ -234,21 +232,10 @@
                                     placeholder="0.00" type="number" step="0.01"
                                     value="{{ old('salary_amount', $teacher->salary_amount) }}" />
                             </div>
+                            <p class="mt-1 text-xs text-text-secondary">Set the fixed monthly salary for this teacher.</p>
                             @if($errors->has('salary_amount'))
                                 <p class="mt-1 text-xs text-red-500">{{ $errors->first('salary_amount') }}</p>
                             @endif
-                        </div>
-                        <div>
-                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Salary Amount Type</label>
-                            <select name="salary_amount_type" id="salary_amount_type"
-                                class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary {{ $errors->has('salary_amount_type') ? 'ring-2 ring-red-500' : '' }}">
-                                @foreach(App\Models\Teacher::SALARY_AMOUNT_TYPE_SELECT as $key => $label)
-                                    <option value="{{ $key }}" {{ old('salary_amount_type', $teacher->salary_amount_type ?? 'fixed') == $key ? 'selected' : '' }}>
-                                        {{ $label }}
-                                    </option>
-                                @endforeach
-                            </select>
-                            <p class="mt-1 text-[10px] text-text-secondary">Used when salary_type is 'fixed'</p>
                         </div>
                     </div>
                 </div>
@@ -467,6 +454,18 @@
                     if (label) label.textContent = '';
                 }
             });
+
+            // Salary Type Toggle
+            function toggleSalaryAmount() {
+                const val = $('#salary_type').val();
+                if (val === 'monthly_fixed') {
+                    $('#salary_amount_wrapper').show();
+                } else {
+                    $('#salary_amount_wrapper').hide();
+                }
+            }
+            toggleSalaryAmount();
+            $('#salary_type').on('change', toggleSalaryAmount);
 
             // Photo Upload Logic
             const fileUpload = document.getElementById('file-upload');

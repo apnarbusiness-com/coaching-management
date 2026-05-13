@@ -30,8 +30,8 @@ class Teacher extends Model implements HasMedia
     ];
 
     public const SALARY_TYPE_SELECT = [
-        'fixed' => 'fixed',
-        'variable' => 'variable',
+        'monthly_fixed' => 'Monthly Fixed',
+        'batch_wise' => 'Batch Wise',
     ];
 
     public const SALARY_AMOUNT_TYPE_SELECT = [

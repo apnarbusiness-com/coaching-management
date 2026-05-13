@@ -65,8 +65,16 @@ class StoreTeacherRequest extends FormRequest
                 'string',
                 'required',
             ],
+            'salary_type' => [
+                'required',
+                'string',
+                'in:monthly_fixed,batch_wise',
+            ],
             'salary_amount' => [
                 'nullable',
+                'numeric',
+                'min:0',
+                'required_if:salary_type,monthly_fixed',
             ],
             'subjects.*' => [
                 'integer',

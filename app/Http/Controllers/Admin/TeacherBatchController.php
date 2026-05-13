@@ -33,7 +33,7 @@ class TeacherBatchController extends Controller
             ->where('batch_id', $batchId)
             ->where('month', $month)
             ->where('year', $year)
-            ->sum('due_amount');
+            ->sum('paid_amount');
 
         return $totalExpected;
     }
