@@ -644,6 +644,20 @@ class DueCollectionController extends Controller
             ];
         })->values();
 
+        $generalComment = DB::table('student_flag_assignments')
+            ->where('student_basic_info_id', $studentId)
+            ->whereNull('student_flag_id')
+            ->first();
+
+        if ($generalComment?->comment) {
+            $flagData->push([
+                'id' => null,
+                'name' => 'General Comment',
+                'color' => '#6c757d',
+                'comment' => $generalComment->comment,
+            ]);
+        }
+
         return response()->json([
             'student' => [
                 'id' => $student->id,

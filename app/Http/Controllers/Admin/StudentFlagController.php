@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentFlag;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
 use Symfony\Component\HttpFoundation\Response;
 use Yajra\DataTables\Facades\DataTables;
@@ -103,19 +104,49 @@ class StudentFlagController extends Controller
 
         $request->validate([
             'student_id' => 'required|exists:student_basic_infos,id',
-            'flag_id' => 'required|exists:student_flags,id',
+            'flag_id' => 'nullable|exists:student_flags,id',
             'comment' => 'nullable|string',
         ]);
 
         $student = StudentBasicInfo::findOrFail($request->student_id);
-        $flag = StudentFlag::findOrFail($request->flag_id);
 
-        $student->flags()->syncWithoutDetaching([
-            $flag->id => [
-                'comment' => $request->comment,
-                'created_by_id' => auth()->id(),
-            ]
-        ]);
+        if ($request->flag_id) {
+            $flag = StudentFlag::findOrFail($request->flag_id);
+
+            if ($student->flags()->where('student_flag_id', $flag->id)->exists()) {
+                $student->flags()->updateExistingPivot($flag->id, [
+                    'comment' => $request->comment,
+                ]);
+            } else {
+                $student->flags()->attach($flag->id, [
+                    'comment' => $request->comment,
+                    'created_by_id' => auth()->id(),
+                ]);
+            }
+        } else {
+            $existing = DB::table('student_flag_assignments')
+                ->where('student_basic_info_id', $student->id)
+                ->whereNull('student_flag_id')
+                ->first();
+
+            if ($existing) {
+                DB::table('student_flag_assignments')
+                    ->where('id', $existing->id)
+                    ->update([
+                        'comment' => $request->comment,
+                        'updated_at' => now(),
+                    ]);
+            } else {
+                DB::table('student_flag_assignments')->insert([
+                    'student_flag_id' => null,
+                    'student_basic_info_id' => $student->id,
+                    'comment' => $request->comment,
+                    'created_by_id' => auth()->id(),
+                    'created_at' => now(),
+                    'updated_at' => now(),
+                ]);
+            }
+        }
 
         return response()->json(['success' => true, 'message' => 'Flag assigned successfully']);
     }
@@ -126,11 +157,19 @@ class StudentFlagController extends Controller
 
         $request->validate([
             'student_id' => 'required|exists:student_basic_infos,id',
-            'flag_id' => 'required|exists:student_flags,id',
+            'flag_id' => 'nullable|exists:student_flags,id',
         ]);
 
         $student = StudentBasicInfo::findOrFail($request->student_id);
-        $student->flags()->detach($request->flag_id);
+
+        if ($request->flag_id) {
+            $student->flags()->detach($request->flag_id);
+        } else {
+            DB::table('student_flag_assignments')
+                ->where('student_basic_info_id', $student->id)
+                ->whereNull('student_flag_id')
+                ->delete();
+        }
 
         return response()->json(['success' => true, 'message' => 'Flag removed successfully']);
     }

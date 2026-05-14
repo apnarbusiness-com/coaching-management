@@ -1407,6 +1407,12 @@ $(document).on('click', '.search-result-item', function() {
                 });
             });
 
+            const existingComments = currentStudentFlags
+                .map(function(f) { return f.comment; })
+                .filter(function(c) { return c && c.trim(); })
+                .join('\n---\n');
+            $('#flagComment').val(existingComments);
+
             renderCurrentFlags(currentStudentFlags);
             $('#flagModal').modal('show');
         }
@@ -1430,9 +1436,7 @@ $(document).on('click', '.search-result-item', function() {
                         <strong>${flag.name}</strong>
                         ${flag.comment ? '<br><small class="text-muted">' + flag.comment + '</small>' : ''}
                     </div>
-                    <button type="button" class="btn btn-xs btn-danger" onclick="removeFlag(${flag.id})">
-                        <i class="fa fa-times"></i>
-                    </button>
+                    <button type="button" class="btn btn-xs btn-danger" onclick="removeFlag(${flag.id})"><i class="fa fa-times"></i></button>
                 </div>
             `);
 
@@ -1455,15 +1459,10 @@ $(document).on('click', '.search-result-item', function() {
             const flagId = $('#selectedFlag').val();
             const comment = $('#flagComment').val();
 
-            if (!flagId) {
-                alert('Please select a flag');
-                return;
-            }
-
             $.post("{{ route('admin.student-flags.assign') }}", {
                 _token: '{{ csrf_token() }}',
                 student_id: studentId,
-                flag_id: flagId,
+                flag_id: flagId || null,
                 comment: comment
             }, function(response) {
                 $('#flagComment').val('');
