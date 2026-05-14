@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\Batch;
 use App\Models\CashBook;
 use App\Models\Earning;
+use App\Models\EarningCategory;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\StudentBasicInfo;
@@ -65,6 +66,18 @@ class FinancialLedgerController extends Controller
                 ->sum('amount');
             $totalPerMonth[$m] = $amount;
             $grandTotal += $amount;
+        }
+
+        // --- Extra Earnings (non-batch) ---
+        $extraEarningPerMonth = [];
+        $grandTotalExtraEarning = 0;
+        for ($m = 1; $m <= 12; $m++) {
+            $amount = Earning::whereYear('earning_date', $year)
+                ->whereMonth('earning_date', $m)
+                ->whereNull('batch_id')
+                ->sum('amount');
+            $extraEarningPerMonth[$m] = $amount;
+            $grandTotalExtraEarning += $amount;
         }
 
         // --- Teacher Salary Expenses ---
@@ -149,6 +162,8 @@ class FinancialLedgerController extends Controller
             'batchEarnings',
             'totalPerMonth',
             'grandTotal',
+            'extraEarningPerMonth',
+            'grandTotalExtraEarning',
             'months',
             'year',
             'batchExpenses',
@@ -250,6 +265,40 @@ class FinancialLedgerController extends Controller
             'batch_name' => $batch->batch_name,
             'month' => $month,
             'payments' => $payments
+        ]);
+    }
+
+    public function getExtraEarningDetails(Request $request)
+    {
+        abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $month = $request->input('month');
+        $year = $request->input('year', date('Y'));
+
+        $earnings = Earning::whereNull('batch_id')
+            ->whereYear('earning_date', $year)
+            ->whereMonth('earning_date', $month)
+            ->get();
+
+        $items = [];
+        foreach ($earnings as $earning) {
+            $category = $earning->earning_category_id ? EarningCategory::find($earning->earning_category_id) : null;
+            $student = $earning->student_id ? StudentBasicInfo::find($earning->student_id) : null;
+
+            $items[] = [
+                'id' => $earning->id,
+                'title' => $earning->title ?? 'Untitled',
+                'category' => $category ? $category->name : 'Uncategorized',
+                'student_name' => $student ? trim($student->first_name . ' ' . $student->last_name) : 'N/A',
+                'amount' => (float) $earning->amount,
+                'earning_date' => $earning->earning_date,
+            ];
+        }
+
+        return response()->json([
+            'month' => $month,
+            'year' => $year,
+            'earnings' => $items
         ]);
     }
 

@@ -192,7 +192,7 @@
             </div>
 
             <!-- Cards -->
-            <div class="grid grid-cols-1 md:grid-cols-5 gap-4">
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Earning</span>
                     <span class="text-2xl font-bold text-primary">{{ number_format($grandTotal) }} BDT</span>
@@ -213,6 +213,15 @@
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Filtered: {{ $statusFilter == 'all' ? 'Showing all' : ($statusFilter == 'active' ? 'Active only' : 'Inactive only') }}</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
+                    <span
+                        class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($netProfit) }}
+                        BDT</span>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
+                </div>
+            </div>
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Teacher Salary</span>
                     <span class="text-2xl font-bold text-danger">{{ number_format($grandTotalExpense) }} BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
@@ -222,18 +231,6 @@
                     <span class="text-2xl font-bold text-orange-600">{{ number_format($grandTotalOtherExpense) }}
                         BDT</span>
                     <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
-                </div>
-                {{-- <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Cash in Hand</span>
-                    <span class="text-2xl font-bold text-emerald-600">{{ number_format($totalCashInHand) }} BDT</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $cashBooks->count() }} active fund(s)</div>
-                </div> --}}
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
-                    <span
-                        class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($netProfit) }}
-                        BDT</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
                 </div>
             </div>
 
@@ -368,6 +365,65 @@
                 </div>
             </div>
 
+            <!-- Extra Earning Table -->
+            <div class="bg-white border-2 border-emerald-600 shadow-lg mt-6">
+                <div class="p-4 bg-emerald-600 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Extra Earning - {{ $year }}</h2>
+                    <span class="text-xs text-white opacity-80">Non-batch earnings</span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="excel-table min-w-full" id="extraEarningTable">
+                        <thead>
+                            <tr class="bg-emerald-600">
+                                <th class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-emerald-700 fixed-col fixed-left">
+                                    Source
+                                </th>
+                                @foreach ($months as $month)
+                                    <th class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-emerald-700">
+                                        {{ $month }}
+                                    </th>
+                                @endforeach
+                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">
+                                    Total
+                                </th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-cell-data font-cell-data text-on-surface">
+                            <tr class="bg-white hover:bg-slate-50 text-emerald-900">
+                                <td class="grid-cell px-4 py-1.5 font-bold fixed-col fixed-left">Extra Earnings</td>
+                                @for ($m = 1; $m <= 12; $m++)
+                                    <td class="grid-cell px-4 py-1.5 text-right relative">
+                                        {{ number_format($extraEarningPerMonth[$m] ?? 0) }}
+                                        @if (($extraEarningPerMonth[$m] ?? 0) > 0)
+                                            <button type="button" class="earning-info-btn-cell"
+                                                onclick="loadExtraEarningDetails({{ $m }}, {{ $year }})"
+                                                style="border-color: #059669 !important;">
+                                                <i class="fas fa-info-circle"></i>
+                                            </button>
+                                        @endif
+                                    </td>
+                                @endfor
+                                <td class="grid-cell px-4 py-1.5 text-right bg-emerald-200 font-bold text-black border-l-2 border-emerald-600 fixed-col fixed-right">
+                                    {{ number_format($grandTotalExtraEarning) }}
+                                </td>
+                            </tr>
+                        </tbody>
+                        @if ($grandTotalExtraEarning > 0)
+                        <tfoot>
+                            <tr class="bg-emerald-100 text-emerald-900 font-bold border-t-2 border-emerald-600">
+                                <td class="grid-cell px-4 py-3 text-left text-header-primary font-black uppercase tracking-widest fixed-col fixed-left">
+                                    Total</td>
+                                @for ($m = 1; $m <= 12; $m++)
+                                    <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($extraEarningPerMonth[$m] ?? 0) }}</td>
+                                @endfor
+                                <td class="grid-cell px-4 py-3 text-right bg-emerald-600 text-white text-lg fixed-col fixed-right">
+                                    {{ number_format($grandTotalExtraEarning) }}</td>
+                            </tr>
+                        </tfoot>
+                        @endif
+                    </table>
+                </div>
+            </div>
 
             <!-- Expenses Table -->
             <div class="bg-white border-2 border-red-800 shadow-lg mt-6">
@@ -706,6 +762,64 @@
                         html += '</table></div>';
                     } else {
                         html += '<p class="text-gray-500">No other expenses for this month.</p>';
+                    }
+
+                    html += '</div>';
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+                });
+        }
+
+        // Extra Earning details loader
+        function loadExtraEarningDetails(month, year) {
+            const drawer = document.getElementById('expenseDrawer');
+            const overlay = document.getElementById('expenseDrawerOverlay');
+            const title = document.getElementById('drawerTitle');
+            const content = document.getElementById('drawerContent');
+
+            title.textContent = 'Extra Earning - ' + monthNames[month - 1] + ' ' + year;
+            title.parentElement.style.background = '#059669';
+            content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+
+            fetch("{{ route('admin.financial-ledgers.extra-earning-details') }}?month=" + month + "&year=" + year)
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<div class="space-y-4">';
+
+                    if (data.earnings && data.earnings.length > 0) {
+                        let totalAmount = 0;
+
+                        data.earnings.forEach(earning => {
+                            totalAmount += earning.amount;
+
+                            html += '<div class="border rounded-lg p-3 border-emerald-300">';
+                            html += '<div class="flex justify-between items-center mb-2">';
+                            html += '<h4 class="font-bold text-emerald-800">' + earning.title + '</h4>';
+                            html += '<span class="text-xs bg-emerald-100 text-emerald-800 px-2 py-1 rounded">' +
+                                earning.category + '</span>';
+                            html += '</div>';
+                            html += '<table class="w-full text-sm">';
+                            if (earning.student_name && earning.student_name !== 'N/A') {
+                                html += '<tr><td class="py-1 text-gray-600">Student:</td><td class="py-1 text-right">' +
+                                    earning.student_name + '</td></tr>';
+                            }
+                            html += '<tr class="font-bold"><td class="py-1">Amount:</td><td class="py-1 text-right">' +
+                                earning.amount.toLocaleString() + ' BDT</td></tr>';
+                            html += '</table></div>';
+                        });
+
+                        html += '<div class="border-t-2 border-emerald-600 pt-2 mt-2">';
+                        html += '<table class="w-full text-sm font-bold">';
+                        html += '<tr><td class="py-1">Total:</td><td class="py-1 text-right">' + totalAmount
+                            .toLocaleString() + ' BDT</td></tr>';
+                        html += '</table></div>';
+                    } else {
+                        html += '<p class="text-gray-500">No extra earnings for this month.</p>';
                     }
 
                     html += '</div>';
