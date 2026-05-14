@@ -173,13 +173,16 @@
 @section('content')
     <main class="flex-1 overflow-auto bg-surface-container-low p-4">
         <div class="max-w-6xl mx-auto space-y-6">
-            <!-- Year Filter -->
+            <!-- Filters -->
             <div class="flex justify-between items-center">
                 <h1 class="text-2xl font-bold text-gray-800">Financial Ledger</h1>
-                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2"
-                    style="min-width: 10%">
-                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()"
-                        style="width: 100%">
+                <form action="{{ route('admin.financial-ledgers.index') }}" method="GET" class="flex items-center gap-2">
+                    <select name="status_filter" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()">
+                        <option value="all" {{ $statusFilter == 'all' ? 'selected' : '' }}>All Batches</option>
+                        <option value="active" {{ $statusFilter == 'active' ? 'selected' : '' }}>Active</option>
+                        <option value="inactive" {{ $statusFilter == 'inactive' ? 'selected' : '' }}>Inactive</option>
+                    </select>
+                    <select name="year" class="form-select text-sm border rounded px-2 py-1" onchange="this.form.submit()">
                         @for ($y = date('Y'); $y >= date('Y') - 5; $y--)
                             <option value="{{ $y }}" {{ $y == $year ? 'selected' : '' }}>{{ $y }}
                             </option>
@@ -203,9 +206,11 @@
                     @endif
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Active Batches</span>
+                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">
+                        {{ $statusFilter == 'active' ? 'Active Batches' : ($statusFilter == 'inactive' ? 'Inactive Batches' : 'Total Batches') }}
+                    </span>
                     <span class="text-2xl font-bold text-primary">{{ $activeBatches }}</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Operational status: Stable</div>
+                    <div class="text-[10px] text-slate-400 font-normal mt-1">Filtered: {{ $statusFilter == 'all' ? 'Showing all' : ($statusFilter == 'active' ? 'Active only' : 'Inactive only') }}</div>
                 </div>
                 <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
                     <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Teacher Salary</span>

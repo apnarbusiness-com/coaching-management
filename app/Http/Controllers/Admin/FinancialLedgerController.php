@@ -22,12 +22,16 @@ class FinancialLedgerController extends Controller
         abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $year = $request->input('year', date('Y'));
+        $statusFilter = $request->input('status_filter', 'all');
         $months = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
 
-        $batches = Batch::where('status', 1)
-            ->orderBy('batch_name')
-            ->with(['subject'])
-            ->get();
+        $batchesQuery = Batch::orderBy('batch_name')->with(['subject']);
+        if ($statusFilter === 'active') {
+            $batchesQuery->where('status', 1);
+        } elseif ($statusFilter === 'inactive') {
+            $batchesQuery->where('status', 0);
+        }
+        $batches = $batchesQuery->get();
 
         $batchEarnings = [];
         foreach ($batches as $batch) {
@@ -132,7 +136,7 @@ class FinancialLedgerController extends Controller
             ->get(['id', 'title', 'amount', 'icon', 'image']);
         $totalCashInHand = $cashBooks->sum('amount');
 
-        $activeBatches = Batch::where('status', 1)->count();
+        $activeBatches = $batches->count();
         $totalExpensesCombined = $grandTotalExpense + $grandTotalOtherExpense;
         $netProfit = $grandTotal - $totalExpensesCombined;
         $profitMargin = $grandTotal > 0 ? round(($netProfit / $grandTotal) * 100, 1) : 0;
@@ -158,7 +162,8 @@ class FinancialLedgerController extends Controller
             'activeBatches',
             'netProfit',
             'profitMargin',
-            'percentChange'
+            'percentChange',
+            'statusFilter'
         ));
     }
 
