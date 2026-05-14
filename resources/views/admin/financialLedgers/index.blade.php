@@ -167,6 +167,12 @@
         tfoot .fixed-col {
             background: #d8e0f1;
         }
+
+        .coin-icon {
+            color: #f5b342;
+            text-shadow: 0 2px 4px rgba(0,0,0,0.2), 0 0 10px rgba(245,179,66,0.3);
+            transition: transform 0.2s;
+        }
     </style>
 @endpush
 
@@ -191,51 +197,74 @@
                 </form>
             </div>
 
+            @php
+                $cardAmounts = [$grandTotal, $grandTotalExtraEarning, $grandTotalExpense, $grandTotalOtherExpense, abs($netProfit)];
+                $maxCardAmount = max($cardAmounts);
+            @endphp
             <!-- Cards -->
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">
-                        {{ $statusFilter == 'active' ? 'Active Batches' : ($statusFilter == 'inactive' ? 'Inactive Batches' : 'Total Batches') }}
-                    </span>
-                    <span class="text-2xl font-bold text-primary">{{ $activeBatches }}</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Filtered: {{ $statusFilter == 'all' ? 'Showing all' : ($statusFilter == 'active' ? 'Active only' : 'Inactive only') }}</div>
+                <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">
+                            {{ $statusFilter == 'active' ? 'Active Batches' : ($statusFilter == 'inactive' ? 'Inactive Batches' : 'Total Batches') }}
+                        </span>
+                        <span class="text-2xl font-bold text-primary">{{ $activeBatches }}</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">Filtered: {{ $statusFilter == 'all' ? 'Showing all' : ($statusFilter == 'active' ? 'Active only' : 'Inactive only') }}</div>
+                    </div>
+                    <i class="fas fa-coins coin-icon text-2xl"></i>
                 </div>
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Earning</span>
-                    <span class="text-2xl font-bold text-primary">{{ number_format($grandTotal) }} BDT</span>
-                    @if ($percentChange != 0)
-                        <div
-                            class="text-[10px] {{ $percentChange >= 0 ? 'text-green-600' : 'text-red-600' }} font-bold mt-1">
-                            {{ $percentChange >= 0 ? '▲' : '▼' }} {{ abs($percentChange) }}% from last year
-                        </div>
-                    @else
-                        <div class="text-[10px] text-slate-400 font-normal mt-1">No previous data</div>
-                    @endif
+                <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Total Earning</span>
+                        <span class="text-2xl font-bold text-primary">{{ number_format($grandTotal) }} BDT</span>
+                        @if ($percentChange != 0)
+                            <div class="text-[10px] {{ $percentChange >= 0 ? 'text-green-600' : 'text-red-600' }} font-bold mt-1">
+                                {{ $percentChange >= 0 ? '▲' : '▼' }} {{ abs($percentChange) }}% from last year
+                            </div>
+                        @else
+                            <div class="text-[10px] text-slate-400 font-normal mt-1">No previous data</div>
+                        @endif
+                    </div>
+                    @php $size = 1.5 + (($grandTotal / $maxCardAmount) * 1.5); @endphp
+                    <i class="fas fa-coins coin-icon" style="font-size: {{ $size }}rem"></i>
                 </div>
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Extra Earning</span>
-                    <span class="text-2xl font-bold text-emerald-600">{{ number_format($grandTotalExtraEarning) }} BDT</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Non-batch earnings</div>
+                <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Extra Earning</span>
+                        <span class="text-2xl font-bold text-emerald-600">{{ number_format($grandTotalExtraEarning) }} BDT</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">Non-batch earnings</div>
+                    </div>
+                    @php $size = 1.5 + (($grandTotalExtraEarning / $maxCardAmount) * 1.5); @endphp
+                    <i class="fas fa-coins coin-icon" style="font-size: {{ $size }}rem"></i>
                 </div>
             </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Teacher Salary</span>
-                    <span class="text-2xl font-bold text-danger">{{ number_format($grandTotalExpense) }} BDT</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
+                <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Teacher Salary</span>
+                        <span class="text-2xl font-bold text-danger">{{ number_format($grandTotalExpense) }} BDT</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
+                    </div>
+                    @php $size = 1.5 + (($grandTotalExpense / $maxCardAmount) * 1.5); @endphp
+                    <i class="fas fa-coins coin-icon" style="font-size: {{ $size }}rem"></i>
                 </div>
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Other Expenses</span>
-                    <span class="text-2xl font-bold text-orange-600">{{ number_format($grandTotalOtherExpense) }}
-                        BDT</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
+                <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Other Expenses</span>
+                        <span class="text-2xl font-bold text-orange-600">{{ number_format($grandTotalOtherExpense) }} BDT</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
+                    </div>
+                    @php $size = 1.5 + (($grandTotalOtherExpense / $maxCardAmount) * 1.5); @endphp
+                    <i class="fas fa-coins coin-icon" style="font-size: {{ $size }}rem"></i>
                 </div>
-                <div class="bg-white border border-outline-variant p-4 flex flex-col justify-center">
-                    <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
-                    <span
-                        class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($netProfit) }}
-                        BDT</span>
-                    <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
+                <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Net Profit</span>
+                        <span class="text-2xl font-bold {{ $netProfit >= 0 ? 'text-green-600' : 'text-red-600' }}">{{ number_format($netProfit) }} BDT</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">{{ $profitMargin }}% profit margin</div>
+                    </div>
+                    @php $size = 1.5 + ((abs($netProfit) / $maxCardAmount) * 1.5); @endphp
+                    <i class="fas fa-coins coin-icon" style="font-size: {{ $size }}rem"></i>
                 </div>
             </div>
 
