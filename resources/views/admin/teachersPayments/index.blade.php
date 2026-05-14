@@ -140,11 +140,26 @@
                                 $paidAmount = $teachersPayment->paid_amount;
                                 $remaining = $totalAmount - $paidAmount;
                                 $status = $teachersPayment->payment_status;
-                                $paymentDetails = is_string($teachersPayment->payment_details)
-                                    ? json_decode($teachersPayment->payment_details, true)
-                                    : $teachersPayment->payment_details;
-                                $salaryType = $paymentDetails['salary_type'] ?? 'fixed';
-                                $salaryAmount = $paymentDetails['salary_amount'] ?? 0;
+
+                                $teacher = $teachersPayment->teacher;
+                                if ($teacher && $teacher->salary_type === 'monthly_fixed') {
+                                    $salaryLabel = 'Monthly Fixed';
+                                    $salarySubtext = number_format((float) $teacher->salary_amount, 2);
+                                } else {
+                                    $pivot = $teachersPayment->batch_id ? \Illuminate\Support\Facades\DB::table('batch_teacher')
+                                        ->where('teacher_id', $teachersPayment->teacher_id)
+                                        ->where('batch_id', $teachersPayment->batch_id)
+                                        ->where('month', $teachersPayment->month)
+                                        ->where('year', $teachersPayment->year)
+                                        ->first() : null;
+                                    if ($pivot && $pivot->salary_amount_type === 'percentage') {
+                                        $salaryLabel = 'Percentage';
+                                        $salarySubtext = $pivot->salary_amount . '%';
+                                    } else {
+                                        $salaryLabel = 'Fixed';
+                                        $salarySubtext = number_format((float) ($pivot->salary_amount ?? 0), 2);
+                                    }
+                                }
                             @endphp
                             <tr data-entry-id="{{ $teachersPayment->id }}">
                                 <td>
@@ -160,7 +175,7 @@
                                     {{ $teachersPayment->batch->batch_name ?? '-' }}
                                 </td>
                                 <td>
-                                    {{ ucfirst($salaryType) }} ({{ $salaryAmount }})
+                                    {{ $salaryLabel }}: {{ $salarySubtext }}
                                 </td>
                                 <td>
                                     {{ $teachersPayment->month_year_name ?? '' }}
