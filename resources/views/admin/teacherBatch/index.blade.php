@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Teacher Batch — List')
 @section('content')
     <div class="max-w-7xl mx-auto p-6 flex flex-col gap-6">
         <div class="flex flex-col md:flex-row md:items-center justify-between gap-4">

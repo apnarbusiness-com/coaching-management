@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Student Profile')
 @section('content')
     @php
         $studentName = trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? ''));

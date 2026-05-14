@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batch Attendance — Take Attendance')
 @section('content')
 <style>
     .attendance-shell {

@@ -4,7 +4,7 @@
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<title>{{ trans('panel.site_title') }}</title>
+<title>@yield('title', trans('panel.site_title'))</title>
 
 <link rel="shortcut icon" href="{{ asset('assets/images/logo.svg') }}" type="image/x-icon">
 

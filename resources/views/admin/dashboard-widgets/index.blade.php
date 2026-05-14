@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Dashboard Widgets — List')
 @section('content')
     <div class="card bg-white dark:bg-slate-800 dark:text-white transition-colors duration-300">
         <div class="card-header">

@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Teacher Profile')
 @section('content')
     <main class="flex-1 overflow-y-auto flex flex-col">
         <div class="p-8">

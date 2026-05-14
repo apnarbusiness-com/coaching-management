@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Expenses — Create')
 @section('content')
     <main class="flex-1 overflow-y-auto">
 

@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Change Password')
 @section('content')
     <div class="space-y-6">
         <!-- Page Header -->

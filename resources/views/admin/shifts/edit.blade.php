@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Shifts — Edit')
 @section('content')
     <!-- Scrollable Content Area -->
     <div class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-4 md:p-8" style="margin-top: -2rem">

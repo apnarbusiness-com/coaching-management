@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Students — Parse Import')
 
 @section('content')
     <div class='row'>

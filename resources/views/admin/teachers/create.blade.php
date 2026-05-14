@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Teachers — Create')
 @section('content')
 
     <!-- Page Scroll Container -->

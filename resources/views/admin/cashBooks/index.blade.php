@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Cash Books — List')
 @section('content')
     <style>
         :root {

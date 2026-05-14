@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Earnings — Edit')
 @section('content')
     <main class="flex-1 flex flex-col h-full overflow-hidden bg-slate-50 dark:bg-[#0F172A] relative">
 

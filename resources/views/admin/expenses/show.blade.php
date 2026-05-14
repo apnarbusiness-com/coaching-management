@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Expenses — Details')
 @section('content')
     <div class="mx-auto max-w-6xl px-6 py-8">
         <div class="mb-8">

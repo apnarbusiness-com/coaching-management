@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Earning Categories — Create')
 @section('content')
 
     <div class="flex-1 overflow-y-auto bg-[#f8fafc] dark:bg-[#0f172a] transition-colors duration-300">

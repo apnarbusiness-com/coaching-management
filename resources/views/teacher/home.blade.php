@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Teacher Dashboard')
 
 @section('style')
     <style>

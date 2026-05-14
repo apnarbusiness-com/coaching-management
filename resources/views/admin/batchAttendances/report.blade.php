@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batch Attendance — Report')
 @section('content')
 <style>
     .report-header {

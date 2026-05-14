@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batches — Assign Teachers')
 @section('content')
     <div class="max-w-4xl mx-auto p-6 flex flex-col gap-6">
         @php

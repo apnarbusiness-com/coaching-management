@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Earnings — List')
 @section('content')
     @can('earning_create')
         <div style="margin-bottom: 10px;" class="row">

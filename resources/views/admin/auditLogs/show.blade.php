@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Audit Logs — Details')
 @section('content')
 
 <div class="card">

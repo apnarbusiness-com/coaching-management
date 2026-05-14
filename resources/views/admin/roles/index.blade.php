@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Roles — List')
 @section('content')
 @can('role_create')
     <div style="margin-bottom: 10px;" class="row">

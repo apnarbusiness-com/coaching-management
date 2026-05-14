@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'My Batches')
 @section('content')
     <div class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark">
         <div class="max-w-7xl mx-auto p-6 md:p-8 space-y-8">

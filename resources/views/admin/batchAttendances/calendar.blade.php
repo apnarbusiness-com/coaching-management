@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batch Attendance — Calendar')
 @section('content')
     <style>
         .calendar-wrap {

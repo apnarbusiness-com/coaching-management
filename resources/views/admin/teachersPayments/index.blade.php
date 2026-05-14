@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Teachers Payments — List')
 @section('content')
     @php
         $months = [

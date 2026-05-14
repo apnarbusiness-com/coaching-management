@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Shifts — List')
 @section('content')
 @can('shift_create')
     <div style="margin-bottom: 10px;" class="row">

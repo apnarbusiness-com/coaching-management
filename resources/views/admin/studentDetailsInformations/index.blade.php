@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Student Details — List')
 @section('content')
 @can('student_details_information_create')
     <div style="margin-bottom: 10px;" class="row">

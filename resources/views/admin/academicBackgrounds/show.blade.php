@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Academic Backgrounds — Details')
 @section('content')
     <div class="flex-1 overflow-y-auto bg-background-light dark:bg-background-dark p-4 md:p-8" style="margin-top: -2rem">
         <div class="max-w-5xl mx-auto flex flex-col gap-6 pb-12">

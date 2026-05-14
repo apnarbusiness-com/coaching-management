@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Students — Raw Imports')
 
 @section('content')
     <div class="card mb-3">

@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batches — List')
 @section('content')
     @php
         $selectedMonth = $month ?? now()->month;

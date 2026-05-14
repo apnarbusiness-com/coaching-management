@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Students — List')
 @section('styles')
 <style>
     .status-toggle {

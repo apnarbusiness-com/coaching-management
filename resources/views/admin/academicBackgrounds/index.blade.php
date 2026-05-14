@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Academic Backgrounds — List')
 @section('content')
 @can('academic_background_create')
     <div style="margin-bottom: 10px;" class="row">

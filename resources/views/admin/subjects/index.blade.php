@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Subjects — List')
 @section('content')
 @can('subject_create')
     <div style="margin-bottom: 10px;" class="row">

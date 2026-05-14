@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Permissions — List')
 @section('content')
 @can('permission_create')
     <div style="margin-bottom: 10px;" class="row">

@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Dashboard Widgets — Edit')
 @section('content')
     <form method="POST" action="{{ route('admin.dashboard-widgets.update', $role->id) }}">
         @csrf

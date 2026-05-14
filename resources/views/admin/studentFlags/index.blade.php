@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Student Flags — List')
 @section('content')
 <style>
     .flag-header {

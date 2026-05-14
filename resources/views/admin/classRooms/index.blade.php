@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Class Rooms — List')
 @section('content')
 @can('class_room_create')
     <div style="margin-bottom: 10px;" class="row">

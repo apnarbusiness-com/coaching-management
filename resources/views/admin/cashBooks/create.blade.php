@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Cash Books — Create')
 @section('content')
 <div class="row">
     <div class="col-md-6">

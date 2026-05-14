@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batch Attendance — List')
 @section('content')
 <style>
     .attendance-wrap {

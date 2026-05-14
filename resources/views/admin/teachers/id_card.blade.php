@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Teachers — ID Card')
 
 @section('styles')
     <style data-purpose="print-styles">

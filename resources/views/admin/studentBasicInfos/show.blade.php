@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Students — Details')
 @section('content')
     <!-- Profile View Content -->
     <div class="p-8 max-w-6xl mx-auto w-full">

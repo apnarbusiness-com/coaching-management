@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Sections — List')
 @section('content')
 @can('section_create')
     <div style="margin-bottom: 10px;" class="row">

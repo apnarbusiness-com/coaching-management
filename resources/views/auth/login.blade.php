@@ -5,7 +5,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>{{ trans('panel.site_title') }}</title>
+    <title>Login — {{ trans('panel.site_title') }}</title>
 
     <link rel="shortcut icon" href="{{ asset('assets/images/logo.svg') }}" type="image/x-icon">
 

@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Batches — Manage')
 @section('content')
     <div class="max-w-6xl mx-auto p-6 md:p-10">
         @php

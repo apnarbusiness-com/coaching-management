@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Due Collections — List')
 @section('content')
 <style>
     .due-stats-grid {

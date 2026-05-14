@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Academic Classes — List')
 @section('content')
 @can('academic_class_create')
     <div style="margin-bottom: 10px;" class="row">

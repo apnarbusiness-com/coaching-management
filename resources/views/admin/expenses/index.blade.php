@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Expenses — List')
 @section('content')
 @can('expense_create')
     <div style="margin-bottom: 10px;" class="row">

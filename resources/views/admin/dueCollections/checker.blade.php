@@ -1,4 +1,5 @@
 @extends('layouts.admin')
+@section('title', 'Due Collections — Checker')
 @section('content')
     <style>
         .checker-container {
