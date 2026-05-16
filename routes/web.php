@@ -157,6 +157,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Cash Book
     Route::get('cash-books/{cashBook}/transactions', [CashBookController::class, 'transactions'])->name('cash-books.transactions');
+    Route::post('cash-books/transfer', [CashBookController::class, 'transfer'])->name('cash-books.transfer');
     Route::resource('cash-books', 'CashBookController');
 
     // Teacher

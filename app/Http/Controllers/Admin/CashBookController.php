@@ -152,4 +152,53 @@ class CashBookController extends Controller
             'transactions' => $transactions,
         ]);
     }
+
+    public function transfer(Request $request)
+    {
+        abort_if(Gate::denies('cash_book_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'from_cash_book_id' => 'required|integer|exists:cash_books,id',
+            'to_cash_book_id'   => 'required|integer|exists:cash_books,id|different:from_cash_book_id',
+            'amount'            => 'required|numeric|min:0.01',
+            'note'              => 'nullable|string|max:500',
+        ]);
+
+        $from = CashBook::findOrFail($data['from_cash_book_id']);
+        $to   = CashBook::findOrFail($data['to_cash_book_id']);
+
+        if ($from->amount < $data['amount']) {
+            return back()->withErrors([
+                'amount' => "Insufficient balance in '{$from->title}'. Available: Tk " . number_format($from->amount, 2),
+            ])->withInput();
+        }
+
+        $fromOld = $from->amount;
+        $toOld   = $to->amount;
+
+        $from->update(['amount' => $fromOld - $data['amount']]);
+        $to->update(['amount'   => $toOld + $data['amount']]);
+
+        $note = trim($data['note'] ?? '');
+
+        CashBookTransaction::create([
+            'cash_book_id'  => $from->id,
+            'old_amount'    => $fromOld,
+            'new_amount'    => $from->amount,
+            'action_type'   => 'transfer_out',
+            'note'          => "Transferred Tk " . number_format($data['amount'], 2) . " to '{$to->title}'." . ($note ? " Note: {$note}" : ''),
+            'created_by_id' => auth()->id(),
+        ]);
+
+        CashBookTransaction::create([
+            'cash_book_id'  => $to->id,
+            'old_amount'    => $toOld,
+            'new_amount'    => $to->amount,
+            'action_type'   => 'transfer_in',
+            'note'          => "Received Tk " . number_format($data['amount'], 2) . " from '{$from->title}'." . ($note ? " Note: {$note}" : ''),
+            'created_by_id' => auth()->id(),
+        ]);
+
+        return redirect()->route('admin.cash-books.index')->with('status', 'Funds transferred successfully.');
+    }
 }

@@ -237,6 +237,14 @@
             border-left-color: #f59e0b;
         }
 
+        .transaction-item.transfer_out {
+            border-left-color: #f97316;
+        }
+
+        .transaction-item.transfer_in {
+            border-left-color: #22c55e;
+        }
+
         .transaction-header {
             display: flex;
             align-items: center;
@@ -310,6 +318,11 @@
                 <a href="{{ route('admin.cash-books.create') }}" class="btn btn-primary btn-sm">
                     <i class="fa fa-plus"></i> Add New
                 </a>
+            @endcan
+            @can('cash_book_edit')
+                <button class="btn btn-warning btn-sm" onclick="openTransferModal()">
+                    <i class="fa fa-exchange-alt"></i> Transfer
+                </button>
             @endcan
         </div>
     </div>
@@ -463,6 +476,60 @@
         </div>
     @endcan
 
+@can('cash_book_edit')
+    <div class="modal fade" id="transferModal" tabindex="-1">
+        <div class="modal-dialog">
+            <div class="modal-content">
+                <form method="POST" action="{{ route('admin.cash-books.transfer') }}">
+                    @csrf
+                    <div class="modal-header">
+                        <h5 class="modal-title">Transfer Funds</h5>
+                        <button type="button" class="btn-close" data-bs-dismiss="modal"></button>
+                    </div>
+                    <div class="modal-body">
+                        <div class="mb-3">
+                            <label class="form-label">From Account <span class="text-danger">*</span></label>
+                            <select name="from_cash_book_id" id="transferFrom" class="form-control select2-transfer" required style="width: 100%;">
+                                <option value="">— Select Source —</option>
+                                @foreach ($cashBooks as $cb)
+                                    <option value="{{ $cb->id }}" data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}" data-icon="{{ $cb->icon ?? '' }}" data-balance="{{ $cb->amount }}" {{ old('from_cash_book_id') == $cb->id ? 'selected' : '' }}>{{ $cb->title }} (Tk {{ number_format($cb->amount, 2) }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">To Account <span class="text-danger">*</span></label>
+                            <select name="to_cash_book_id" id="transferTo" class="form-control select2-transfer" required style="width: 100%;">
+                                <option value="">— Select Destination —</option>
+                                @foreach ($cashBooks as $cb)
+                                    <option value="{{ $cb->id }}" data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}" data-icon="{{ $cb->icon ?? '' }}" data-balance="{{ $cb->amount }}" {{ old('to_cash_book_id') == $cb->id ? 'selected' : '' }}>{{ $cb->title }} (Tk {{ number_format($cb->amount, 2) }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                        <div class="mb-3" id="transferBalanceWarning" style="display:none;">
+                            <div class="alert alert-warning mb-0 py-2 small" id="transferBalanceMsg"></div>
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Amount (Tk) <span class="text-danger">*</span></label>
+                            <input type="number" name="amount" id="transferAmount" class="form-control" step="0.01" min="0.01" placeholder="0.00" required value="{{ old('amount') }}">
+                            @error('amount')
+                                <div class="text-danger small mt-1">{{ $message }}</div>
+                            @enderror
+                        </div>
+                        <div class="mb-3">
+                            <label class="form-label">Note (optional)</label>
+                            <textarea name="note" class="form-control" rows="2" placeholder="Reason for transfer...">{{ old('note') }}</textarea>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="submit" class="btn btn-warning" id="transferSubmitBtn">Transfer</button>
+                    </div>
+                </form>
+            </div>
+        </div>
+    </div>
+@endcan
+
 @can('cash_book_access')
     <div class="drawer-overlay" id="transactionOverlay" onclick="closeTransactionDrawer()"></div>
     <div class="drawer" id="transactionDrawer">
@@ -516,7 +583,9 @@
                                 'update': 'Updated',
                                 'delete': 'Deleted',
                                 'earning_added': 'Earning Added',
-                                'expense_subtracted': 'Expense Subtracted'
+                                'expense_subtracted': 'Expense Subtracted',
+                                'transfer_out': 'Transfer Out',
+                                'transfer_in': 'Transfer In'
                             };
                             const type = tx.action_type;
                             const typeLabel = typeLabels[type] || type;
@@ -556,6 +625,16 @@
                                 html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
                                 html += '</div>';
                             } else if (type === 'expense_subtracted') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
+                            } else if (type === 'transfer_out') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
+                            } else if (type === 'transfer_in') {
                                 html += '<div class="transaction-amounts">';
                                 html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
                                 html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
@@ -631,6 +710,78 @@
                     removeImage.value = '0';
                 }
             }
+
+            var cashBookIcons = {
+                'wallet': '💰',
+                'money': '💵',
+                'bank': '🏦',
+                'mobile': '📱',
+                'card': '💳',
+                'gift': '🎁',
+                'gold': '🪙',
+                'dollar': '💲'
+            };
+
+            function formatCashBookOption(state) {
+                if (!state.id) return state.text;
+                var $el = $(state.element);
+                var img = $el.data('image');
+                var icon = $el.data('icon');
+                var balance = parseFloat($el.data('balance') || 0);
+                var thumbHtml = '';
+                if (img) {
+                    thumbHtml = '<div class="cb-thumb" style="background-image: url(' + img + '); background-size: cover; background-position: center; width: 28px; height: 28px; border-radius: 50%; display: inline-block; margin-right: 8px; vertical-align: middle; flex-shrink: 0;"></div>';
+                } else if (icon && cashBookIcons[icon]) {
+                    thumbHtml = '<div class="cb-thumb" style="width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #f0fdf4; margin-right: 8px; vertical-align: middle; flex-shrink: 0; font-size: 14px;">' + cashBookIcons[icon] + '</div>';
+                } else {
+                    thumbHtml = '<div class="cb-thumb" style="width: 28px; height: 28px; border-radius: 50%; display: inline-flex; align-items: center; justify-content: center; background: #e8eaf6; margin-right: 8px; vertical-align: middle; flex-shrink: 0; font-size: 12px;"><i class="fas fa-wallet"></i></div>';
+                }
+                return $('<div class="cb-option" style="display: flex; align-items: center;">' + thumbHtml + '<span class="cb-title" style="vertical-align: middle; font-size: 14px;">' + state.text + '</span></div>');
+            }
+
+            function openTransferModal() {
+                var modalEl = document.getElementById('transferModal');
+                if (modalEl) {
+                    var modal = new bootstrap.Modal(modalEl);
+                    modal.show();
+                    setTimeout(function() {
+                        $('.select2-transfer').select2({
+                            dropdownParent: $('#transferModal'),
+                            templateResult: formatCashBookOption,
+                            templateSelection: formatCashBookOption,
+                            width: '100%'
+                        });
+                    }, 300);
+                }
+            }
+
+            function checkTransferBalance() {
+                var fromId = $('#transferFrom').val();
+                var amount = parseFloat($('#transferAmount').val()) || 0;
+                if (!fromId || amount <= 0) {
+                    $('#transferBalanceWarning').hide();
+                    return;
+                }
+                var opt = $('#transferFrom').find('option[value="' + fromId + '"]');
+                var balance = parseFloat(opt.data('balance') || 0);
+                if (amount > balance) {
+                    $('#transferBalanceMsg').text('Insufficient balance. Available: Tk ' + balance.toFixed(2));
+                    $('#transferBalanceWarning').show();
+                    $('#transferSubmitBtn').prop('disabled', true);
+                } else {
+                    $('#transferBalanceWarning').hide();
+                    $('#transferSubmitBtn').prop('disabled', false);
+                }
+            }
+
+            $(document).ready(function() {
+                $('#transferFrom').on('change', checkTransferBalance);
+                $('#transferAmount').on('input', checkTransferBalance);
+
+                $('#transferModal').on('hidden.bs.modal', function() {
+                    $('.select2-transfer').select2('destroy');
+                });
+            });
         </script>
     @endpush
 @endcan
