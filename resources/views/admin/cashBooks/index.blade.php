@@ -293,6 +293,74 @@
         .btn-details {
             top: 1rem;
         }
+
+        .action-btn {
+            display: inline-flex;
+            align-items: center;
+            gap: 0.5rem;
+            padding: 0.6rem 1.25rem;
+            border-radius: 0.65rem;
+            border: none;
+            font-size: 0.85rem;
+            font-weight: 600;
+            text-decoration: none;
+            cursor: pointer;
+            transition: all 0.2s ease;
+            box-shadow: 0 2px 8px rgba(0, 0, 0, 0.06);
+            position: relative;
+            overflow: hidden;
+        }
+
+        .action-btn::after {
+            content: '';
+            position: absolute;
+            inset: 0;
+            background: rgba(255, 255, 255, 0);
+            transition: background 0.2s ease;
+            border-radius: inherit;
+        }
+
+        .action-btn:hover::after {
+            background: rgba(255, 255, 255, 0.15);
+        }
+
+        .action-btn:active {
+            transform: translateY(1px);
+            box-shadow: 0 1px 4px rgba(0, 0, 0, 0.06);
+        }
+
+        .action-btn-icon {
+            display: inline-flex;
+            align-items: center;
+            justify-content: center;
+            width: 26px;
+            height: 26px;
+            border-radius: 0.5rem;
+            font-size: 0.75rem;
+            flex-shrink: 0;
+        }
+
+        .action-btn-text {
+            line-height: 1;
+        }
+
+        .action-btn-primary {
+            background: linear-gradient(135deg, #0d47a1, #1565c0);
+            color: #fff;
+        }
+
+        .action-btn-primary .action-btn-icon {
+            background: rgba(255, 255, 255, 0.2);
+        }
+
+        .action-btn-warning {
+            background: linear-gradient(135deg, #e65100, #f57c00);
+            color: #fff;
+        }
+
+        .action-btn-warning .action-btn-icon {
+            background: rgba(255, 255, 255, 0.2);
+        }
     </style>
 
     <div class="row">
@@ -309,21 +377,27 @@
     </div>
 
     <div class="row mb-4">
-        <div class="col-12 d-flex justify-content-between align-items-end">
+        <div class="col-12 d-flex flex-column flex-md-row justify-content-between align-items-md-center gap-3">
             <div>
-                <h4 class="fw-bold text-primary mb-1">Fund Locations</h4>
+                <h4 class="fw-bold text-primary mb-1" style="font-size: 1.25rem;">
+                    <i class="fas fa-wallet me-2" style="opacity: 0.7;"></i>Fund Locations
+                </h4>
                 <p class="text-muted small mb-0">Manage your financial assets.</p>
             </div>
-            @can('cash_book_create')
-                <a href="{{ route('admin.cash-books.create') }}" class="btn btn-primary btn-sm">
-                    <i class="fa fa-plus"></i> Add New
-                </a>
-            @endcan
-            @can('cash_book_edit')
-                <button class="btn btn-warning btn-sm" onclick="openTransferModal()">
-                    <i class="fa fa-exchange-alt"></i> Transfer
-                </button>
-            @endcan
+            <div class="d-flex gap-2">
+                @can('cash_book_create')
+                    <a href="{{ route('admin.cash-books.create') }}" class="action-btn action-btn-primary">
+                        <span class="action-btn-icon"><i class="fa fa-plus"></i></span>
+                        <span class="action-btn-text">Add New</span>
+                    </a>
+                @endcan
+                @can('cash_book_edit')
+                    <button class="action-btn action-btn-warning" onclick="openTransferModal()">
+                        <span class="action-btn-icon"><i class="fas fa-exchange-alt"></i></span>
+                        <span class="action-btn-text">Transfer</span>
+                    </button>
+                @endcan
+            </div>
         </div>
     </div>
 
