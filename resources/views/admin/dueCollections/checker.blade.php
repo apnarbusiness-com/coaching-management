@@ -693,6 +693,27 @@
                             <div class="batch-list" id="activeBatchesList"></div>
                         </div>
                     </div>
+                    <div class="info-card mt-3">
+                        <div class="card-header" style="background: #f59e0b;">
+                            <i class="fa fa-clock"></i> Other Dues (Pending)
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                <table class="data-table" id="otherDuesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="info-card">
@@ -845,6 +866,51 @@
                 <div class="modal-footer">
                     <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Collect Other Due Modal -->
+    <div class="modal fade" id="collectOtherDueModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog" role="document">
+            <div class="modal-content">
+                <div class="modal-header" style="background: #f59e0b; color: white;">
+                    <h5 class="modal-title">Collect Other Due</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <form id="collect-other-due-form">
+                    <div class="modal-body">
+                        <input type="hidden" id="collect-other-due-id">
+                        <div class="form-group">
+                            <label>Title</label>
+                            <input type="text" class="form-control" id="collect-other-due-title" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Due Amount</label>
+                            <input type="text" class="form-control" id="collect-other-due-amount" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Remaining</label>
+                            <input type="text" class="form-control" id="collect-other-due-remaining" readonly>
+                        </div>
+                        <div class="form-group">
+                            <label>Collect Amount <span class="text-danger">*</span></label>
+                            <input type="number" class="form-control" id="collect-other-pay-amount" step="0.01" min="0.01" required>
+                        </div>
+                        <div class="form-group">
+                            <label>Deposit to Account <span class="text-danger">*</span></label>
+                            <select class="form-control" id="collect-other-cash-book" required>
+                                <option value="">— Select Account —</option>
+                                @foreach (\App\Models\CashBook::where('is_financial_account', true)->orderBy('title')->get() as $cb)
+                                    <option value="{{ $cb->id }}">{{ $cb->title }} (Tk {{ number_format($cb->amount, 2) }})</option>
+                                @endforeach
+                            </select>
+                        </div>
+                    </div>
+                    <div class="modal-footer">
+                        <button type="submit" class="btn btn-warning">Collect Payment</button>
+                    </div>
+                </form>
             </div>
         </div>
     </div>
@@ -1171,6 +1237,29 @@ $(document).on('click', '.search-result-item', function() {
                     });
                 }
 
+                const otherDuesBody = $('#otherDuesTable tbody');
+                otherDuesBody.empty();
+                if (!response.other_dues || response.other_dues.length === 0) {
+                    otherDuesBody.html('<tr><td colspan="5" class="text-center text-muted">No other dues found</td></tr>');
+                } else {
+                    response.other_dues.forEach(function(od) {
+                        let badgeClass = od.status === 'paid' ? 'badge-success' : (od.status === 'partial' ? 'badge-warning' : 'badge-danger');
+                        let remaining = od.due_remaining || 0;
+                        let actionBtn = remaining > 0 ?
+                            `<button type="button" class="btn btn-xs btn-warning collect-other-btn" data-id="${od.id}" data-title="${od.title}" data-amount="${od.amount}" data-remaining="${remaining}">Collect Now</button>` :
+                            '<span class="text-success"><i class="fa fa-check"></i> Paid</span>';
+                        otherDuesBody.append(`
+                    <tr>
+                        <td>${od.title}</td>
+                        <td>${od.category}</td>
+                        <td>${parseFloat(od.amount).toFixed(2)}</td>
+                        <td><span class="badge ${badgeClass}">${od.status}</span></td>
+                        <td>${actionBtn}</td>
+                    </tr>
+                `);
+                    });
+                }
+
                 const attendanceAnalysis = $('#attendanceAnalysis');
                 attendanceAnalysis.empty();
                 if (response.attendance_analysis.length === 0) {
@@ -1372,6 +1461,49 @@ $(document).on('click', '.search-result-item', function() {
                 }
                 alert(msg);
                 submitBtn.prop('disabled', false).text(originalText);
+            });
+        });
+
+        $(document).on('click', '.collect-other-btn', function() {
+            const $btn = $(this);
+            $('#collect-other-due-id').val($btn.data('id'));
+            $('#collect-other-due-title').val($btn.data('title'));
+            $('#collect-other-due-amount').val(parseFloat($btn.data('amount')).toFixed(2));
+            const remaining = parseFloat($btn.data('remaining'));
+            $('#collect-other-due-remaining').val(remaining.toFixed(2));
+            $('#collect-other-pay-amount').val(remaining.toFixed(2)).attr('max', remaining);
+            $('#collectOtherDueModal').modal('show');
+        });
+
+        $('#collect-other-due-form').on('submit', function(e) {
+            e.preventDefault();
+
+            const btn = $(this).find('button[type="submit"]');
+            const originalText = btn.text();
+            btn.prop('disabled', true).text('Processing...');
+
+            $.ajax({
+                url: "{{ route('admin.due-collections.collect-other-due') }}",
+                method: 'POST',
+                data: {
+                    _token: '{{ csrf_token() }}',
+                    other_due_id: $('#collect-other-due-id').val(),
+                    amount: $('#collect-other-pay-amount').val(),
+                    cash_book_id: $('#collect-other-cash-book').val(),
+                },
+                success: function(response) {
+                    $('#collectOtherDueModal').modal('hide');
+                    loadStudentData();
+                    alert(response.message);
+                },
+                error: function(xhr) {
+                    let msg = 'Collection failed. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.error) {
+                        msg = xhr.responseJSON.error;
+                    }
+                    alert(msg);
+                    btn.prop('disabled', false).text(originalText);
+                }
             });
         });
 

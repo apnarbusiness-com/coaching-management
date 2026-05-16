@@ -13,6 +13,7 @@ use App\Models\CashBookTransaction;
 use App\Models\Earning;
 use App\Models\EarningCategory;
 use App\Models\StudentBasicInfo;
+use App\Models\StudentOtherDue;
 use App\Models\Subject;
 use App\Models\User;
 use Carbon\Carbon;
@@ -208,7 +209,9 @@ class EarningsController extends Controller
 
         $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
 
-        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers', 'cashBooks'));
+        $batches = Batch::orderBy('batch_name')->pluck('batch_name', 'id')->prepend(trans('global.pleaseSelect'), '');
+
+        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers', 'cashBooks', 'batches'));
     }
 
     public function getStudents(Request $request)
@@ -240,16 +243,38 @@ class EarningsController extends Controller
         $data = $request->all();
         $data['created_by_id'] = auth()->id();
 
-        // Auto-calculate month and year from earning_date
         if (!empty($data['earning_date'])) {
             $date = \Carbon\Carbon::parse($data['earning_date']);
             $data['earning_month'] = $date->month;
             $data['earning_year'] = $date->year;
         }
 
+        $isDue = !empty($data['is_due']);
+
+        if ($isDue) {
+            StudentOtherDue::create([
+                'student_id' => $data['student_id'],
+                'earning_category_id' => $data['earning_category_id'],
+                'batch_id' => $data['batch_id'] ?? null,
+                'subject_id' => $data['subject_id'] ?? null,
+                'title' => $data['title'],
+                'amount' => $data['amount'],
+                'academic_background' => $data['academic_background'] ?? null,
+                'exam_year' => $data['exam_year'] ?? null,
+                'details' => $data['details'] ?? null,
+                'due_date' => $data['earning_date'] ?? null,
+                'payment_method' => $data['payment_method'] ?? null,
+                'payment_proof_details' => $data['payment_proof_details'] ?? null,
+                'paid_by' => $data['paid_by'] ?? null,
+                'recieved_by' => $data['recieved_by'] ?? null,
+                'created_by_id' => auth()->id(),
+            ]);
+
+            return redirect()->route('admin.earnings.index')->with('status', 'Due recorded successfully. It will appear in Due Checker for collection.');
+        }
+
         $earning = Earning::create($data);
 
-        // Update linked cash book balance
         if (!empty($data['cash_book_id'])) {
             $cashBook = CashBook::find($data['cash_book_id']);
             if ($cashBook) {

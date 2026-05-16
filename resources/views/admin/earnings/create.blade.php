@@ -411,6 +411,17 @@
                         </div>
                     </div>
                     <div
+                        class="px-6 md:px-8 py-4 bg-amber-50 dark:bg-amber-900/20 border-t border-amber-200 dark:border-amber-800">
+                        <label class="flex items-center gap-3 cursor-pointer select-none">
+                            <input type="checkbox" name="is_due" id="isDueToggle" value="1" class="sr-only peer">
+                            <div class="relative w-11 h-6 bg-slate-300 dark:bg-slate-600 peer-checked:bg-amber-500 rounded-full transition-colors after:content-[''] after:absolute after:top-0.5 after:start-0.5 after:bg-white after:rounded-full after:h-5 after:w-5 after:transition-all peer-checked:after:translate-x-full"></div>
+                            <div>
+                                <span class="text-sm font-semibold text-amber-800 dark:text-amber-300">Mark as Due (Collect Later)</span>
+                                <p class="text-xs text-amber-600 dark:text-amber-400">Student will owe this amount. Collect via <strong>Due Checker</strong> later.</p>
+                            </div>
+                        </label>
+                    </div>
+                    <div
                         class="p-6 md:p-8 bg-slate-50 dark:bg-slate-900/40 border-t border-slate-200 dark:border-slate-800 flex flex-col-reverse sm:flex-row sm:items-center sm:justify-end gap-3">
                         <button
                             class="px-6 py-2.5 rounded-lg border border-slate-300 dark:border-slate-600 text-[#1F2937] dark:text-[#F9FAFB] font-medium hover:bg-slate-100 dark:hover:bg-slate-800 transition-colors w-full sm:w-auto"
@@ -419,9 +430,9 @@
                         </button>
                         <button
                             class="px-6 py-2.5 rounded-lg bg-[#2563EB] dark:bg-[#60A5FA] hover:bg-[#2563EB]/90 dark:hover:bg-[#60A5FA]/90 text-white dark:text-[#111827] font-medium shadow-md shadow-blue-500/20 flex items-center justify-center gap-2 transition-colors w-full sm:w-auto"
-                            type="submit">
+                            type="submit" id="submitBtn">
                             <span class="material-symbols-outlined text-xl">save</span>
-                            Record Payment
+                            <span id="submitBtnText">Record Payment</span>
                         </button>
                     </div>
                 </form>
@@ -630,6 +641,11 @@
 
             // Conditional fields based on earning category
             function toggleStudentFeeFields() {
+                const isDueChecked = document.getElementById('isDueToggle')?.checked;
+                if (isDueChecked) {
+                    $('.student-fee-field').slideDown(300);
+                    return;
+                }
                 const selectedOption = $('#earning_category_id').find('option:selected');
                 const isStudentConnected = Number(selectedOption.data('student-connected')) === 1;
 
@@ -640,8 +656,33 @@
                 }
             }
 
+            function toggleDueFields() {
+                const isChecked = document.getElementById('isDueToggle')?.checked;
+                const cashBookSelect = $('#cash_book_id');
+                const submitBtn = $('#submitBtn');
+                const submitText = $('#submitBtnText');
+
+                if (isChecked) {
+                    cashBookSelect.prop('required', false).closest('.space-y-1\\.5').find('label .text-red-500').hide();
+                    cashBookSelect.closest('.space-y-1\\.5').find('p.text-\\[10px\\]').text('Optional for due items. Balance will update when collected.');
+                    submitBtn.removeClass('bg-[#2563EB] dark:bg-[#60A5FA] hover:bg-[#2563EB]/90 dark:hover:bg-[#60A5FA]/90 shadow-blue-500/20')
+                        .addClass('bg-amber-600 hover:bg-amber-700 shadow-amber-500/20');
+                    submitText.text('Save as Due');
+                    $('.student-fee-field').slideDown(300);
+                } else {
+                    cashBookSelect.prop('required', true).closest('.space-y-1\\.5').find('label .text-red-500').show();
+                    cashBookSelect.closest('.space-y-1\\.5').find('p.text-\\[10px\\]').text('The selected account balance will increase by this earning amount.');
+                    submitBtn.removeClass('bg-amber-600 hover:bg-amber-700 shadow-amber-500/20')
+                        .addClass('bg-[#2563EB] dark:bg-[#60A5FA] hover:bg-[#2563EB]/90 dark:hover:bg-[#60A5FA]/90 shadow-blue-500/20');
+                    submitText.text('Record Payment');
+                    toggleStudentFeeFields();
+                }
+            }
+
             toggleStudentFeeFields();
             $('#earning_category_id').on('change', toggleStudentFeeFields);
+            $('#isDueToggle').on('change', toggleDueFields);
+            toggleDueFields();
 
             // Auto-calculate month and year from earning date
             $('#earning_date').on('change', function() {

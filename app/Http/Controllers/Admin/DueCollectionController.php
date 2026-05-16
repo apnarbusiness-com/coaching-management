@@ -16,6 +16,9 @@ use App\Models\StudentBasicInfo;
 use App\Models\StudentDetailsInformation;
 use App\Models\StudentFlag;
 use App\Models\StudentMonthlyDue;
+use App\Models\StudentOtherDue;
+use App\Models\CashBook;
+use App\Models\CashBookTransaction;
 use App\Services\DueCalculationService;
 use App\Services\TeacherSalaryCalculationService;
 use Carbon\Carbon;
@@ -456,6 +459,82 @@ class DueCollectionController extends Controller
         };
     }
 
+    public function collectOtherDue(Request $request)
+    {
+        abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'other_due_id' => 'required|integer|exists:student_other_dues,id',
+            'amount' => 'required|numeric|min:0.01',
+            'cash_book_id' => 'required|integer|exists:cash_books,id',
+        ]);
+
+        $otherDue = StudentOtherDue::findOrFail($data['other_due_id']);
+        $cashBook = CashBook::findOrFail($data['cash_book_id']);
+
+        $payAmount = min($data['amount'], $otherDue->amount - $otherDue->paid_amount);
+        if ($payAmount <= 0) {
+            return response()->json(['error' => 'No pending amount to collect.'], 400);
+        }
+
+        $receiptNo = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
+
+        $earning = Earning::create([
+            'earning_category_id' => $otherDue->earning_category_id,
+            'student_id' => $otherDue->student_id,
+            'batch_id' => $otherDue->batch_id,
+            'subject_id' => $otherDue->subject_id,
+            'cash_book_id' => $cashBook->id,
+            'title' => $otherDue->title,
+            'academic_background' => $otherDue->academic_background,
+            'exam_year' => $otherDue->exam_year,
+            'details' => $otherDue->details,
+            'amount' => $payAmount,
+            'earning_date' => now(),
+            'earning_month' => now()->month,
+            'earning_year' => now()->year,
+            'earning_reference' => $receiptNo,
+            'payment_method' => $otherDue->payment_method ?? 'cash',
+            'payment_proof_details' => $otherDue->payment_proof_details,
+            'paid_by' => $otherDue->paid_by,
+            'recieved_by' => auth()->user()->name,
+            'created_by_id' => auth()->id(),
+        ]);
+
+        $oldAmount = $cashBook->amount;
+        $newAmount = $oldAmount + $payAmount;
+        $cashBook->update(['amount' => $newAmount]);
+
+        CashBookTransaction::create([
+            'cash_book_id' => $cashBook->id,
+            'old_amount' => $oldAmount,
+            'new_amount' => $newAmount,
+            'action_type' => 'earning_added',
+            'note' => "Other Due collection '{$otherDue->title}' of Tk " . number_format($payAmount, 2) . " added.",
+            'created_by_id' => auth()->id(),
+        ]);
+
+        $newPaid = $otherDue->paid_amount + $payAmount;
+        $newStatus = $newPaid >= $otherDue->amount ? 'paid' : 'partial';
+        $otherDue->update([
+            'paid_amount' => $newPaid,
+            'status' => $newStatus,
+            'earning_id' => $earning->id,
+        ]);
+
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment collected successfully. Receipt: ' . $receiptNo,
+            'earning_id' => $earning->id,
+            'other_due' => [
+                'id' => $otherDue->id,
+                'paid_amount' => (float) $newPaid,
+                'status' => $newStatus,
+                'due_remaining' => (float) ($otherDue->amount - $newPaid),
+            ],
+        ]);
+    }
+
     public function checker(Request $request)
     {
         abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -658,6 +737,23 @@ class DueCollectionController extends Controller
             ]);
         }
 
+        $otherDuesQuery = StudentOtherDue::where('student_id', $studentId);
+        if ($year !== 'all') {
+            $otherDuesQuery->whereYear('created_at', $year);
+        }
+        $otherDues = $otherDuesQuery->orderBy('created_at', 'desc')->get()->map(function ($due) {
+            return [
+                'id' => $due->id,
+                'title' => $due->title,
+                'category' => $due->earningCategory->name ?? 'N/A',
+                'amount' => (float) $due->amount,
+                'paid_amount' => (float) $due->paid_amount,
+                'due_remaining' => (float) ($due->amount - $due->paid_amount),
+                'status' => $due->status,
+                'created_at' => $due->created_at->toDateTimeString(),
+            ];
+        })->values();
+
         return response()->json([
             'student' => [
                 'id' => $student->id,
@@ -676,6 +772,7 @@ class DueCollectionController extends Controller
             'active_batches' => $activeBatches,
             'attendance_analysis' => $attendanceData,
             'flags' => $flagData,
+            'other_dues' => $otherDues,
         ]);
     }
 }

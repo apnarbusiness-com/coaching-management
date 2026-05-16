@@ -26,11 +26,21 @@ class StoreEarningRequest extends FormRequest
                 'nullable',
                 'integer',
                 'exists:student_basic_infos,id',
+                function ($attribute, $value, $fail) {
+                    if ($this->input('is_due') && empty($value)) {
+                        $fail('The student field is required when marking as due.');
+                    }
+                },
             ],
             'cash_book_id' => [
-                'required',
+                'nullable',
                 'integer',
                 'exists:cash_books,id',
+                function ($attribute, $value, $fail) {
+                    if (!$this->input('is_due') && empty($value)) {
+                        $fail('The cash book field is required when recording a paid earning.');
+                    }
+                },
             ],
             'subject_id' => [
                 'nullable',
