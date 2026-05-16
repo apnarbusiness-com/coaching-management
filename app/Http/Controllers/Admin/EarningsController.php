@@ -8,6 +8,8 @@ use App\Http\Requests\MassDestroyEarningRequest;
 use App\Http\Requests\StoreEarningRequest;
 use App\Http\Requests\UpdateEarningRequest;
 use App\Models\Batch;
+use App\Models\CashBook;
+use App\Models\CashBookTransaction;
 use App\Models\Earning;
 use App\Models\EarningCategory;
 use App\Models\StudentBasicInfo;
@@ -204,7 +206,9 @@ class EarningsController extends Controller
         // Generate receipt number Format: REC-YYYY-001
         $receipt_numbers = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
 
-        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers'));
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->pluck('title', 'id');
+
+        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers', 'cashBooks'));
     }
 
     public function getStudents(Request $request)
@@ -244,6 +248,25 @@ class EarningsController extends Controller
         }
 
         $earning = Earning::create($data);
+
+        // Update linked cash book balance
+        if (!empty($data['cash_book_id'])) {
+            $cashBook = CashBook::find($data['cash_book_id']);
+            if ($cashBook) {
+                $oldAmount = $cashBook->amount;
+                $newAmount = $oldAmount + (float) $data['amount'];
+                $cashBook->update(['amount' => $newAmount]);
+
+                CashBookTransaction::create([
+                    'cash_book_id' => $cashBook->id,
+                    'old_amount' => $oldAmount,
+                    'new_amount' => $newAmount,
+                    'action_type' => 'earning_added',
+                    'note' => "Earning '{$earning->title}' of Tk " . number_format((float) $data['amount'], 2) . " added.",
+                    'created_by_id' => auth()->id(),
+                ]);
+            }
+        }
 
         foreach ($request->input('payment_proof', []) as $file) {
             $earning->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('payment_proof');

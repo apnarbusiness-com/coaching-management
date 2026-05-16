@@ -7,6 +7,8 @@ use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyExpenseRequest;
 use App\Http\Requests\StoreExpenseRequest;
 use App\Http\Requests\UpdateExpenseRequest;
+use App\Models\CashBook;
+use App\Models\CashBookTransaction;
 use App\Models\Expense;
 use App\Models\ExpenseCategory;
 use App\Models\Teacher;
@@ -175,12 +177,36 @@ class ExpensesController extends Controller
 
         $teachers = Teacher::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.expenses.create', compact('created_bies', 'expense_categories', 'expense_category_flags', 'teachers', 'updated_bies'));
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->pluck('title', 'id');
+
+        return view('admin.expenses.create', compact('created_bies', 'expense_categories', 'expense_category_flags', 'teachers', 'updated_bies', 'cashBooks'));
     }
 
     public function store(StoreExpenseRequest $request)
     {
-        $expense = Expense::create($request->all());
+        $data = $request->all();
+        $data['created_by_id'] = auth()->id();
+        $data['updated_by_id'] = auth()->id();
+        $expense = Expense::create($data);
+
+        // Update linked cash book balance (subtract)
+        if (!empty($request->cash_book_id)) {
+            $cashBook = CashBook::find($request->cash_book_id);
+            if ($cashBook) {
+                $oldAmount = $cashBook->amount;
+                $newAmount = $oldAmount - (float) $expense->amount;
+                $cashBook->update(['amount' => $newAmount]);
+
+                CashBookTransaction::create([
+                    'cash_book_id' => $cashBook->id,
+                    'old_amount' => $oldAmount,
+                    'new_amount' => $newAmount,
+                    'action_type' => 'expense_subtracted',
+                    'note' => "Expense '{$expense->title}' of Tk " . number_format((float) $expense->amount, 2) . " subtracted.",
+                    'created_by_id' => auth()->id(),
+                ]);
+            }
+        }
 
         foreach ($request->input('payment_proof', []) as $file) {
             $expense->addMedia(storage_path('tmp/uploads/' . basename($file)))->toMediaCollection('payment_proof');

@@ -27,6 +27,11 @@ class StoreEarningRequest extends FormRequest
                 'integer',
                 'exists:student_basic_infos,id',
             ],
+            'cash_book_id' => [
+                'nullable',
+                'integer',
+                'exists:cash_books,id',
+            ],
             'subject_id' => [
                 'nullable',
                 'integer',

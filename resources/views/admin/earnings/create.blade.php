@@ -221,6 +221,19 @@
                                     </div>
                                 </div>
                             </div>
+                            @if ($cashBooks->isNotEmpty())
+                            <div class="space-y-1.5">
+                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Deposit to Account</label>
+                                <select name="cash_book_id" id="cash_book_id"
+                                    class="w-full pl-4 pr-10 bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 dark:focus:ring-[#60A5FA]/20 focus:border-[#2563EB] dark:focus:border-[#60A5FA] text-[#1F2937] dark:text-[#F9FAFB]">
+                                    <option value="">— Select Account (optional) —</option>
+                                    @foreach ($cashBooks as $id => $title)
+                                        <option value="{{ $id }}" {{ old('cash_book_id') == $id ? 'selected' : '' }}>{{ $title }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="text-[10px] text-slate-400">Selected account balance will increase by this earning amount.</p>
+                            </div>
+                            @endif
                         </div>
                     </div>
                     <div class="p-6 md:p-8">

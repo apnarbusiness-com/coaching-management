@@ -32,6 +32,7 @@ class Earning extends Model implements HasMedia
         'earning_category_id',
         'student_id',
         'batch_id',
+        'cash_book_id',
         'subject_id',
         'title',
         'academic_background',
@@ -78,6 +79,11 @@ class Earning extends Model implements HasMedia
     public function batch()
     {
         return $this->belongsTo(Batch::class, 'batch_id');
+    }
+
+    public function cashBook()
+    {
+        return $this->belongsTo(CashBook::class, 'cash_book_id');
     }
 
     public function subject()

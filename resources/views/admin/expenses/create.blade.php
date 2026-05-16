@@ -151,6 +151,20 @@
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('expense_date') }}</p>
                                 @endif
                             </div>
+                            @if (isset($cashBooks) && $cashBooks->isNotEmpty())
+                            <div class="col-span-2">
+                                <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    for="cash_book_id">Deduct from Account</label>
+                                <select name="cash_book_id" id="cash_book_id"
+                                    class="block w-full rounded-lg border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-primary focus:bg-white focus:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:text-sm">
+                                    <option value="">— Select Account (optional) —</option>
+                                    @foreach ($cashBooks as $id => $title)
+                                        <option value="{{ $id }}" {{ old('cash_book_id') == $id ? 'selected' : '' }}>{{ $title }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-[10px] text-slate-400">Selected account balance will decrease by this expense amount.</p>
+                            </div>
+                            @endif
                             <div class="col-span-2">
                                 <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
                                     for="details">Description / Note</label>

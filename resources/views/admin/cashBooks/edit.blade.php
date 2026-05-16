@@ -52,6 +52,15 @@
                         <input type="hidden" name="icon" id="iconValue" value="{{ $cashBook->icon }}">
                     </div>
                     <div class="mb-3">
+                        <div class="form-check">
+                            <input type="checkbox" name="is_financial_account" class="form-check-input" id="is_financial_account" value="1" {{ $cashBook->is_financial_account ? 'checked' : '' }}>
+                            <label class="form-check-label" for="is_financial_account">
+                                <strong>Financial Account</strong>
+                            </label>
+                            <small class="d-block text-muted">If checked, this account will appear as a selectable option in Earning & Expense forms.</small>
+                        </div>
+                    </div>
+                    <div class="mb-3">
                         <label class="form-label">Note</label>
                         <textarea name="note" class="form-control" rows="3">{{ $cashBook->note }}</textarea>
                     </div>

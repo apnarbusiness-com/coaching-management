@@ -229,6 +229,14 @@
             border-left-color: #ef4444;
         }
 
+        .transaction-item.earning_added {
+            border-left-color: #22c55e;
+        }
+
+        .transaction-item.expense_subtracted {
+            border-left-color: #f59e0b;
+        }
+
         .transaction-header {
             display: flex;
             align-items: center;
@@ -340,9 +348,12 @@
                     <h4 class="fund-title-bn">{{ $cashBook->title }}</h4>
                     <p class="fund-amount">Tk {{ number_format($cashBook->amount, 2) }}</p>
                     <span class="status-tag">{{ $cashBook->status === 'active' ? 'Active' : 'Inactive' }}</span>
+                    @if ($cashBook->is_financial_account)
+                        <span class="badge bg-info position-absolute" style="bottom: 5px; left: 50%; font-size: 9px;transform: translateX(-50%);">FINANCIAL</span>
+                    @endif
                     @can('cash_book_edit')
                         <button class="btn btn-sm btn-outline-primary position-absolute btn-details" style="top: 1rem; right: 1.5rem;"
-                            onclick="openEditModal({{ $cashBook->id }}, {{ json_encode($cashBook->title) }}, {{ $cashBook->amount }}, {{ json_encode($cashBook->image ?? '') }}, {{ json_encode($cashBook->icon ?? '') }})">
+                            onclick="openEditModal({{ $cashBook->id }}, {{ json_encode($cashBook->title) }}, {{ $cashBook->amount }}, {{ json_encode($cashBook->image ?? '') }}, {{ json_encode($cashBook->icon ?? '') }}, {{ $cashBook->is_financial_account ? 'true' : 'false' }})">
                             <i class="fas fa-edit"></i>
                         </button>
                     @endcan
@@ -426,6 +437,15 @@
                                 <input type="hidden" name="remove_image" id="editRemoveImage" value="0">
                             </div>
                             <div class="mb-3">
+                                <div class="form-check">
+                                    <input type="checkbox" name="is_financial_account" class="form-check-input" id="editIsFinancialAccount" value="1">
+                                    <label class="form-check-label" for="editIsFinancialAccount">
+                                        <strong>Financial Account</strong>
+                                    </label>
+                                    <small class="d-block text-muted">Appears in Earning & Expense forms for auto balance update.</small>
+                                </div>
+                            </div>
+                            <div class="mb-3">
                                 <label class="form-label">Note</label>
                                 <textarea name="note" id="editNote" class="form-control" rows="2"></textarea>
                             </div>
@@ -494,7 +514,9 @@
                             const typeLabels = {
                                 'create': 'Created',
                                 'update': 'Updated',
-                                'delete': 'Deleted'
+                                'delete': 'Deleted',
+                                'earning_added': 'Earning Added',
+                                'expense_subtracted': 'Expense Subtracted'
                             };
                             const type = tx.action_type;
                             const typeLabel = typeLabels[type] || type;
@@ -528,6 +550,16 @@
                                 html += '<div class="transaction-amounts">';
                                 html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
                                 html += '</div>';
+                            } else if (type === 'earning_added') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
+                            } else if (type === 'expense_subtracted') {
+                                html += '<div class="transaction-amounts">';
+                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
+                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
+                                html += '</div>';
                             }
 
                             if (tx.note) {
@@ -555,7 +587,7 @@
 @can('cash_book_edit')
     @push('scripts')
         <script>
-            function openEditModal(id, title, amount, image, icon) {
+            function openEditModal(id, title, amount, image, icon, isFinancial) {
                 document.getElementById('editTitle').value = title;
                 document.getElementById('editAmount').value = amount;
                 document.getElementById('editNote').value = '';
@@ -564,6 +596,7 @@
                 document.getElementById('editRemoveImage').value = '0';
                 document.getElementById('editIconSelect').value = icon || '';
                 document.getElementById('editIconValue').value = icon || '';
+                document.getElementById('editIsFinancialAccount').checked = isFinancial === true || isFinancial === 1 || isFinancial === '1';
 
                 document.getElementById('editCashBookForm').action = '/admin/cash-books/' + id;
                 document.getElementById('deleteBtn').onclick = function() {

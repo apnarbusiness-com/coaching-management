@@ -37,9 +37,11 @@ class CashBookController extends Controller
             'title' => ['required', 'string', 'max:255'],
             'amount' => ['required', 'numeric', 'min:0'],
             'note' => ['nullable', 'string'],
+            'is_financial_account' => ['nullable', 'boolean'],
         ]);
 
         $data['status'] = 'active';
+        $data['is_financial_account'] = $request->boolean('is_financial_account');
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('cash-books', 'public');
@@ -77,8 +79,10 @@ class CashBookController extends Controller
             'amount' => ['required', 'numeric', 'min:0'],
             'remove_image' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
+            'is_financial_account' => ['nullable', 'boolean'],
         ]);
 
+        $data['is_financial_account'] = $request->boolean('is_financial_account');
         $oldAmount = $cashBook->amount;
 
         if ($request->boolean('remove_image') || $request->hasFile('image')) {
