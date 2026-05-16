@@ -595,7 +595,7 @@
                         </div>
                     </div>
                     <div class="modal-footer">
-                        <button type="button" class="btn btn-secondary" data-bs-dismiss="modal">Cancel</button>
+                        <button type="button" class="btn btn-secondary" onclick="closeTransferModal()">Cancel</button>
                         <button type="submit" class="btn btn-warning" id="transferSubmitBtn">Transfer</button>
                     </div>
                 </form>
@@ -813,11 +813,13 @@
                 return $('<div class="cb-option" style="display: flex; align-items: center;">' + thumbHtml + '<span class="cb-title" style="vertical-align: middle; font-size: 14px;">' + state.text + '</span></div>');
             }
 
+            var transferModalInstance = null;
+
             function openTransferModal() {
                 var modalEl = document.getElementById('transferModal');
                 if (modalEl) {
-                    var modal = new bootstrap.Modal(modalEl);
-                    modal.show();
+                    transferModalInstance = new bootstrap.Modal(modalEl);
+                    transferModalInstance.show();
                     setTimeout(function() {
                         $('.select2-transfer').select2({
                             dropdownParent: $('#transferModal'),
@@ -826,6 +828,14 @@
                             width: '100%'
                         });
                     }, 300);
+                }
+            }
+
+            function closeTransferModal() {
+                if (transferModalInstance) {
+                    $('.select2-transfer').select2('destroy');
+                    transferModalInstance.hide();
+                    transferModalInstance = null;
                 }
             }
 
@@ -851,10 +861,6 @@
             $(document).ready(function() {
                 $('#transferFrom').on('change', checkTransferBalance);
                 $('#transferAmount').on('input', checkTransferBalance);
-
-                $('#transferModal').on('hidden.bs.modal', function() {
-                    $('.select2-transfer').select2('destroy');
-                });
             });
         </script>
     @endpush

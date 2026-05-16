@@ -158,6 +158,9 @@ class FinancialLedgerController extends Controller
         $previousYearEarning = Earning::whereYear('earning_date', $previousYear)->sum('amount');
         $percentChange = $previousYearEarning > 0 ? round((($grandTotal - $previousYearEarning) / $previousYearEarning) * 100, 1) : 0;
 
+        $todayEarning = Earning::whereDate('earning_date', today())->sum('amount');
+        $thisWeekEarning = Earning::whereBetween('earning_date', [now()->startOfWeek(), now()->endOfWeek()])->sum('amount');
+
         return view('admin.financialLedgers.index', compact(
             'batchEarnings',
             'totalPerMonth',
@@ -178,7 +181,9 @@ class FinancialLedgerController extends Controller
             'netProfit',
             'profitMargin',
             'percentChange',
-            'statusFilter'
+            'statusFilter',
+            'todayEarning',
+            'thisWeekEarning'
         ));
     }
 

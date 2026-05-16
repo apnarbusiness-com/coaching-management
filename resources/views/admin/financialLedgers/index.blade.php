@@ -248,6 +248,28 @@
                     </div>
                 </div>
             </div>
+            <div class="grid grid-cols-1 md:grid-cols-6 gap-4">
+                <div class="md:col-span-2 bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Today's Earning</span>
+                        <span class="text-2xl font-bold text-primary">{{ number_format($todayEarning) }} BDT</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">{{ date('d M Y') }}</div>
+                    </div>
+                    <div class="card-icon" style="background: #e0f2fe; color: #0284c7;">
+                        <i class="fas fa-calendar-check"></i>
+                    </div>
+                </div>
+                <div class="md:col-span-2 bg-white border border-outline-variant p-4 flex items-center justify-between">
+                    <div class="flex flex-col justify-center">
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">This Week's Earning</span>
+                        <span class="text-2xl font-bold text-primary">{{ number_format($thisWeekEarning) }} BDT</span>
+                        <div class="text-[10px] text-slate-400 font-normal mt-1">{{ now()->startOfWeek()->format('d M') }} - {{ now()->endOfWeek()->format('d M Y') }}</div>
+                    </div>
+                    <div class="card-icon" style="background: #e0f2fe; color: #0284c7;">
+                        <i class="fas fa-calendar-alt"></i>
+                    </div>
+                </div>
+            </div>
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
                     <div class="flex flex-col justify-center">
