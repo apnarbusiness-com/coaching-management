@@ -40,7 +40,7 @@ class StoreExpenseRequest extends FormRequest
                 'exists:teachers,id',
             ],
             'cash_book_id' => [
-                'nullable',
+                'required',
                 'integer',
                 'exists:cash_books,id',
             ],

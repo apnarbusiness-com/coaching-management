@@ -151,20 +151,6 @@
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('expense_date') }}</p>
                                 @endif
                             </div>
-                            @if (isset($cashBooks) && $cashBooks->isNotEmpty())
-                            <div class="col-span-2">
-                                <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                                    for="cash_book_id">Deduct from Account</label>
-                                <select name="cash_book_id" id="cash_book_id"
-                                    class="block w-full rounded-lg border-slate-200 bg-slate-50 px-4 py-3 text-slate-900 focus:border-primary focus:bg-white focus:ring-primary dark:border-slate-700 dark:bg-slate-900 dark:text-white sm:text-sm">
-                                    <option value="">— Select Account (optional) —</option>
-                                    @foreach ($cashBooks as $id => $title)
-                                        <option value="{{ $id }}" {{ old('cash_book_id') == $id ? 'selected' : '' }}>{{ $title }}</option>
-                                    @endforeach
-                                </select>
-                                <p class="mt-1 text-[10px] text-slate-400">Selected account balance will decrease by this expense amount.</p>
-                            </div>
-                            @endif
                             <div class="col-span-2">
                                 <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
                                     for="details">Description / Note</label>
@@ -181,6 +167,19 @@
                         <h2 class="mb-4 text-lg font-semibold text-slate-900 dark:text-white">Payment Information
                         </h2>
                         <div class="space-y-6">
+                            @if (isset($cashBooks) && $cashBooks->isNotEmpty())
+                            <div>
+                                <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
+                                    for="cash_book_id">Deduct from Account <span class="text-red-500">*</span></label>
+                                <select name="cash_book_id" id="cash_book_id" class="form-control select2-cashbook" required style="width: 100%;">
+                                    <option value="">— Select Account —</option>
+                                    @foreach ($cashBooks as $cb)
+                                        <option value="{{ $cb->id }}" data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}" data-icon="{{ $cb->icon ?? '' }}" {{ old('cash_book_id') == $cb->id ? 'selected' : '' }}>{{ $cb->title }}</option>
+                                    @endforeach
+                                </select>
+                                <p class="mt-1 text-[10px] text-slate-400">Selected account balance will decrease by this expense amount.</p>
+                            </div>
+                            @endif
                             <div>
                                 <label class="mb-3 block text-sm font-medium text-slate-700 dark:text-slate-300">Payment
                                     Method</label>
@@ -574,6 +573,29 @@
 
     <script>
         $(document).ready(function () {
+            // Cash Book Select2 with image template
+            function formatCashBook(option) {
+                if (!option.id) return option.text;
+                const img = $(option.element).data('image');
+                const icon = $(option.element).data('icon');
+                const iconMap = {wallet:'💰',money:'💵',bank:'🏦',mobile:'📱',card:'💳',gift:'🎁',gold:'🪙',dollar:'💲'};
+                let thumb = '';
+                if (img) {
+                    thumb = '<img src="' + img + '" style="width:24px;height:24px;object-fit:cover;border-radius:50%;margin-right:8px;">';
+                } else if (icon && iconMap[icon]) {
+                    thumb = '<span style="margin-right:8px;font-size:18px;">' + iconMap[icon] + '</span>';
+                } else {
+                    thumb = '<span style="margin-right:8px;font-size:18px;">🏦</span>';
+                }
+                return $('<span>' + thumb + option.text + '</span>');
+            }
+            $('.select2-cashbook').select2({
+                width: '100%',
+                placeholder: '— Select Account —',
+                templateResult: formatCashBook,
+                templateSelection: formatCashBook
+            });
+
             // Teacher section visibility logic
             function toggleTeacherSection() {
                 const selectedOption = $('#expense_category_id').find('option:selected');

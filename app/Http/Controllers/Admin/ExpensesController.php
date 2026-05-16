@@ -177,7 +177,7 @@ class ExpensesController extends Controller
 
         $teachers = Teacher::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->pluck('title', 'id');
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
 
         return view('admin.expenses.create', compact('created_bies', 'expense_categories', 'expense_category_flags', 'teachers', 'updated_bies', 'cashBooks'));
     }
@@ -234,7 +234,9 @@ class ExpensesController extends Controller
 
         $expense->load('expense_category', 'created_by', 'updated_by', 'teacher', 'media');
 
-        return view('admin.expenses.edit', compact('created_bies', 'expense', 'expense_categories', 'expense_category_flags', 'teachers', 'updated_bies'));
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
+
+        return view('admin.expenses.edit', compact('created_bies', 'expense', 'expense_categories', 'expense_category_flags', 'teachers', 'updated_bies', 'cashBooks'));
     }
 
     public function update(UpdateExpenseRequest $request, Expense $expense)

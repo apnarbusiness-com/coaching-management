@@ -206,7 +206,7 @@ class EarningsController extends Controller
         // Generate receipt number Format: REC-YYYY-001
         $receipt_numbers = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
 
-        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->pluck('title', 'id');
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
 
         return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers', 'cashBooks'));
     }
@@ -292,7 +292,9 @@ class EarningsController extends Controller
 
         $earning->load('earning_category', 'student', 'subject', 'created_by', 'updated_by');
 
-        return view('admin.earnings.edit', compact('earning', 'earning_categories', 'earning_category_flags', 'students', 'subjects'));
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
+
+        return view('admin.earnings.edit', compact('earning', 'earning_categories', 'earning_category_flags', 'students', 'subjects', 'cashBooks'));
     }
 
     public function update(UpdateEarningRequest $request, Earning $earning)
