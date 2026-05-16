@@ -490,6 +490,49 @@
     </div> --}}
 @endsection
 
+@push('styles')
+<style>
+    .select2-cashbook-dropdown .select2-results__option {
+        display: flex;
+        justify-content: space-between;
+        padding: 2px 10px;
+    }
+    .select2-cashbook-dropdown .select2-results__option .cb-title {
+        font-weight: 600;
+        font-size: 14px;
+    }
+    /* Dropdown + Selection: thumb always 28px circle */
+    .cb-thumb {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        flex-shrink: 0;
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        font-size: 18px;
+        overflow: hidden;
+    }
+    .cb-thumb img {
+        width: 28px;
+        height: 28px;
+        border-radius: 50%;
+        object-fit: cover;
+    }
+    .cb-option {
+        display: flex;
+        align-items: center;
+        gap: 10px;
+        width: 100%;
+    }
+    .cb-selection {
+        display: flex;
+        align-items: center;
+        gap: 8px;
+    }
+</style>
+@endpush
+
 @section('scripts')
     <script>
         $(document).ready(function () {
@@ -579,21 +622,27 @@
                 const img = $(option.element).data('image');
                 const icon = $(option.element).data('icon');
                 const iconMap = {wallet:'💰',money:'💵',bank:'🏦',mobile:'📱',card:'💳',gift:'🎁',gold:'🪙',dollar:'💲'};
-                let thumb = '';
+                let thumbHtml = '';
                 if (img) {
-                    thumb = '<img src="' + img + '" style="width:24px;height:24px;object-fit:cover;border-radius:50%;margin-right:8px;">';
+                    thumbHtml = '<img src="' + img + '" alt="">';
                 } else if (icon && iconMap[icon]) {
-                    thumb = '<span style="margin-right:8px;font-size:18px;">' + iconMap[icon] + '</span>';
+                    thumbHtml = iconMap[icon];
                 } else {
-                    thumb = '<span style="margin-right:8px;font-size:18px;">🏦</span>';
+                    thumbHtml = '🏦';
                 }
-                return $('<span>' + thumb + option.text + '</span>');
+                return $('<span class="cb-option"><span class="cb-thumb">' + thumbHtml + '</span><span class="cb-title">' + option.text + '</span></span>');
             }
             $('.select2-cashbook').select2({
                 width: '100%',
                 placeholder: '— Select Account —',
+                dropdownCssClass: 'select2-cashbook-dropdown',
                 templateResult: formatCashBook,
-                templateSelection: formatCashBook
+                templateSelection: function(option) {
+                    if (!option.id) return option.text;
+                    const rendered = formatCashBook(option);
+                    rendered.addClass('cb-selection');
+                    return rendered;
+                }
             });
 
             // Teacher section visibility logic
