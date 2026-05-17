@@ -1180,14 +1180,19 @@ $(document).on('click', '.search-result-item', function() {
                     // console.log(response.due_history);
                     
                     response.due_history.forEach(function(due) {
-                        let isFree = due.due_remaining <= 0 && parseFloat(due.discount_amount) >= parseFloat(due.due_amount) && parseFloat(due.discount_amount) > 0;
                         let badgeClass, badgeText;
-                        if (isFree) {
+                        if (due.status === 'free') {
                             badgeClass = 'badge-warning';
                             badgeText = 'Free';
+                        } else if (due.status === 'paid') {
+                            badgeClass = 'badge-success';
+                            badgeText = 'Paid';
+                        } else if (due.status === 'partial') {
+                            badgeClass = 'badge-warning';
+                            badgeText = 'Partial';
                         } else {
-                            badgeClass = due.status === 'paid' ? 'badge-success' : (due.status === 'partial' ? 'badge-warning' : 'badge-danger');
-                            badgeText = due.status;
+                            badgeClass = 'badge-danger';
+                            badgeText = 'Unpaid';
                         }
                         let permDisc = due.pivot_permanent_discount || 0;
                         let oneTimeDisc = due.pivot_one_time_discount || 0;
@@ -1395,8 +1400,7 @@ $(document).on('click', '.search-result-item', function() {
             const dueListBody = $('#payAllDueList');
             dueListBody.empty();
             currentDues.forEach(function(due) {
-                let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status === 'partial' ?
-                    'badge-warning' : 'badge-danger');
+                let badgeClass = due.status === 'free' ? 'badge-warning' : (due.status === 'paid' ? 'badge-success' : (due.status === 'partial' ? 'badge-warning' : 'badge-danger'));
                 dueListBody.append(`
             <tr>
                 <td>${due.month_name} ${due.year}</td>
@@ -1404,7 +1408,7 @@ $(document).on('click', '.search-result-item', function() {
                 <td>${parseFloat(due.due_amount).toFixed(2)}</td>
                 <td>${parseFloat(due.paid_amount).toFixed(2)}</td>
                 <td>${parseFloat(due.due_remaining).toFixed(2)}</td>
-                <td><span class="badge ${badgeClass}">${due.status}</span></td>
+                <td><span class="badge ${badgeClass}">${due.status === 'free' ? 'Free' : due.status}</span></td>
             </tr>
         `);
             });

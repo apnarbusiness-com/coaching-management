@@ -187,8 +187,9 @@ class DueCollectionController extends Controller
             ]);
 
             if ($due->paid_amount >= $newDueAmount) {
+                $status = $due->paid_amount > 0 ? 'paid' : 'free';
                 $due->update([
-                    'status' => 'paid',
+                    'status' => $status,
                     'paid_date' => now()->format('Y-m-d'),
                 ]);
             } elseif ($due->paid_amount > 0) {
@@ -315,8 +316,9 @@ class DueCollectionController extends Controller
                         ]);
 
                         if ($due->paid_amount >= $newDueAmount) {
+                            $status = $due->paid_amount > 0 ? 'paid' : 'free';
                             $due->update([
-                                'status' => 'paid',
+                                'status' => $status,
                                 'paid_date' => now()->format('Y-m-d'),
                             ]);
                         } elseif ($due->paid_amount > 0) {

@@ -299,7 +299,7 @@ $(function() {
             $.get("{{ route('admin.due-collections.student-dues', ':id') }}".replace(':id', studentId), function(dues) {
                 let html = '';
                 dues.forEach(due => {
-                    let badgeClass = due.status === 'paid' ? 'paid' : (due.status === 'partial' ? 'partial' : '');
+                    let badgeClass = due.status === 'paid' || due.status === 'free' ? 'paid' : (due.status === 'partial' ? 'partial' : '');
                     html += `
                         <div class="due-item ${badgeClass}">
                             <div>

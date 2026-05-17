@@ -193,7 +193,7 @@ class DashboardWidgetService
                     });
             })
             ->where('due_remaining', '>', 0)
-            ->where('status', '!=', 'paid')
+            ->whereIn('status', ['unpaid', 'partial'])
             ->with('student')
             ->get();
 
@@ -445,7 +445,7 @@ class DashboardWidgetService
                 });
         })
         ->where('due_remaining', '>', 0)
-        ->where('status', '!=', 'paid')
+        ->whereIn('status', ['unpaid', 'partial'])
         ->with('student')
         ->get();
 

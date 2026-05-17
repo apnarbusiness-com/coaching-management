@@ -89,7 +89,12 @@ class StudentMonthlyDue extends Model
 
     public function scopePaid($query)
     {
-        return $query->where('status', 'paid');
+        return $query->whereIn('status', ['paid', 'free']);
+    }
+
+    public function scopeFree($query)
+    {
+        return $query->where('status', 'free');
     }
 
     public function scopeForMonth($query, $month, $year)
@@ -99,13 +104,12 @@ class StudentMonthlyDue extends Model
 
     public function getDueStatusAttribute()
     {
-        if ($this->status === 'paid') {
-            return '<span class="badge bg-success">Paid</span>';
-        } elseif ($this->status === 'partial') {
-            return '<span class="badge bg-warning">Partial</span>';
-        } else {
-            return '<span class="badge bg-danger">Unpaid</span>';
-        }
+        return match ($this->status) {
+            'paid' => '<span class="badge bg-success">Paid</span>',
+            'free' => '<span class="badge bg-warning">Free</span>',
+            'partial' => '<span class="badge bg-warning">Partial</span>',
+            default => '<span class="badge bg-danger">Unpaid</span>',
+        };
     }
 
     public function getMonthNameAttribute()

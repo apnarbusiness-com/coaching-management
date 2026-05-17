@@ -113,7 +113,7 @@ class DueCalculationService
             $existingDue->due_remaining = max(0, $newDueAmount - $existingPaid);
 
             if ($existingDue->due_remaining <= 0) {
-                $existingDue->status = 'paid';
+                $existingDue->status = $existingPaid > 0 ? 'paid' : 'free';
                 $existingDue->paid_date = now()->format('Y-m-d');
             } elseif ($existingPaid > 0) {
                 $existingDue->status = 'partial';
@@ -315,7 +315,7 @@ class DueCalculationService
             'total_due' => $query->sum('due_amount'),
             'total_collected' => $query->sum('paid_amount'),
             'total_remaining' => $query->sum('due_remaining'),
-            'paid_count' => $query->where('status', 'paid')->count(),
+            'paid_count' => $query->whereIn('status', ['paid', 'free'])->count(),
             'partial_count' => $query->where('status', 'partial')->count(),
             'unpaid_count' => $query->where('status', 'unpaid')->count(),
             'total_students' => $query->distinct('student_id')->count('student_id'),
