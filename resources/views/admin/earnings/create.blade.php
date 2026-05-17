@@ -180,7 +180,7 @@
                                 <div class="relative">
                                     <input name="earning_date" id="earning_date" required
                                         class="w-full pl-10 pr-4  bg-white dark:bg-[#111827] border border-slate-200 dark:border-slate-700 rounded-lg focus:ring-2 focus:ring-[#2563EB]/20 dark:focus:ring-[#60A5FA]/20 focus:border-[#2563EB] dark:focus:border-[#60A5FA] text-[#1F2937] dark:text-[#F9FAFB] {{ $errors->has('earning_date') ? 'border-red-500' : '' }}"
-                                        type="date" value="{{ old('earning_date', date('Y-m-d')) }}" />
+                                        type="datetime-local" value="{{ old('earning_date', date('Y-m-d\TH:i')) }}" />
                                     <div
                                         class="absolute inset-y-0 left-0 pl-3 flex items-center pointer-events-none text-slate-400">
                                         <span class="material-symbols-outlined text-xl">calendar_today</span>
