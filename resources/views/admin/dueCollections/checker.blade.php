@@ -597,7 +597,8 @@
                             <p>
                                 <strong>Father:</strong> <span id="studentFather">-</span> |
                                 <strong>Mother:</strong> <span id="studentMother">-</span> |
-                                <strong>Contact:</strong> <span id="studentContact">-</span>
+                                <strong>Contact:</strong> <span id="studentContact">-</span> |
+                                <strong>Guardian:</strong> <span id="studentGuardianContact">-</span>
                             </p>
                             <div id="flagBadges" class="mt-2"></div>
                             <div id="flagCommentsDisplay" class="mt-2 text-muted"
@@ -1152,6 +1153,7 @@ $(document).on('click', '.search-result-item', function() {
                 $('#studentFather').text(s.fathers_name);
                 $('#studentMother').text(s.mothers_name);
                 $('#studentContact').text(s.contact_number);
+                $('#studentGuardianContact').text(s.guardian_contact_number);
 
                 const summary = response.due_summary;
                 $('#totalDue').text(parseFloat(summary.total_due).toFixed(2));

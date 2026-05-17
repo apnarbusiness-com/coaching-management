@@ -347,6 +347,16 @@
                 </button>
             </div>
 
+            <div class="quick-enroll-bar" style="display:flex; gap:8px; margin-bottom:12px; align-items:center; background:#eef2ff; padding:10px 14px; border-radius:12px; border:1px solid #c7d2fe;">
+                <span style="font-size:12px; font-weight:600; color:#4338ca; white-space:nowrap;">Quick Enroll:</span>
+                <input type="text" id="quickEnrollIds" placeholder="e.g. 417 410 415 380"
+                       style="flex:1; padding:8px 12px; border:1px solid #c7d2fe; border-radius:8px; font-size:13px; background:#fff;">
+                <button type="button" onclick="quickEnrollStudents()"
+                        style="padding:8px 16px; background:#4338ca; color:#fff; border:none; border-radius:8px; font-weight:600; font-size:13px; cursor:pointer;">
+                    Enroll
+                </button>
+            </div>
+
             <div class="stats-bar">
                 <div class="stat-item marked">
                     <div class="value">{{ $stats['marked'] }}/{{ $stats['total'] }}</div>
@@ -675,5 +685,32 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function quickEnrollStudents() {
+    const input = document.getElementById('quickEnrollIds');
+    const studentIds = input.value.trim();
+    if (!studentIds) { alert('Please enter student ID numbers.'); return; }
+
+    const dateInput = document.getElementById('attendance-date');
+    const d = new Date(dateInput.value + 'T00:00:00');
+    const month = d.getMonth() + 1;
+    const year = d.getFullYear();
+
+    fetch('{{ route('admin.batches.quickEnrollAjax', $batch->id) }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ student_ids: studentIds, month, year })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.success) {
+            input.value = '';
+            location.reload();
+        } else {
+            alert(data.message);
+        }
+    })
+    .catch(err => { console.error(err); alert('Error enrolling students.'); });
+}
 </script>
 @endsection

@@ -764,6 +764,7 @@ class DueCollectionController extends Controller
                 'fathers_name' => $student->studentDetails->fathers_name ?? 'N/A',
                 'mothers_name' => $student->studentDetails->mothers_name ?? 'N/A',
                 'contact_number' => $student->contact_number,
+                'guardian_contact_number' => $student->studentDetails->guardian_contact_number ?? 'N/A',
                 'image' => $student->image?->thumbnail ?? null,
             ],
             'due_summary' => $dueSummary,
