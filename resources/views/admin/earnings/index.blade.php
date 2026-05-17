@@ -366,7 +366,8 @@
                     },
                     {
                         data: 'earning_date',
-                        name: 'earning_date'
+                        name: 'earning_date',
+                        render: function(data) { return data ? moment(data).format('DD-MMM-YYYY h:mm A') : ''; }
                     },
                     {
                         data: 'paid_by',

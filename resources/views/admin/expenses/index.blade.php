@@ -277,7 +277,7 @@
       { data: 'id', name: 'id' },
       { data: 'title', name: 'title' },
       { data: 'amount', name: 'amount' },
-      { data: 'expense_date', name: 'expense_date' },
+      { data: 'expense_date', name: 'expense_date', render: function(data) { return data ? moment(data).format('DD-MMM-YYYY h:mm A') : ''; } },
       { data: 'paid_by', name: 'paid_by' },
       { data: 'teacher_name', name: 'teacher.name' },
       { data: 'actions', name: 'actions', searchable: false, sortable: false }

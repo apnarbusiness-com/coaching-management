@@ -273,7 +273,7 @@
                                                 <p class="text-xs text-slate-400 mt-1">Total: ৳<span data-field="totalAmount">0</span></p>
                                             </div>
                                         </div>
-                                        <button class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">View List</button>
+                                        <a href="{{ route('admin.due-collections.index') }}" class="px-4 py-2 text-sm font-medium text-white bg-red-600 rounded-lg hover:bg-red-700 transition-colors">View List</a>
                                     </div>
                                 </div>
                             @endif
@@ -297,7 +297,7 @@
                                                 <p class="text-xs text-slate-400 mt-1">Total: ৳<span data-field="totalAmount">0</span></p>
                                             </div>
                                         </div>
-                                        <button class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">Review</button>
+                                        <a href="{{ route('admin.teachers-payments.index') }}" class="px-4 py-2 text-sm font-medium text-white bg-orange-600 rounded-lg hover:bg-orange-700 transition-colors">Review</a>
                                     </div>
                                 </div>
                             @endif
