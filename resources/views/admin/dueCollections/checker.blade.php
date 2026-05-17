@@ -1180,8 +1180,15 @@ $(document).on('click', '.search-result-item', function() {
                     // console.log(response.due_history);
                     
                     response.due_history.forEach(function(due) {
-                        let badgeClass = due.status === 'paid' ? 'badge-success' : (due.status ===
-                            'partial' ? 'badge-warning' : 'badge-danger');
+                        let isFree = due.due_remaining <= 0 && parseFloat(due.discount_amount) >= parseFloat(due.due_amount) && parseFloat(due.discount_amount) > 0;
+                        let badgeClass, badgeText;
+                        if (isFree) {
+                            badgeClass = 'badge-warning';
+                            badgeText = 'Free';
+                        } else {
+                            badgeClass = due.status === 'paid' ? 'badge-success' : (due.status === 'partial' ? 'badge-warning' : 'badge-danger');
+                            badgeText = due.status;
+                        }
                         let permDisc = due.pivot_permanent_discount || 0;
                         let oneTimeDisc = due.pivot_one_time_discount || 0;
                         let payButton = due.due_remaining > 0 ?
@@ -1197,7 +1204,7 @@ $(document).on('click', '.search-result-item', function() {
                         <td><span class="text-purple-600">${parseFloat(oneTimeDisc).toFixed(2)}</span></td>
                         <td>${parseFloat(due.due_remaining).toFixed(2)}</td>
                         <td><span class="badge ${badgeClass} text-capitalize">
-                            ${due.status}
+                            ${badgeText}
                         </span></td>
                         <td>${payButton}</td>
                     </tr>
