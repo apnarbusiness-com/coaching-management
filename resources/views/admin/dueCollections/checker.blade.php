@@ -184,6 +184,13 @@
             overflow: hidden;
         }
 
+        .info-card.sticky-info {
+            position: sticky;
+            top: 70px;
+            z-index: 50;
+            overflow: visible;
+        }
+
         @keyframes heartbit {
             0% {
                 box-shadow: 0 0 0 0 var(--flag-color);
@@ -577,7 +584,7 @@
         </div>
 
         <div id="studentData" style="display: none;">
-            <div class="info-card">
+            <div class="info-card sticky-info">
                 <div class="card-header">
                     <i class="fa fa-user"></i> Student Information
                     <button type="button" class="btn btn-xs btn-primary ml-auto" onclick="openFlagModal()">
