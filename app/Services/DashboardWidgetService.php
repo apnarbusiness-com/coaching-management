@@ -307,4 +307,336 @@ class DashboardWidgetService
 
         return $data;
     }
+
+    public static function getWidgetData(string $widgetKey): array
+    {
+        return match ($widgetKey) {
+            'total_profit' => self::getTotalProfitData(),
+            'yearly_earnings' => self::getYearlyEarningsData(),
+            'yearly_expenses' => self::getYearlyExpensesData(),
+            'yearly_profit' => self::getYearlyProfitData(),
+            'monthly_earnings' => self::getMonthlyEarningsData(),
+            'monthly_expenses' => self::getMonthlyExpensesData(),
+            'monthly_profit' => self::getMonthlyProfitData(),
+            'student_due_alert' => self::getStudentDueAlertData(),
+            'teacher_payment_alert' => self::getTeacherPaymentAlertData(),
+            'monthly_revenue_chart' => self::getMonthlyRevenueChartData(),
+            'total_batches' => self::getTotalBatchesData(),
+            'total_students' => self::getTotalStudentsData(),
+            'total_teachers' => self::getTotalTeachersData(),
+            'attendance_overview' => self::getAttendanceOverviewData(),
+            'monthly_earnings_table' => self::getMonthlyEarningsTableData(),
+            'recent_transactions' => self::getRecentTransactionsData(),
+            default => ['error' => 'Unknown widget'],
+        };
+    }
+
+    private static function getTotalProfitData(): array
+    {
+        $totalEarnings = \App\Models\Earning::sum('amount');
+        $totalExpenses = \App\Models\Expense::sum('amount');
+
+        $months = collect();
+        $now = \Carbon\Carbon::now()->startOfMonth();
+        for ($i = 5; $i >= 0; $i--) {
+            $months->push($now->copy()->subMonths($i));
+        }
+        $earningData = \App\Models\Earning::selectRaw('
+            YEAR(earning_date) as year,
+            MONTH(earning_date) as month,
+            SUM(amount) as total
+        ')
+            ->where('earning_date', '>=', $months->first())
+            ->groupBy('year', 'month')
+            ->get()
+            ->keyBy(fn($item) => $item->year . '-' . $item->month);
+
+        $last6MonthsEarnings = [];
+        $maxEarning = 1;
+        foreach ($months as $month) {
+            $key = $month->year . '-' . $month->month;
+            $total = $earningData[$key]->total ?? 0;
+            $last6MonthsEarnings[] = ['month' => $month->format('M Y'), 'total' => $total];
+            if ($total > $maxEarning) $maxEarning = $total;
+        }
+
+        $lastMonth = $last6MonthsEarnings[4]['total'] ?? 0;
+        $currentMonthVal = $last6MonthsEarnings[5]['total'] ?? 0;
+
+        if ($lastMonth == 0 && $currentMonthVal == 0) {
+            $trend = 'flat';
+            $growthPercentage = 0;
+        } elseif ($lastMonth == 0) {
+            $trend = 'up';
+            $growthPercentage = 100;
+        } else {
+            $change = (($currentMonthVal - $lastMonth) / $lastMonth) * 100;
+            $growthPercentage = round(abs($change), 1);
+            $trend = $change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat');
+        }
+
+        return [
+            'totalProfit' => $totalEarnings - $totalExpenses,
+            'totalEarnings' => $totalEarnings,
+            'totalExpenses' => $totalExpenses,
+            'earnings' => $last6MonthsEarnings,
+            'maxEarning' => $maxEarning,
+            'growthPercentage' => $growthPercentage,
+            'growthTrend' => $trend,
+        ];
+    }
+
+    private static function getYearlyEarningsData(): array
+    {
+        return ['thisYearEarnings' => \App\Models\Earning::whereYear('earning_date', date('Y'))->sum('amount')];
+    }
+
+    private static function getYearlyExpensesData(): array
+    {
+        return ['thisYearExpenses' => \App\Models\Expense::whereYear('expense_date', date('Y'))->sum('amount')];
+    }
+
+    private static function getYearlyProfitData(): array
+    {
+        $thisYearEarnings = \App\Models\Earning::whereYear('earning_date', date('Y'))->sum('amount');
+        $thisYearExpenses = \App\Models\Expense::whereYear('expense_date', date('Y'))->sum('amount');
+        $profit = $thisYearEarnings - $thisYearExpenses;
+        $margin = $thisYearEarnings > 0 ? round(($profit / $thisYearEarnings) * 100, 2) : 0;
+        return [
+            'thisYearEarnings' => $thisYearEarnings,
+            'thisYearExpenses' => $thisYearExpenses,
+            'thisYearProfit' => $profit,
+            'thisYearProfitMargin' => $margin,
+        ];
+    }
+
+    private static function getMonthlyEarningsData(): array
+    {
+        return ['thisMonthEarnings' => \App\Models\Earning::whereMonth('earning_date', date('m'))->whereYear('earning_date', date('Y'))->sum('amount')];
+    }
+
+    private static function getMonthlyExpensesData(): array
+    {
+        return ['thisMonthExpenses' => \App\Models\Expense::whereMonth('expense_date', date('m'))->whereYear('expense_date', date('Y'))->sum('amount')];
+    }
+
+    private static function getMonthlyProfitData(): array
+    {
+        $thisMonthEarnings = \App\Models\Earning::whereMonth('earning_date', date('m'))->whereYear('earning_date', date('Y'))->sum('amount');
+        $thisMonthExpenses = \App\Models\Expense::whereMonth('expense_date', date('m'))->whereYear('expense_date', date('Y'))->sum('amount');
+        $profit = $thisMonthEarnings - $thisMonthExpenses;
+        $margin = $thisMonthEarnings > 0 ? round(($profit / $thisMonthEarnings) * 100, 2) : 0;
+        return [
+            'thisMonthEarnings' => $thisMonthEarnings,
+            'thisMonthExpenses' => $thisMonthExpenses,
+            'thisMonthProfit' => $profit,
+            'thisMonthProfitMargin' => $margin,
+        ];
+    }
+
+    private static function getStudentDueAlertData(): array
+    {
+        $currentMonth = (int) now()->format('n');
+        $currentYear = (int) now()->format('Y');
+        $overdueDues = \App\Models\StudentMonthlyDue::where(function ($query) use ($currentMonth, $currentYear) {
+            $query->where('year', '<', $currentYear)
+                ->orWhere(function ($q) use ($currentMonth, $currentYear) {
+                    $q->where('year', $currentYear)->where('month', '<', $currentMonth);
+                });
+        })
+        ->where('due_remaining', '>', 0)
+        ->where('status', '!=', 'paid')
+        ->with('student')
+        ->get();
+
+        $totalAmount = $overdueDues->sum('due_remaining');
+        return [
+            'overdueCount' => $overdueDues->count(),
+            'totalAmount' => $totalAmount,
+        ];
+    }
+
+    private static function getTeacherPaymentAlertData(): array
+    {
+        $currentMonth = (int) now()->format('n');
+        $currentYear = (int) now()->format('Y');
+        $pendingPayments = \App\Models\TeachersPayment::where(function ($query) use ($currentMonth, $currentYear) {
+            $query->where(function ($q) use ($currentMonth, $currentYear) {
+                $q->where('year', '<', $currentYear)
+                    ->orWhere(function ($q2) use ($currentMonth, $currentYear) {
+                        $q2->where('year', $currentYear)->where('month', '<', $currentMonth);
+                    });
+            })->where('payment_status', '!=', 'paid');
+        })
+        ->get();
+
+        return [
+            'pendingCount' => $pendingPayments->count(),
+            'totalAmount' => $pendingPayments->sum('amount'),
+        ];
+    }
+
+    private static function getMonthlyRevenueChartData(): array
+    {
+        $months = collect();
+        $now = \Carbon\Carbon::now()->startOfMonth();
+        for ($i = 5; $i >= 0; $i--) {
+            $months->push($now->copy()->subMonths($i));
+        }
+        $earningData = \App\Models\Earning::selectRaw('
+            YEAR(earning_date) as year,
+            MONTH(earning_date) as month,
+            SUM(amount) as total
+        ')
+            ->where('earning_date', '>=', $months->first())
+            ->groupBy('year', 'month')
+            ->get()
+            ->keyBy(fn($item) => $item->year . '-' . $item->month);
+
+        $last6MonthsEarnings = [];
+        $maxEarning = 1;
+        foreach ($months as $month) {
+            $key = $month->year . '-' . $month->month;
+            $total = $earningData[$key]->total ?? 0;
+            $last6MonthsEarnings[] = ['total' => $total];
+            if ($total > $maxEarning) $maxEarning = $total;
+        }
+
+        $lastMonth = $last6MonthsEarnings[4]['total'] ?? 0;
+        $currentMonthVal = $last6MonthsEarnings[5]['total'] ?? 0;
+
+        if ($lastMonth == 0 && $currentMonthVal == 0) {
+            $trend = 'flat';
+            $growthPercentage = 0;
+        } elseif ($lastMonth == 0) {
+            $trend = 'up';
+            $growthPercentage = 100;
+        } else {
+            $change = (($currentMonthVal - $lastMonth) / $lastMonth) * 100;
+            $growthPercentage = round(abs($change), 1);
+            $trend = $change > 0 ? 'up' : ($change < 0 ? 'down' : 'flat');
+        }
+
+        return [
+            'earnings' => $last6MonthsEarnings,
+            'maxEarning' => $maxEarning,
+            'growthPercentage' => $growthPercentage,
+            'growthTrend' => $trend,
+        ];
+    }
+
+    private static function getTotalBatchesData(): array
+    {
+        $total = \App\Models\Batch::count();
+        $active = \App\Models\Batch::where('status', 1)->count();
+        $inactive = $total - $active;
+
+        return [
+            'total' => $total,
+            'active' => $active,
+            'inactive' => $inactive,
+        ];
+    }
+
+    private static function getTotalStudentsData(): array
+    {
+        $total = \App\Models\StudentBasicInfo::count();
+        $enrolledThisMonth = \App\Models\StudentBasicInfo::whereHas('batches', function ($q) {
+            $q->whereYear('batch_student_basic_info.enrolled_at', now()->year)
+              ->whereMonth('batch_student_basic_info.enrolled_at', now()->month);
+        })->count();
+
+        return [
+            'total' => $total,
+            'enrolled_this_month' => $enrolledThisMonth,
+        ];
+    }
+
+    private static function getTotalTeachersData(): array
+    {
+        $total = \App\Models\Teacher::count();
+        $active = \App\Models\Teacher::where('status', 1)->count();
+
+        return [
+            'total' => $total,
+            'active' => $active,
+        ];
+    }
+
+    private static function getAttendanceOverviewData(): array
+    {
+        $allAttendances = \App\Models\BatchAttendance::whereYear('attendance_date', now()->year)->get();
+        $total = $allAttendances->count();
+        $present = $allAttendances->where('status', 'present')->count();
+        $absent = $allAttendances->where('status', 'absent')->count();
+        $late = $allAttendances->where('status', 'late')->count();
+        $percentage = $total > 0 ? round((($present + $late) / $total) * 100, 1) : 0;
+
+        return [
+            'total' => $total,
+            'present' => $present,
+            'absent' => $absent,
+            'late' => $late,
+            'percentage' => $percentage,
+        ];
+    }
+
+    private static function getMonthlyEarningsTableData(): array
+    {
+        $rows = \App\Models\Earning::selectRaw('
+            YEAR(earning_date) as year,
+            MONTH(earning_date) as month,
+            SUM(amount) as total
+        ')
+            ->whereYear('earning_date', now()->year)
+            ->groupBy('year', 'month')
+            ->orderBy('month')
+            ->get()
+            ->keyBy('month');
+
+        $months = [];
+        for ($m = 1; $m <= 12; $m++) {
+            $months[] = [
+                'month' => \Carbon\Carbon::createFromDate(null, $m)->format('F'),
+                'total' => (float) ($rows[$m]->total ?? 0),
+            ];
+        }
+
+        $grandTotal = array_sum(array_column($months, 'total'));
+
+        return ['months' => $months, 'grand_total' => $grandTotal];
+    }
+
+    private static function getRecentTransactionsData(): array
+    {
+        $earnings = \App\Models\Earning::with('earning_category')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn($e) => [
+                'type' => 'earning',
+                'title' => $e->title,
+                'category' => $e->earningCategory->name ?? 'N/A',
+                'amount' => (float) $e->amount,
+                'date' => $e->earning_date,
+                'url' => route('admin.earnings.show', $e->id),
+            ]);
+
+        $expenses = \App\Models\Expense::with('expenseCategory')
+            ->latest()
+            ->take(5)
+            ->get()
+            ->map(fn($e) => [
+                'type' => 'expense',
+                'title' => $e->title ?? 'Untitled',
+                'category' => $e->expenseCategory->name ?? 'N/A',
+                'amount' => (float) $e->amount,
+                'date' => $e->expense_date,
+                'url' => route('admin.expenses.show', $e->id),
+            ]);
+
+        $transactions = $earnings->concat($expenses)->sortByDesc('date')->take(10)->values();
+
+        return ['transactions' => $transactions];
+    }
 }

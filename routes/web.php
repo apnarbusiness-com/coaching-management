@@ -47,6 +47,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Alert Data API
     Route::get('/alert-data', [HomeController::class, 'getAlertData'])->name('alert-data');
 
+    // Widget Data API (lazy load)
+    Route::get('/widget-data/{widget}', [HomeController::class, 'getWidgetData'])->name('widget-data');
+
     // Dashboard Widget Configuration
     Route::get('dashboard-widgets', 'DashboardWidgetConfigController@index')->name('dashboard-widgets.index');
     Route::get('dashboard-widgets/role/{role}/edit', 'DashboardWidgetConfigController@edit')->name('dashboard-widgets.edit');

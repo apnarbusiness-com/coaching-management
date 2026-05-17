@@ -79,7 +79,37 @@ return [
             'permission' => 'dashboard_view_financials',
         ],
 
-        // Level 4: Subject-wise Earnings Table
+        // Level 4: Summary Stats
+        'total_batches' => [
+            'label' => 'Total Batches',
+            'default_visible' => true,
+            'permission' => 'dashboard_view_financials',
+        ],
+        'total_students' => [
+            'label' => 'Total Students',
+            'default_visible' => true,
+            'permission' => 'dashboard_view_financials',
+        ],
+        'total_teachers' => [
+            'label' => 'Total Teachers',
+            'default_visible' => true,
+            'permission' => 'dashboard_view_financials',
+        ],
+        'attendance_overview' => [
+            'label' => 'Attendance Overview',
+            'default_visible' => true,
+            'permission' => 'dashboard_view_reports',
+        ],
+        'monthly_earnings_table' => [
+            'label' => 'Monthly Earnings Breakdown',
+            'default_visible' => true,
+            'permission' => 'dashboard_view_financials',
+        ],
+        'recent_transactions' => [
+            'label' => 'Recent Transactions',
+            'default_visible' => true,
+            'permission' => 'dashboard_view_financials',
+        ],
         'subject_earnings_table' => [
             'label' => 'Subject-wise Earnings',
             'default_visible' => true,
@@ -109,6 +139,12 @@ return [
             'teacher_payment_alert',
             'monthly_revenue_chart',
             'financial_overview',
+            'total_batches',
+            'total_students',
+            'total_teachers',
+            'attendance_overview',
+            'monthly_earnings_table',
+            'recent_transactions',
             'subject_earnings_table',
         ],
         'manager' => [

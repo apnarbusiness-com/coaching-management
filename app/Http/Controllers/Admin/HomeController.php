@@ -6,8 +6,8 @@ use App\Models\Earning;
 use App\Models\Expense;
 use App\Models\StudentMonthlyDue;
 use App\Models\Batch;
-use App\Services\DueCalculationService;
 use App\Services\DashboardWidgetService;
+use App\Services\DueCalculationService;
 use Carbon\Carbon;
 use App\Models\TeachersPayment;
 use App\Services\TeacherSalaryCalculationService;
@@ -20,30 +20,14 @@ class HomeController
     {
         $user = auth()->user();
 
-
         $visibleWidgets = DashboardWidgetService::getVisibleWidgetKeys($user);
-
-        // return $visibleWidgets;
-
-        $widgetData = DashboardWidgetService::getWidgetDataForUser($user);
-
-        $transactionData = $widgetData['transactionData'] ?? [];
-        $lastSixMonthsData = $widgetData['lastSixMonthsData'] ?? [
-            'earnings' => [],
-            'maxEarning' => 1,
-            'growthPercentage' => 0,
-            'growthTrend' => 'flat',
-        ];
 
         $batches = Batch::orderBy('batch_name')->get();
 
         $currentMonth = (int) now()->format('n');
         $currentYear = (int) now()->format('Y');
 
-        $studentAlerts = $transactionData['studentAlerts'] ?? ['overdueCount' => 0, 'overdueStudents' => collect()];
-        $teacherPaymentAlerts = $transactionData['teacherPaymentAlerts'] ?? ['pendingCount' => 0, 'pendingTeachers' => collect()];
-
-        return view('home', compact('transactionData', 'lastSixMonthsData', 'visibleWidgets', 'batches', 'currentMonth', 'currentYear', 'studentAlerts', 'teacherPaymentAlerts'));
+        return view('home', compact('visibleWidgets', 'batches', 'currentMonth', 'currentYear'));
     }
 
     public function loadStudentDashboard()
@@ -320,5 +304,19 @@ class HomeController
             'student_alerts' => $studentData,
             'teacher_alerts' => $teacherData,
         ]);
+    }
+
+    public function getWidgetData(Request $request, $widget)
+    {
+        $user = auth()->user();
+        $visibleWidgets = DashboardWidgetService::getVisibleWidgetKeys($user);
+
+        if (!in_array($widget, $visibleWidgets)) {
+            return response()->json(['error' => 'Widget not available'], 403);
+        }
+
+        $data = DashboardWidgetService::getWidgetData($widget);
+
+        return response()->json($data);
     }
 }
