@@ -79,6 +79,14 @@
                                 {{ $yr }}</option>
                         @endforeach
                     </select>
+                    <select name="status"
+                        class="px-3 py-1.5 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-sm">
+                        <option value="">All Status</option>
+                        @foreach (\App\Models\TeachersPayment::PAYMENT_STATUS_SELECT as $key => $label)
+                            <option value="{{ $key }}" {{ request('status') == $key ? 'selected' : '' }}>
+                                {{ $label }}</option>
+                        @endforeach
+                    </select>
                     <button type="submit"
                         class="px-3 py-1.5 bg-slate-200 dark:bg-slate-700 rounded-lg text-sm font-medium hover:bg-slate-300 dark:hover:bg-slate-600">
                         Filter

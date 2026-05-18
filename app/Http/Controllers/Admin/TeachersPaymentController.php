@@ -44,6 +44,9 @@ class TeachersPaymentController extends Controller
         if ($request->filled('batch_id')) {
             $query->where('batch_id', $request->batch_id);
         }
+        if ($request->filled('status')) {
+            $query->where('payment_status', $request->status);
+        }
 
         $teachersPayments = $query->orderBy('year', 'desc')
             ->orderBy('month', 'desc')
