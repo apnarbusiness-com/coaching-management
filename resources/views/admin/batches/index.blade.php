@@ -62,6 +62,14 @@
                         id="open-teacher-modal-btn">
                         Assign Last Month Teachers (All Batches)
                     </button>
+                <form method="POST" action="{{ route('admin.batches.clearOrphanedData') }}" id="clear-orphaned-data-form" class="inline-flex">
+                    @csrf
+                    <button type="button"
+                        class="inline-flex items-center px-5 py-2.5 text-sm font-semibold text-white bg-red-600 border border-transparent rounded-lg shadow-sm hover:bg-red-700 focus:outline-none focus:ring-2 focus:ring-offset-2 focus:ring-red-500"
+                        id="clear-orphaned-data-btn">
+                        Clear Orphaned Data
+                    </button>
+                </form>
             </div>
         </div>
     </div>
@@ -931,6 +939,25 @@
                 form.action = '{{ route('admin.batches.destroy', 'REPLACE_ID') }}'.replace('REPLACE_ID', batchDeleteId);
                 form.submit();
             };
+
+            $('#clear-orphaned-data-btn').on('click', function() {
+                Swal.fire({
+                    title: 'Clear Orphaned Data?',
+                    html: '<p style="text-align:left;margin-bottom:10px;font-size:13px;color:#64748b;">This will permanently delete all soft-deleted batches and their related child records.</p>' +
+                          '<p style="text-align:left;margin-bottom:10px;font-size:13px;color:#64748b;">Financial records (earnings/expenses) will be preserved with NULL batch_id.</p>' +
+                          '<p style="text-align:left;margin-top:10px;font-size:12px;color:#ef4444;">⚠️ This action cannot be undone.</p>',
+                    icon: 'warning',
+                    showCancelButton: true,
+                    confirmButtonColor: '#dc2626',
+                    cancelButtonColor: '#64748b',
+                    confirmButtonText: 'Yes, clear it!',
+                    cancelButtonText: 'Cancel',
+                    showLoaderOnConfirm: true,
+                    preConfirm: () => {
+                        $('#clear-orphaned-data-form').submit();
+                    }
+                });
+            });
         });
     </script>
 @endsection

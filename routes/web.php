@@ -110,6 +110,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('batches/{batch}/dependencies/{type}/records', [BatchController::class, 'dependencyRecords'])->name('batches.dependencies.records');
     Route::delete('batches/{batch}/dependencies/{type}', [BatchController::class, 'deleteDependency'])->name('batches.dependencies.delete');
     Route::post('batches/{batch}/toggle-status', [BatchController::class, 'toggleStatus'])->name('batches.toggleStatus');
+    Route::post('batches/clear-orphaned-data', [BatchController::class, 'clearOrphanedData'])->name('batches.clearOrphanedData');
     Route::resource('batches', 'BatchController');
 
     // Student Basic Info

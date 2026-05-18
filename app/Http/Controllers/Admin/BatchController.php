@@ -1573,4 +1573,27 @@ class BatchController extends Controller
 
         return response()->json(['status' => $batch->status]);
     }
+
+    public function clearOrphanedData()
+    {
+        abort_if(Gate::denies('batch_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $deletedBatchCount = 0;
+        $deletedStudentOtherDues = 0;
+
+        $deletedBatches = Batch::onlyTrashed()->get();
+
+        foreach ($deletedBatches as $batch) {
+            $deletedStudentOtherDues += DB::table('student_other_dues')
+                ->where('batch_id', $batch->id)
+                ->delete();
+
+            $batch->forceDelete();
+            $deletedBatchCount++;
+        }
+
+        $affectedEarnings = DB::table('earnings')->whereNull('batch_id')->count();
+
+        return back()->with('status', "Orphaned data cleared: {$deletedBatchCount} batches permanently deleted, {$deletedStudentOtherDues} other dues removed. {$affectedEarnings} earnings records remain with NULL batch_id for financial history.");
+    }
 }
