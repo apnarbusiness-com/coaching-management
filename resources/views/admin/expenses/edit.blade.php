@@ -181,7 +181,7 @@
                                                 <label class="cursor-pointer">
                                                     <input class="payment-card-input sr-only" type="radio" name="cash_book_id"
                                                         value="{{ $cb->id }}"
-                                                        {{ old('cash_book_id', $expense->cash_book_id) == $cb->id ? 'checked' : ($loop->first ? 'checked' : '') }}>
+                                                        {{ old('cash_book_id', $expense->cash_book_id) == $cb->id ? 'checked' : ($defaultCashBook && $defaultCashBook->id == $cb->id ? 'checked' : ($loop->first ? 'checked' : '')) }}>
                                                     <div class="payment-card flex flex-col items-center justify-center rounded-lg border border-slate-200 p-3 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800 transition-all">
                                                         @if ($cb->image)
                                                             <img src="{{ Storage::url($cb->image) }}" class="w-8 h-8 mb-1 object-contain">
@@ -202,7 +202,7 @@
                                                 <option value="{{ $cb->id }}"
                                                     data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}"
                                                     data-icon="{{ $cb->icon ?? '' }}"
-                                                    {{ old('cash_book_id', $expense->cash_book_id) == $cb->id ? 'selected' : '' }}>{{ $cb->title }}
+                                                    {{ old('cash_book_id', $expense->cash_book_id) == $cb->id ? 'selected' : ($defaultCashBook && $defaultCashBook->id == $cb->id ? 'selected' : '') }}>{{ $cb->title }}
                                                 </option>
                                             @endforeach
                                         </select>

@@ -50,6 +50,22 @@
                             <small class="d-block text-muted">If checked, this account will appear as a selectable option in Earning & Expense forms. Earnings will add to, Expenses will subtract from this balance.</small>
                         </div>
                     </div>
+                    <div class="row mb-3">
+                        <div class="col-md-6">
+                            <label class="form-label">Order</label>
+                            <input type="number" name="order" class="form-control" min="0" value="{{ old('order', 0) }}">
+                            <small class="text-muted">Lower numbers appear first.</small>
+                        </div>
+                        <div class="col-md-6 d-flex align-items-end">
+                            <div class="form-check">
+                                <input type="checkbox" name="is_default" class="form-check-input" id="is_default" value="1" {{ old('is_default') ? 'checked' : '' }}>
+                                <label class="form-check-label" for="is_default">
+                                    <strong>Default Account</strong>
+                                </label>
+                                <small class="d-block text-muted">If checked, this account will be pre-selected in Earning & Expense forms.</small>
+                            </div>
+                        </div>
+                    </div>
                     <div class="mb-3">
                         <label class="form-label">Note</label>
                         <textarea name="note" class="form-control" rows="3" placeholder="Optional notes..."></textarea>

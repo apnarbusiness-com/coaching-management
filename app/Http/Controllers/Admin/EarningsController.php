@@ -207,11 +207,12 @@ class EarningsController extends Controller
         // Generate receipt number Format: REC-YYYY-001
         $receipt_numbers = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
 
-        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('order')->orderBy('title')->get();
+        $defaultCashBook = CashBook::where('is_financial_account', true)->where('is_default', true)->first();
 
         $batches = Batch::orderBy('batch_name')->pluck('batch_name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers', 'cashBooks', 'batches'));
+        return view('admin.earnings.create', compact('earning_categories', 'earning_category_flags', 'students', 'subjects', 'receipt_numbers', 'cashBooks', 'batches', 'defaultCashBook'));
     }
 
     public function getStudents(Request $request)
@@ -322,9 +323,10 @@ class EarningsController extends Controller
 
         $earning->load('earning_category', 'student', 'subject', 'created_by', 'updated_by');
 
-        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('title')->get();
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('order')->orderBy('title')->get();
+        $defaultCashBook = CashBook::where('is_financial_account', true)->where('is_default', true)->first();
 
-        return view('admin.earnings.edit', compact('earning', 'earning_categories', 'earning_category_flags', 'students', 'subjects', 'cashBooks'));
+        return view('admin.earnings.edit', compact('earning', 'earning_categories', 'earning_category_flags', 'students', 'subjects', 'cashBooks', 'defaultCashBook'));
     }
 
     public function update(UpdateEarningRequest $request, Earning $earning)

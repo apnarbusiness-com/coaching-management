@@ -27,6 +27,8 @@ class CashBook extends Model
         'note',
         'status',
         'is_financial_account',
+        'is_default',
+        'order',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -34,6 +36,7 @@ class CashBook extends Model
 
     protected $casts = [
         'is_financial_account' => 'boolean',
+        'is_default' => 'boolean',
     ];
 
     protected function serializeDate(DateTimeInterface $date)

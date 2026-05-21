@@ -17,7 +17,7 @@ class CashBookController extends Controller
     {
         abort_if(Gate::denies('cash_book_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $cashBooks = CashBook::orderBy('title')->get();
+        $cashBooks = CashBook::orderBy('order')->orderBy('title')->get();
         $totalBalance = $cashBooks->sum('amount');
 
         return view('admin.cashBooks.index', compact('cashBooks', 'totalBalance'));
@@ -39,10 +39,18 @@ class CashBookController extends Controller
             'amount' => ['required', 'numeric', 'min:0'],
             'note' => ['nullable', 'string'],
             'is_financial_account' => ['nullable', 'boolean'],
+            'is_default' => ['nullable', 'boolean'],
+            'order' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $data['status'] = 'active';
         $data['is_financial_account'] = $request->boolean('is_financial_account');
+        $data['is_default'] = $request->boolean('is_default');
+        $data['order'] = $request->input('order', 0);
+
+        if ($data['is_default']) {
+            CashBook::where('is_default', true)->update(['is_default' => false]);
+        }
 
         if ($request->hasFile('image')) {
             $data['image'] = $request->file('image')->store('cash-books', 'public');
@@ -81,10 +89,18 @@ class CashBookController extends Controller
             'remove_image' => ['nullable', 'boolean'],
             'note' => ['nullable', 'string'],
             'is_financial_account' => ['nullable', 'boolean'],
+            'is_default' => ['nullable', 'boolean'],
+            'order' => ['nullable', 'integer', 'min:0'],
         ]);
 
         $data['is_financial_account'] = $request->boolean('is_financial_account');
+        $data['is_default'] = $request->boolean('is_default');
+        $data['order'] = $request->input('order', 0);
         $oldAmount = $cashBook->amount;
+
+        if ($data['is_default']) {
+            CashBook::where('id', '!=', $cashBook->id)->where('is_default', true)->update(['is_default' => false]);
+        }
 
         if ($request->boolean('remove_image') || $request->hasFile('image')) {
             if ($cashBook->image) {
@@ -217,5 +233,15 @@ class CashBookController extends Controller
         );
 
         return redirect()->route('admin.cash-books.index')->with('status', 'Display type updated successfully.');
+    }
+
+    public function setDefault(CashBook $cashBook)
+    {
+        abort_if(Gate::denies('cash_book_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        CashBook::where('is_default', true)->update(['is_default' => false]);
+        $cashBook->update(['is_default' => true]);
+
+        return redirect()->route('admin.cash-books.index')->with('status', "'{$cashBook->title}' set as default account.");
     }
 }
