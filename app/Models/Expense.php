@@ -50,6 +50,20 @@ class Expense extends Model implements HasMedia
         'deleted_at',
     ];
 
+    protected static function booted()
+    {
+        static::saving(function ($expense) {
+            if ($expense->expense_date) {
+                $date = Carbon::parse($expense->expense_date);
+                $expense->expense_month = $date->month;
+                $expense->expense_year = $date->year;
+            } else {
+                $expense->expense_month = null;
+                $expense->expense_year = null;
+            }
+        });
+    }
+
     protected function serializeDate(DateTimeInterface $date)
     {
         return $date->format('Y-m-d H:i:s');

@@ -35,6 +35,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('financial-ledgers/earning-details', 'FinancialLedgerController@getEarningDetails')->name('financial-ledgers.earning-details');
     Route::get('financial-ledgers/other-expense-details', 'FinancialLedgerController@getOtherExpenseDetails')->name('financial-ledgers.other-expense-details');
     Route::get('financial-ledgers/extra-earning-details', 'FinancialLedgerController@getExtraEarningDetails')->name('financial-ledgers.extra-earning-details');
+    Route::get('financial-ledgers/uncategorized-earning-details', 'FinancialLedgerController@getUncategorizedEarningDetails')->name('financial-ledgers.uncategorized-earning-details');
+    Route::get('financial-ledgers/uncategorized-expense-details', 'FinancialLedgerController@getUncategorizedExpenseDetails')->name('financial-ledgers.uncategorized-expense-details');
     Route::get('student/profile', 'HomeController@studentProfile')->name('student.profile');
     Route::get('student/batches', 'HomeController@myBatches')->name('student.myBatches');
     Route::get('teacher/profile', 'HomeController@teacherProfile')->name('teacher.profile');
