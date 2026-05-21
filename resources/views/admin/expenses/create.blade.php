@@ -168,49 +168,41 @@
                         </h2>
                         <div class="space-y-6">
                             @if (isset($cashBooks) && $cashBooks->isNotEmpty())
-                            <div>
-                                <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
-                                    for="cash_book_id">Deduct from Account <span class="text-red-500">*</span></label>
-                                <select name="cash_book_id" id="cash_book_id" class="form-control select2-cashbook" required style="width: 100%;">
-                                    <option value="">— Select Account —</option>
-                                    @foreach ($cashBooks as $cb)
-                                        <option value="{{ $cb->id }}" data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}" data-icon="{{ $cb->icon ?? '' }}" {{ old('cash_book_id') == $cb->id ? 'selected' : '' }}>{{ $cb->title }}</option>
-                                    @endforeach
-                                </select>
-                                <p class="mt-1 text-[10px] text-slate-400">Selected account balance will decrease by this expense amount.</p>
+                            <div id="payment-method-section">
+                                <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                    Payment Method <span class="text-red-500">*</span>
+                                </label>
+                                @if (setting('cashbook_display_type') == 'card')
+                                    @php
+                                        $icons = ['wallet'=>'💰','money'=>'💵','bank'=>'🏦','mobile'=>'📱','card'=>'💳','gift'=>'🎁','gold'=>'🪙','dollar'=>'💲'];
+                                    @endphp
+                                    <div class="grid grid-cols-3 gap-3">
+                                        @foreach ($cashBooks as $cb)
+                                            <label class="cursor-pointer">
+                                                <input class="payment-card-input sr-only" type="radio" name="cash_book_id" value="{{ $cb->id }}" {{ old('cash_book_id') == $cb->id ? 'checked' : ($loop->first ? 'checked' : '') }}>
+                                                <div class="payment-card flex flex-col items-center justify-center rounded-lg border border-slate-200 p-3 hover:bg-slate-50 dark:border-slate-700 dark:hover:bg-slate-800">
+                                                    @if ($cb->image)
+                                                        <img src="{{ Storage::url($cb->image) }}" class="w-8 h-8 mb-1 object-contain">
+                                                    @elseif ($cb->icon && isset($icons[$cb->icon]))
+                                                        <span class="text-2xl mb-1">{{ $icons[$cb->icon] }}</span>
+                                                    @else
+                                                        <span class="material-icons-round mb-1 text-2xl">account_balance</span>
+                                                    @endif
+                                                    <span class="text-xs font-medium">{{ $cb->title }}</span>
+                                                </div>
+                                            </label>
+                                        @endforeach
+                                    </div>
+                                @else
+                                    <select name="cash_book_id" id="cash_book_id" class="form-control select2-cashbook" required style="width: 100%;">
+                                        <option value="">— Select Account —</option>
+                                        @foreach ($cashBooks as $cb)
+                                            <option value="{{ $cb->id }}" data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}" data-icon="{{ $cb->icon ?? '' }}" {{ old('cash_book_id') == $cb->id ? 'selected' : '' }}>{{ $cb->title }}</option>
+                                        @endforeach
+                                    </select>
+                                @endif
                             </div>
                             @endif
-                            <div>
-                                <label class="mb-3 block text-sm font-medium text-slate-700 dark:text-slate-300">Payment
-                                    Method</label>
-                                <div class="grid grid-cols-3 gap-3">
-                                    <label class="cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio" value="Cash" {{ old('payment_method') == 'Cash' ? 'checked' : '' }} />
-                                        <div
-                                            class="flex flex-col items-center justify-center rounded-lg border border-slate-200 p-3 hover:bg-slate-50 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary dark:border-slate-700 dark:hover:bg-slate-800 dark:peer-checked:bg-primary/20">
-                                            <span class="material-icons-round mb-1 text-2xl">payments</span>
-                                            <span class="text-xs font-medium">Cash</span>
-                                        </div>
-                                    </label>
-                                    <label class="cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio" value="Bank Transfer"
-                                            {{ old('payment_method', 'Bank Transfer') == 'Bank Transfer' ? 'checked' : '' }} />
-                                        <div
-                                            class="flex flex-col items-center justify-center rounded-lg border border-slate-200 p-3 hover:bg-slate-50 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary dark:border-slate-700 dark:hover:bg-slate-800 dark:peer-checked:bg-primary/20">
-                                            <span class="material-icons-round mb-1 text-2xl">account_balance</span>
-                                            <span class="text-xs font-medium">Bank Transfer</span>
-                                        </div>
-                                    </label>
-                                    <label class="cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio" value="Check" {{ old('payment_method') == 'Check' ? 'checked' : '' }} />
-                                        <div
-                                            class="flex flex-col items-center justify-center rounded-lg border border-slate-200 p-3 hover:bg-slate-50 peer-checked:border-primary peer-checked:bg-primary/5 peer-checked:text-primary dark:border-slate-700 dark:hover:bg-slate-800 dark:peer-checked:bg-primary/20">
-                                            <span class="material-icons-round mb-1 text-2xl">confirmation_number</span>
-                                            <span class="text-xs font-medium">Check</span>
-                                        </div>
-                                    </label>
-                                </div>
-                            </div>
                             <div>
                                 <div>
                                     <label class="mb-2 block text-sm font-medium text-slate-700 dark:text-slate-300"
@@ -492,6 +484,16 @@
 
 @push('styles')
 <style>
+    .payment-card-input:checked + .payment-card {
+        border-color: #137fec !important;
+        background-color: rgba(19, 127, 236, 0.05) !important;
+        color: #137fec !important;
+    }
+    .dark .payment-card-input:checked + .payment-card {
+        border-color: #60A5FA !important;
+        background-color: rgba(96, 165, 250, 0.2) !important;
+        color: #60A5FA !important;
+    }
     .select2-cashbook-dropdown .select2-results__option {
         display: flex;
         justify-content: space-between;

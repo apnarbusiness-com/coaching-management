@@ -72,6 +72,11 @@ class UpdateEarningRequest extends FormRequest
                 'string',
                 'nullable',
             ],
+            'cash_book_id' => [
+                'nullable',
+                'integer',
+                'exists:cash_books,id',
+            ],
             'payment_method' => [
                 'string',
                 'nullable',

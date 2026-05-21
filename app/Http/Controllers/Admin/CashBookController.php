@@ -5,6 +5,7 @@ namespace App\Http\Controllers\Admin;
 use App\Http\Controllers\Controller;
 use App\Models\CashBook;
 use App\Models\CashBookTransaction;
+use App\Models\Setting;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
 use Illuminate\Support\Facades\Storage;
@@ -200,5 +201,21 @@ class CashBookController extends Controller
         ]);
 
         return redirect()->route('admin.cash-books.index')->with('status', 'Funds transferred successfully.');
+    }
+
+    public function updateDisplayType(Request $request)
+    {
+        abort_if(Gate::denies('cash_book_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $data = $request->validate([
+            'display_type' => 'required|in:select,card',
+        ]);
+
+        Setting::updateOrCreate(
+            ['key' => 'cashbook_display_type'],
+            ['value' => $data['display_type']]
+        );
+
+        return redirect()->route('admin.cash-books.index')->with('status', 'Display type updated successfully.');
     }
 }

@@ -187,6 +187,14 @@ class ExpensesController extends Controller
         $data = $request->all();
         $data['created_by_id'] = auth()->id();
         $data['updated_by_id'] = auth()->id();
+
+        if (!empty($data['cash_book_id'])) {
+            $cashBook = CashBook::find($data['cash_book_id']);
+            if ($cashBook) {
+                $data['payment_method'] = $cashBook->title;
+            }
+        }
+
         $expense = Expense::create($data);
 
         // Update linked cash book balance (subtract)
@@ -241,7 +249,62 @@ class ExpensesController extends Controller
 
     public function update(UpdateExpenseRequest $request, Expense $expense)
     {
-        $expense->update($request->all());
+        $data = $request->all();
+        $data['updated_by_id'] = auth()->id();
+
+        $oldCashBookId = $expense->cash_book_id;
+        $originalAmount = (float) $expense->amount;
+        $newCashBookId = $data['cash_book_id'] ?? null;
+        $newAmount = isset($data['amount']) ? (float) $data['amount'] : $originalAmount;
+
+        if ($newCashBookId) {
+            $cashBook = CashBook::find($newCashBookId);
+            if ($cashBook) {
+                $data['payment_method'] = $cashBook->title;
+            }
+        }
+
+        $expense->update($data);
+
+        // Adjust cash book balances
+        if ($newCashBookId) {
+            if ($oldCashBookId && $oldCashBookId != $newCashBookId) {
+                // Reverse old cash book (add back the original amount)
+                $oldCashBook = CashBook::find($oldCashBookId);
+                if ($oldCashBook) {
+                    $oldBal = $oldCashBook->amount;
+                    $newBal = $oldBal + $originalAmount;
+                    $oldCashBook->update(['amount' => $newBal]);
+                    CashBookTransaction::create([
+                        'cash_book_id' => $oldCashBook->id,
+                        'old_amount' => $oldBal,
+                        'new_amount' => $newBal,
+                        'action_type' => 'update',
+                        'note' => "Expense '{$expense->title}' (Tk " . number_format($originalAmount, 2) . ") removed from this account.",
+                        'created_by_id' => auth()->id(),
+                    ]);
+                }
+            }
+
+            if ($oldCashBookId != $newCashBookId || $originalAmount != $newAmount) {
+                // Subtract from new/current cash book
+                $currentCashBook = CashBook::find($newCashBookId);
+                if ($currentCashBook) {
+                    $subAmount = ($oldCashBookId == $newCashBookId) ? ($newAmount - $originalAmount) : $newAmount;
+                    $oldBal = $currentCashBook->amount;
+                    $newBal = $oldBal - $subAmount;
+                    $currentCashBook->update(['amount' => max(0, $newBal)]);
+                    CashBookTransaction::create([
+                        'cash_book_id' => $currentCashBook->id,
+                        'old_amount' => $oldBal,
+                        'new_amount' => $newBal,
+                        'action_type' => 'expense_subtracted',
+                        'note' => "Expense '{$expense->title}' of Tk " . number_format($newAmount, 2) . " " . ($oldCashBookId == $newCashBookId ? "amount adjusted." : "subtracted (edited)."),
+                        'created_by_id' => auth()->id(),
+                    ]);
+                }
+            }
+        }
 
         if (count($expense->payment_proof) > 0) {
             foreach ($expense->payment_proof as $media) {

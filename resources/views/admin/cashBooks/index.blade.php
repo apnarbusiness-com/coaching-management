@@ -384,7 +384,17 @@
                 </h4>
                 <p class="text-muted small mb-0">Manage your financial assets.</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
+                @can('cash_book_edit')
+                    <form method="POST" action="{{ route('admin.cash-books.update-display-type') }}" class="d-flex align-items-center gap-2 me-2">
+                        @csrf
+                        <span class="text-muted small">Display:</span>
+                        <select name="display_type" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                            <option value="select" {{ setting('cashbook_display_type') == 'select' ? 'selected' : '' }}>Select Box</option>
+                            <option value="card" {{ setting('cashbook_display_type') == 'card' ? 'selected' : '' }}>Cards</option>
+                        </select>
+                    </form>
+                @endcan
                 @can('cash_book_create')
                     <a href="{{ route('admin.cash-books.create') }}" class="action-btn action-btn-primary">
                         <span class="action-btn-icon"><i class="fa fa-plus"></i></span>

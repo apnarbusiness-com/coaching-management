@@ -273,24 +273,29 @@ class EarningsController extends Controller
             return redirect()->route('admin.earnings.index')->with('status', 'Due recorded successfully. It will appear in Due Checker for collection.');
         }
 
+        $cashBookForBalance = null;
+        if (!empty($data['cash_book_id'])) {
+            $cashBookForBalance = CashBook::find($data['cash_book_id']);
+            if ($cashBookForBalance) {
+                $data['payment_method'] = $cashBookForBalance->title;
+            }
+        }
+
         $earning = Earning::create($data);
 
-        if (!empty($data['cash_book_id'])) {
-            $cashBook = CashBook::find($data['cash_book_id']);
-            if ($cashBook) {
-                $oldAmount = $cashBook->amount;
-                $newAmount = $oldAmount + (float) $data['amount'];
-                $cashBook->update(['amount' => $newAmount]);
+        if ($cashBookForBalance) {
+            $oldAmount = $cashBookForBalance->amount;
+            $newAmount = $oldAmount + (float) $data['amount'];
+            $cashBookForBalance->update(['amount' => $newAmount]);
 
-                CashBookTransaction::create([
-                    'cash_book_id' => $cashBook->id,
-                    'old_amount' => $oldAmount,
-                    'new_amount' => $newAmount,
-                    'action_type' => 'earning_added',
-                    'note' => "Earning '{$earning->title}' of Tk " . number_format((float) $data['amount'], 2) . " added.",
-                    'created_by_id' => auth()->id(),
-                ]);
-            }
+            CashBookTransaction::create([
+                'cash_book_id' => $cashBookForBalance->id,
+                'old_amount' => $oldAmount,
+                'new_amount' => $newAmount,
+                'action_type' => 'earning_added',
+                'note' => "Earning '{$earning->title}' of Tk " . number_format((float) $data['amount'], 2) . " added.",
+                'created_by_id' => auth()->id(),
+            ]);
         }
 
         foreach ($request->input('payment_proof', []) as $file) {
@@ -334,7 +339,60 @@ class EarningsController extends Controller
             $data['earning_year'] = $date->year;
         }
 
+        // Capture original values before update
+        $oldCashBookId = $earning->cash_book_id;
+        $originalAmount = (float) $earning->amount;
+        $newCashBookId = $data['cash_book_id'] ?? null;
+        $newAmount = isset($data['amount']) ? (float) $data['amount'] : $originalAmount;
+
+        if ($newCashBookId) {
+            $cashBook = CashBook::find($newCashBookId);
+            if ($cashBook) {
+                $data['payment_method'] = $cashBook->title;
+            }
+        }
+
         $earning->update($data);
+
+        // Adjust cash book balances
+        if ($newCashBookId) {
+            if ($oldCashBookId && $oldCashBookId != $newCashBookId) {
+                // Reverse from old cash book using original amount
+                $oldCashBook = CashBook::find($oldCashBookId);
+                if ($oldCashBook) {
+                    $oldBal = $oldCashBook->amount;
+                    $newBal = $oldBal - $originalAmount;
+                    $oldCashBook->update(['amount' => max(0, $newBal)]);
+                    CashBookTransaction::create([
+                        'cash_book_id' => $oldCashBook->id,
+                        'old_amount' => $oldBal,
+                        'new_amount' => $newBal,
+                        'action_type' => 'update',
+                        'note' => "Earning '{$earning->title}' (Tk " . number_format($originalAmount, 2) . ") removed from this account.",
+                        'created_by_id' => auth()->id(),
+                    ]);
+                }
+            }
+
+            if ($oldCashBookId != $newCashBookId || $originalAmount != $newAmount) {
+                // Apply/add difference to new/current cash book
+                $currentCashBook = CashBook::find($newCashBookId);
+                if ($currentCashBook) {
+                    $addAmount = ($oldCashBookId == $newCashBookId) ? ($newAmount - $originalAmount) : $newAmount;
+                    $oldBal = $currentCashBook->amount;
+                    $newBal = $oldBal + $addAmount;
+                    $currentCashBook->update(['amount' => max(0, $newBal)]);
+                    CashBookTransaction::create([
+                        'cash_book_id' => $currentCashBook->id,
+                        'old_amount' => $oldBal,
+                        'new_amount' => $newBal,
+                        'action_type' => 'earning_added',
+                        'note' => "Earning '{$earning->title}' of Tk " . number_format($newAmount, 2) . " " . ($oldCashBookId == $newCashBookId ? "amount adjusted." : "added (edited)."),
+                        'created_by_id' => auth()->id(),
+                    ]);
+                }
+            }
+        }
 
         if (count($earning->payment_proof) > 0) {
             foreach ($earning->payment_proof as $media) {
