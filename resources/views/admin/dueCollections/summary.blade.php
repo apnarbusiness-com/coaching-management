@@ -244,11 +244,11 @@ $(function() {
         ajax: {
             url: "{{ route('admin.due-collections.summary') }}",
             data: function(d) {
-                d.month = '{{ $month }}';
-                d.year = '{{ $year }}';
-                d.batch_id = '{{ request('batch_id') }}';
-                d.class_id = '{{ request('class_id') }}';
-                d.status = '{{ request('status') }}';
+                d.month = $('#filter-month').val();
+                d.year = $('#filter-year').val();
+                d.batch_id = $('#filter-batch').val();
+                d.class_id = $('#filter-class').val();
+                d.status = $('#filter-status').val();
             }
         },
         columns: [

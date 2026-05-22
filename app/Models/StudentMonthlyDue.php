@@ -104,7 +104,9 @@ class StudentMonthlyDue extends Model
 
     public function getDueStatusAttribute()
     {
-        return match ($this->status) {
+        $displayStatus = ($this->due_amount == 0 && $this->paid_amount == 0) ? 'free' : $this->status;
+
+        return match ($displayStatus) {
             'paid' => '<span class="badge bg-success">Paid</span>',
             'free' => '<span class="badge bg-warning">Free</span>',
             'partial' => '<span class="badge bg-warning">Partial</span>',

@@ -87,7 +87,12 @@ class DueCollectionController extends Controller
             $table->editColumn('due_amount', fn($row) => number_format($row->due_amount, 2));
             $table->editColumn('paid_amount', fn($row) => number_format($row->paid_amount, 2));
             $table->editColumn('due_remaining', fn($row) => number_format($row->due_remaining, 2));
-            $table->editColumn('status', fn($row) => $this->getStatusBadge($row->status));
+            $table->editColumn('status', function ($row) {
+                if ($row->due_amount == 0 && $row->paid_amount == 0) {
+                    return '<span class="badge bg-warning">Free</span>';
+                }
+                return $this->getStatusBadge($row->status);
+            });
 
             $table->rawColumns(['actions', 'status', 'placeholder']);
             $table->setRowAttr(['data-entry-id' => fn($row) => $row->id]);
@@ -126,48 +131,45 @@ class DueCollectionController extends Controller
         $stats = $this->dueService->getDashboardStats($month, $year);
 
         if ($request->ajax()) {
-            $query = StudentMonthlyDue::with(['student', 'batch', 'academicClass', 'section'])
-                ->forMonth($month, $year)
-                ->select(sprintf('%s.*', (new StudentMonthlyDue)->table));
+            $query = StudentMonthlyDue::forMonth($month, $year)
+                ->join('student_basic_infos', 'student_monthly_dues.student_id', '=', 'student_basic_infos.id')
+                ->selectRaw("
+                    student_monthly_dues.student_id,
+                    CONCAT_WS(' ', student_basic_infos.first_name, student_basic_infos.last_name) as student_name,
+                    student_basic_infos.id_no as student_id_no,
+                    SUM(student_monthly_dues.due_amount) as total_due,
+                    SUM(student_monthly_dues.paid_amount) as total_paid,
+                    SUM(student_monthly_dues.due_remaining) as total_remaining,
+                    SUM(student_monthly_dues.discount_amount) as total_discount,
+                    COUNT(student_monthly_dues.id) as due_count,
+                    SUM(CASE WHEN student_monthly_dues.status IN ('paid','free') THEN 1 ELSE 0 END) as paid_count,
+                    SUM(CASE WHEN student_monthly_dues.status = 'partial' THEN 1 ELSE 0 END) as partial_count,
+                    SUM(CASE WHEN student_monthly_dues.status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count
+                ")
+                ->groupBy('student_monthly_dues.student_id', 'student_basic_infos.first_name', 'student_basic_infos.last_name', 'student_basic_infos.id_no');
 
             if ($batchId) {
-                $query->where('batch_id', $batchId);
+                $query->where('student_monthly_dues.batch_id', $batchId);
             }
             if ($classId) {
-                $query->where('academic_class_id', $classId);
+                $query->where('student_monthly_dues.academic_class_id', $classId);
             }
             if ($status) {
-                $query->where('status', $status);
+                $query->where('student_monthly_dues.status', $status);
             }
 
-            $grouped = $query->get()->groupBy('student_id');
-
-            $rows = $grouped->map(function ($dues, $studentId) {
-                $student = $dues->first()->student;
-                return [
-                    'student_id' => $studentId,
-                    'student_name' => $student->first_name . ' ' . $student->last_name,
-                    'student_id_no' => $student->id_no ?? '',
-                    'total_due' => (float) $dues->sum('due_amount'),
-                    'total_paid' => (float) $dues->sum('paid_amount'),
-                    'total_remaining' => (float) $dues->sum('due_remaining'),
-                    'total_discount' => (float) $dues->sum('discount_amount'),
-                    'due_count' => $dues->count(),
-                    'paid_count' => $dues->whereIn('status', ['paid', 'free'])->count(),
-                    'partial_count' => $dues->where('status', 'partial')->count(),
-                    'unpaid_count' => $dues->where('status', 'unpaid')->count(),
-                ];
-            })->values();
-
-            return DataTables::of($rows)
+            return DataTables::of($query)
                 ->addColumn('placeholder', '&nbsp;')
                 ->addColumn('actions', function ($row) {
-                    return '<button type="button" class="btn btn-xs btn-primary view-details-btn" data-student-id="' . $row['student_id'] . '">View Details</button>';
+                    return '<button type="button" class="btn btn-xs btn-primary view-details-btn" data-student-id="' . $row->student_id . '">View Details</button>';
                 })
-                ->editColumn('total_due', fn($row) => number_format($row['total_due'], 2))
-                ->editColumn('total_paid', fn($row) => number_format($row['total_paid'], 2))
-                ->editColumn('total_remaining', fn($row) => number_format($row['total_remaining'], 2))
-                ->editColumn('total_discount', fn($row) => number_format($row['total_discount'], 2))
+                ->editColumn('total_due', fn($row) => number_format($row->total_due, 2))
+                ->editColumn('total_paid', fn($row) => number_format($row->total_paid, 2))
+                ->editColumn('total_remaining', fn($row) => number_format($row->total_remaining, 2))
+                ->editColumn('total_discount', fn($row) => number_format($row->total_discount, 2))
+                ->filterColumn('student_name', function ($query, $keyword) {
+                    $query->whereRaw("CONCAT_WS(' ', student_basic_infos.first_name, student_basic_infos.last_name) LIKE ?", ["%{$keyword}%"]);
+                })
                 ->rawColumns(['actions', 'placeholder'])
                 ->make(true);
         }
@@ -213,7 +215,9 @@ class DueCollectionController extends Controller
                     'due_remaining' => (float) $due->due_remaining,
                     'discount_amount' => (float) $due->discount_amount,
                     'status' => $due->status,
-                    'status_badge' => $this->getStatusBadge($due->status),
+                    'status_badge' => $due->due_amount == 0 && $due->paid_amount == 0
+                        ? '<span class="badge bg-warning">Free</span>'
+                        : $this->getStatusBadge($due->status),
                 ];
             });
 
@@ -578,6 +582,7 @@ class DueCollectionController extends Controller
     {
         return match ($status) {
             'paid' => '<span class="badge bg-success">Paid</span>',
+            'free' => '<span class="badge bg-warning">Free</span>',
             'partial' => '<span class="badge bg-warning">Partial</span>',
             'unpaid' => '<span class="badge bg-danger">Unpaid</span>',
             default => $status,
@@ -769,7 +774,7 @@ class DueCollectionController extends Controller
                 'pivot_permanent_discount' => $pivot->per_student_discount ?? 0,
                 'pivot_one_time_discount' => $pivot->one_time_discount ?? 0,
                 'due_remaining' => (float) $due->due_remaining,
-                'status' => $due->status,
+                'status' => $due->due_amount == 0 && $due->paid_amount == 0 ? 'free' : $due->status,
             ];
         })->values();
 
