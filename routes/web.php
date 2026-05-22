@@ -214,6 +214,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Due Collections
     Route::get('due-collections', 'DueCollectionController@index')->name('due-collections.index');
+    Route::get('due-collections/summary', 'DueCollectionController@summary')->name('due-collections.summary');
+    Route::get('due-collections/student-summary/{studentId}', [DueCollectionController::class, 'getStudentDueSummary'])->name('due-collections.student-summary');
     Route::post('due-collections/generate', 'DueCollectionController@generateDues')->name('due-collections.generate');
     Route::get('due-collections/students', 'DueCollectionController@getStudentList')->name('due-collections.students');
     Route::get('due-collections/student-dues/{studentId}', [DueCollectionController::class, 'getStudentDues'])->name('due-collections.student-dues');
