@@ -186,9 +186,50 @@
 
         .info-card.sticky-info {
             position: sticky;
-            top: 70px;
-            z-index: 50;
+            top: 2px;
+            z-index: 1030;
             overflow: visible;
+            transition: padding 0.2s, box-shadow 0.2s;
+        }
+
+        .info-card.sticky-info.compact {
+            margin-bottom: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        .info-card.sticky-info.compact .card-header {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .info-card.sticky-info.compact .card-body {
+            padding: 8px 16px;
+        }
+
+        .info-card.sticky-info.compact .student-info {
+            gap: 12px;
+        }
+
+        .info-card.sticky-info.compact .student-info .avatar {
+            width: 48px;
+            height: 48px;
+        }
+
+        .info-card.sticky-info.compact .student-info .details h4 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .info-card.sticky-info.compact .student-info .details p {
+            font-size: 12px;
+        }
+
+        .info-card.sticky-info.compact .student-info .details p:nth-child(3) {
+            display: none;
+        }
+
+        .info-card.sticky-info.compact .flag-comments-area {
+            display: none;
         }
 
         @keyframes heartbit {
@@ -608,7 +649,7 @@
                                 <strong>Guardian:</strong> <span id="studentGuardianContact">-</span>
                             </p>
                             <div id="flagBadges" class="mt-2"></div>
-                            <div id="flagCommentsDisplay" class="mt-2 text-muted"
+                            <div id="flagCommentsDisplay" class="mt-2 text-muted flag-comments-area"
                                 style="font-style: italic; font-size: 13px;"></div>
                         </div>
                     </div>
@@ -665,6 +706,27 @@
                             </div>
                         </div>
                     </div>
+                    <div class="info-card mt-3">
+                        <div class="card-header" style="background: #f59e0b;">
+                            <i class="fa fa-clock"></i> Other Dues (Pending)
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                <table class="data-table" id="otherDuesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="info-card">
@@ -699,27 +761,6 @@
                         </div>
                         <div class="card-body">
                             <div class="batch-list" id="activeBatchesList"></div>
-                        </div>
-                    </div>
-                    <div class="info-card mt-3">
-                        <div class="card-header" style="background: #f59e0b;">
-                            <i class="fa fa-clock"></i> Other Dues (Pending)
-                        </div>
-                        <div class="card-body" style="padding: 0;">
-                            <div style="max-height: 300px; overflow-y: auto;">
-                                <table class="data-table" id="otherDuesTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Title</th>
-                                            <th>Category</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -1644,5 +1685,39 @@ $(document).on('click', '.search-result-item', function() {
                 alert(xhr.responseJSON?.message || 'Failed to remove flag');
             });
         }
+
+        // --- Sticky info card compaction ---
+        let stickyObserver = null;
+
+        function setupStickyCompaction() {
+            if (stickyObserver) { stickyObserver.disconnect(); stickyObserver = null; }
+
+            const el = document.querySelector('.info-card.sticky-info');
+            if (!el) return;
+            if (el.closest('#studentData') && $('#studentData').is(':hidden')) return;
+
+            const elRect = el.getBoundingClientRect();
+            const isAtTop = elRect.top <= 2;
+            el.classList.toggle('compact', isAtTop);
+
+            const observer = new IntersectionObserver(
+                ([e]) => {
+                    el.classList.toggle('compact', e.intersectionRatio < 1);
+                },
+                { threshold: [1] }
+            );
+
+            observer.observe(el);
+            stickyObserver = observer;
+        }
+
+        // Re-setup after student data loads and on scroll
+        $(document).on('ajaxComplete', function() {
+            setTimeout(setupStickyCompaction, 200);
+        });
+
+        $(function() {
+            setupStickyCompaction();
+        });
     </script>
 @endsection
