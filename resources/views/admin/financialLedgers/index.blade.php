@@ -308,6 +308,48 @@
 
 
 
+            <!-- Today's Cash -->
+            <div class="bg-white border-2 border-amber-600 shadow-lg mt-6">
+                <div class="p-4 bg-amber-600 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Today's Cash</h2>
+                    <span class="text-xs text-white opacity-80">{{ date('d M Y') }}</span>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white border border-emerald-300 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Earning</span>
+                                <span class="text-2xl font-bold text-emerald-600">{{ number_format($todayEarning) }} BDT</span>
+                                <div class="text-[10px] text-slate-400 font-normal mt-1">Today's income</div>
+                            </div>
+                            <div class="card-icon" style="background: #e0f5ec; color: #059669;">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Cost</span>
+                                <span class="text-2xl font-bold text-red-600">{{ number_format($todayExpense) }} BDT</span>
+                                <div class="text-[10px] text-slate-400 font-normal mt-1">Today's expenses</div>
+                            </div>
+                            <div class="card-icon" style="background: #fde8e8; color: #dc2626;">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-blue-300 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Cash</span>
+                                <span class="text-2xl font-bold {{ $todayNetCash >= 0 ? 'text-blue-600' : 'text-red-600' }}">{{ number_format($todayNetCash) }} BDT</span>
+                                <div class="text-[10px] text-slate-400 font-normal mt-1">Earning − Cost</div>
+                            </div>
+                            <div class="card-icon" style="background: #e0f2fe; color: #0284c7;">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
+
             <!-- Cash Book Overview -->
             <div class="bg-white border-2 border-emerald-700 shadow-lg mt-6">
                 <div class="p-4 bg-emerald-700 flex justify-between items-center">

@@ -163,6 +163,8 @@ class FinancialLedgerController extends Controller
         $percentChange = $previousYearEarning > 0 ? round((($grandTotal - $previousYearEarning) / $previousYearEarning) * 100, 1) : 0;
 
         $todayEarning = Earning::whereDate('earning_date', today())->sum('amount');
+        $todayExpense = Expense::whereDate('expense_date', today())->sum('amount');
+        $todayNetCash = $todayEarning - $todayExpense;
         $thisWeekEarning = Earning::whereBetween('earning_date', [now()->startOfWeek(), now()->endOfWeek()])->sum('amount');
 
         return view('admin.financialLedgers.index', compact(
@@ -187,6 +189,8 @@ class FinancialLedgerController extends Controller
             'percentChange',
             'statusFilter',
             'todayEarning',
+            'todayExpense',
+            'todayNetCash',
             'thisWeekEarning',
             'uncategorizedEarningTotal',
             'uncategorizedEarningCount',
