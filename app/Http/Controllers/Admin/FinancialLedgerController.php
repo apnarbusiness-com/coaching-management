@@ -63,6 +63,7 @@ class FinancialLedgerController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $amount = Earning::whereYear('earning_date', $year)
                 ->whereMonth('earning_date', $m)
+                ->whereNotNull('batch_id')
                 ->sum('amount');
             $totalPerMonth[$m] = $amount;
             $grandTotal += $amount;
