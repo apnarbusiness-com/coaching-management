@@ -1414,35 +1414,59 @@ $(document).on('click', '.search-result-item', function() {
             let paidAmount = $('#pay-due-paid').val();
             let remaining = $('#pay-due-remaining').val();
 
-            let confirmMsg = 'Please confirm the payment details:\n\n';
-            confirmMsg += 'Due Amount: ' + dueAmount + '\n';
-            confirmMsg += 'Already Paid: ' + paidAmount + '\n';
-            confirmMsg += 'One-Time Discount: ' + oneTimeDiscount + '\n';
-            confirmMsg += 'Remaining After Discount: ' + remaining + '\n';
-            confirmMsg += 'Additional Pay Amount: ' + amount + '\n\n';
-            confirmMsg += 'Are you sure?';
+            Swal.fire({
+                title: 'Confirm Payment',
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">Due Amount</span>
+                            <span style="font-weight: 600;">${parseFloat(dueAmount).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">Already Paid</span>
+                            <span style="font-weight: 600;">${parseFloat(paidAmount).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">Remaining After Discount</span>
+                            <span style="font-weight: 600;">${parseFloat(remaining).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">One-Time Discount</span>
+                            <span style="font-weight: 600; color: #e53e3e;">${parseFloat(oneTimeDiscount).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                            <span style="color: #666; font-weight: 600;">Additional Pay Amount</span>
+                            <span style="font-weight: 700; color: #059669;">${parseFloat(amount).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, submit!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (!result.isConfirmed) return;
 
-            if (!confirm(confirmMsg)) {
-                return;
-            }
-
-            $.post("{{ route('admin.due-collections.pay') }}", {
-                _token: '{{ csrf_token() }}',
-                due_id: dueId,
-                amount: amount,
-                one_time_discount: oneTimeDiscount
-            }, function(response) {
-                $('#payDueModal').modal('hide');
-                loadStudentData();
-                alert(response.message || 'Payment recorded successfully!');
-            }).fail(function(xhr) {
-                let msg = 'Payment failed. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                } else if (xhr.status === 403) {
-                    msg = 'You do not have permission to make payments.';
-                }
-                alert(msg);
+                $.post("{{ route('admin.due-collections.pay') }}", {
+                    _token: '{{ csrf_token() }}',
+                    due_id: dueId,
+                    amount: amount,
+                    one_time_discount: oneTimeDiscount
+                }, function(response) {
+                    $('#payDueModal').modal('hide');
+                    loadStudentData();
+                    Swal.fire('Success!', response.message || 'Payment recorded successfully!', 'success');
+                }).fail(function(xhr) {
+                    let msg = 'Payment failed. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    } else if (xhr.status === 403) {
+                        msg = 'You do not have permission to make payments.';
+                    }
+                    Swal.fire('Error!', msg, 'error');
+                });
             });
         });
 
