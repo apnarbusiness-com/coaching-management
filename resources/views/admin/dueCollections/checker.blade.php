@@ -799,6 +799,10 @@
                                 <input type="text" class="form-control" id="pay-due-amount" readonly>
                             </div>
                             <div class="form-group">
+                                <label>Already Paid</label>
+                                <input type="text" class="form-control" id="pay-due-paid" readonly>
+                            </div>
+                            <div class="form-group">
                                 <label>Current One-Time Discount</label>
                                 <input type="text" class="form-control" id="pay-due-one-time" readonly>
                             </div>
@@ -813,7 +817,7 @@
                                 <input type="text" class="form-control" id="pay-due-remaining" readonly>
                             </div>
                             <div class="form-group">
-                                <label>Pay Amount</label>
+                                <label>Pay Amount (Additional Collection)</label>
                                 <input type="number" class="form-control" id="pay-amount" step="0.01"
                                     min="0" required>
                             </div>
@@ -1237,9 +1241,9 @@ $(document).on('click', '.search-result-item', function() {
                         }
                         let permDisc = due.pivot_permanent_discount || 0;
                         let oneTimeDisc = due.pivot_one_time_discount || 0;
-                        let payButton = due.due_remaining > 0 ?
-                            `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-remaining="${due.due_remaining}" data-one-time="${oneTimeDisc}">Pay Now</button>` :
-                            '-';
+                            let payButton = due.due_remaining > 0 ?
+                                `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-paid-amount="${due.paid_amount}" data-remaining="${due.due_remaining}" data-one-time="${oneTimeDisc}">Pay Now</button>` :
+                                '-';
                         dueHistoryBody.append(`
                     <tr>
                         <td>${due.month_name} ${due.year}</td>
@@ -1373,8 +1377,11 @@ $(document).on('click', '.search-result-item', function() {
             let remaining = $(this).data('remaining');
             let oneTimeDisc = $(this).data('one-time') || 0;
 
+            let paidAmount = $(this).data('paid-amount') || 0;
+
             $('#pay-due-id').val(dueId);
             $('#pay-due-amount').val(dueAmount);
+            $('#pay-due-paid').val(paidAmount);
             $('#pay-due-one-time').val(oneTimeDisc);
             $('#pay-one-time-discount').val(oneTimeDisc);
 
@@ -1388,11 +1395,14 @@ $(document).on('click', '.search-result-item', function() {
 
         $('#pay-one-time-discount').on('input', function() {
             let oneTimeDisc = parseFloat($(this).val()) || 0;
-            let originalDue = parseFloat($('#pay-due-amount').val()) || 0;
-            let remainingAfterDiscount = Math.max(0, originalDue - oneTimeDisc);
+            let dueAmount = parseFloat($('#pay-due-amount').val()) || 0;
+            let paidAmount = parseFloat($('#pay-due-paid').val()) || 0;
+            let remainingAfterDiscount = Math.max(0, (dueAmount - oneTimeDisc) - paidAmount);
             $('#pay-due-remaining').val(remainingAfterDiscount.toFixed(2));
             $('#pay-amount').attr('max', remainingAfterDiscount);
-            $('#pay-amount').val(remainingAfterDiscount.toFixed(2));
+            if (oneTimeDisc > 0) {
+                $('#pay-amount').val('0');
+            }
         });
 
         $('#pay-due-form').on('submit', function(e) {
@@ -1400,6 +1410,21 @@ $(document).on('click', '.search-result-item', function() {
             let dueId = $('#pay-due-id').val();
             let amount = $('#pay-amount').val();
             let oneTimeDiscount = $('#pay-one-time-discount').val() || 0;
+            let dueAmount = $('#pay-due-amount').val();
+            let paidAmount = $('#pay-due-paid').val();
+            let remaining = $('#pay-due-remaining').val();
+
+            let confirmMsg = 'Please confirm the payment details:\n\n';
+            confirmMsg += 'Due Amount: ' + dueAmount + '\n';
+            confirmMsg += 'Already Paid: ' + paidAmount + '\n';
+            confirmMsg += 'One-Time Discount: ' + oneTimeDiscount + '\n';
+            confirmMsg += 'Remaining After Discount: ' + remaining + '\n';
+            confirmMsg += 'Additional Pay Amount: ' + amount + '\n\n';
+            confirmMsg += 'Are you sure?';
+
+            if (!confirm(confirmMsg)) {
+                return;
+            }
 
             $.post("{{ route('admin.due-collections.pay') }}", {
                 _token: '{{ csrf_token() }}',
