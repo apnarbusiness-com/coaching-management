@@ -186,9 +186,50 @@
 
         .info-card.sticky-info {
             position: sticky;
-            top: 70px;
-            z-index: 50;
+            top: 2px;
+            z-index: 1030;
             overflow: visible;
+            transition: padding 0.2s, box-shadow 0.2s;
+        }
+
+        .info-card.sticky-info.compact {
+            margin-bottom: 8px;
+            box-shadow: 0 2px 12px rgba(0,0,0,0.1);
+        }
+
+        .info-card.sticky-info.compact .card-header {
+            padding: 8px 16px;
+            font-size: 14px;
+        }
+
+        .info-card.sticky-info.compact .card-body {
+            padding: 8px 16px;
+        }
+
+        .info-card.sticky-info.compact .student-info {
+            gap: 12px;
+        }
+
+        .info-card.sticky-info.compact .student-info .avatar {
+            width: 48px;
+            height: 48px;
+        }
+
+        .info-card.sticky-info.compact .student-info .details h4 {
+            font-size: 16px;
+            margin-bottom: 2px;
+        }
+
+        .info-card.sticky-info.compact .student-info .details p {
+            font-size: 12px;
+        }
+
+        .info-card.sticky-info.compact .student-info .details p:nth-child(3) {
+            display: none;
+        }
+
+        .info-card.sticky-info.compact .flag-comments-area {
+            display: none;
         }
 
         @keyframes heartbit {
@@ -608,7 +649,7 @@
                                 <strong>Guardian:</strong> <span id="studentGuardianContact">-</span>
                             </p>
                             <div id="flagBadges" class="mt-2"></div>
-                            <div id="flagCommentsDisplay" class="mt-2 text-muted"
+                            <div id="flagCommentsDisplay" class="mt-2 text-muted flag-comments-area"
                                 style="font-style: italic; font-size: 13px;"></div>
                         </div>
                     </div>
@@ -665,6 +706,27 @@
                             </div>
                         </div>
                     </div>
+                    <div class="info-card mt-3">
+                        <div class="card-header" style="background: #f59e0b;">
+                            <i class="fa fa-clock"></i> Other Dues (Pending)
+                        </div>
+                        <div class="card-body" style="padding: 0;">
+                            <div style="max-height: 300px; overflow-y: auto;">
+                                <table class="data-table" id="otherDuesTable">
+                                    <thead>
+                                        <tr>
+                                            <th>Title</th>
+                                            <th>Category</th>
+                                            <th>Amount</th>
+                                            <th>Status</th>
+                                            <th>Action</th>
+                                        </tr>
+                                    </thead>
+                                    <tbody></tbody>
+                                </table>
+                            </div>
+                        </div>
+                    </div>
                 </div>
                 <div class="col-lg-6">
                     <div class="info-card">
@@ -699,27 +761,6 @@
                         </div>
                         <div class="card-body">
                             <div class="batch-list" id="activeBatchesList"></div>
-                        </div>
-                    </div>
-                    <div class="info-card mt-3">
-                        <div class="card-header" style="background: #f59e0b;">
-                            <i class="fa fa-clock"></i> Other Dues (Pending)
-                        </div>
-                        <div class="card-body" style="padding: 0;">
-                            <div style="max-height: 300px; overflow-y: auto;">
-                                <table class="data-table" id="otherDuesTable">
-                                    <thead>
-                                        <tr>
-                                            <th>Title</th>
-                                            <th>Category</th>
-                                            <th>Amount</th>
-                                            <th>Status</th>
-                                            <th>Action</th>
-                                        </tr>
-                                    </thead>
-                                    <tbody></tbody>
-                                </table>
-                            </div>
                         </div>
                     </div>
                 </div>
@@ -758,6 +799,10 @@
                                 <input type="text" class="form-control" id="pay-due-amount" readonly>
                             </div>
                             <div class="form-group">
+                                <label>Already Paid</label>
+                                <input type="text" class="form-control" id="pay-due-paid" readonly>
+                            </div>
+                            <div class="form-group">
                                 <label>Current One-Time Discount</label>
                                 <input type="text" class="form-control" id="pay-due-one-time" readonly>
                             </div>
@@ -772,7 +817,7 @@
                                 <input type="text" class="form-control" id="pay-due-remaining" readonly>
                             </div>
                             <div class="form-group">
-                                <label>Pay Amount</label>
+                                <label>Pay Amount (Additional Collection)</label>
                                 <input type="number" class="form-control" id="pay-amount" step="0.01"
                                     min="0" required>
                             </div>
@@ -1196,9 +1241,9 @@ $(document).on('click', '.search-result-item', function() {
                         }
                         let permDisc = due.pivot_permanent_discount || 0;
                         let oneTimeDisc = due.pivot_one_time_discount || 0;
-                        let payButton = due.due_remaining > 0 ?
-                            `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-remaining="${due.due_remaining}" data-one-time="${oneTimeDisc}">Pay Now</button>` :
-                            '-';
+                            let payButton = due.due_remaining > 0 ?
+                                `<button type="button" class="btn btn-xs btn-primary pay-btn" data-id="${due.id}" data-due-amount="${due.due_amount}" data-paid-amount="${due.paid_amount}" data-remaining="${due.due_remaining}" data-one-time="${oneTimeDisc}">Pay Now</button>` :
+                                '-';
                         dueHistoryBody.append(`
                     <tr>
                         <td>${due.month_name} ${due.year}</td>
@@ -1332,8 +1377,11 @@ $(document).on('click', '.search-result-item', function() {
             let remaining = $(this).data('remaining');
             let oneTimeDisc = $(this).data('one-time') || 0;
 
+            let paidAmount = $(this).data('paid-amount') || 0;
+
             $('#pay-due-id').val(dueId);
             $('#pay-due-amount').val(dueAmount);
+            $('#pay-due-paid').val(paidAmount);
             $('#pay-due-one-time').val(oneTimeDisc);
             $('#pay-one-time-discount').val(oneTimeDisc);
 
@@ -1347,11 +1395,14 @@ $(document).on('click', '.search-result-item', function() {
 
         $('#pay-one-time-discount').on('input', function() {
             let oneTimeDisc = parseFloat($(this).val()) || 0;
-            let originalDue = parseFloat($('#pay-due-amount').val()) || 0;
-            let remainingAfterDiscount = Math.max(0, originalDue - oneTimeDisc);
+            let dueAmount = parseFloat($('#pay-due-amount').val()) || 0;
+            let paidAmount = parseFloat($('#pay-due-paid').val()) || 0;
+            let remainingAfterDiscount = Math.max(0, (dueAmount - oneTimeDisc) - paidAmount);
             $('#pay-due-remaining').val(remainingAfterDiscount.toFixed(2));
             $('#pay-amount').attr('max', remainingAfterDiscount);
-            $('#pay-amount').val(remainingAfterDiscount.toFixed(2));
+            if (oneTimeDisc > 0) {
+                $('#pay-amount').val('0');
+            }
         });
 
         $('#pay-due-form').on('submit', function(e) {
@@ -1359,24 +1410,63 @@ $(document).on('click', '.search-result-item', function() {
             let dueId = $('#pay-due-id').val();
             let amount = $('#pay-amount').val();
             let oneTimeDiscount = $('#pay-one-time-discount').val() || 0;
+            let dueAmount = $('#pay-due-amount').val();
+            let paidAmount = $('#pay-due-paid').val();
+            let remaining = $('#pay-due-remaining').val();
 
-            $.post("{{ route('admin.due-collections.pay') }}", {
-                _token: '{{ csrf_token() }}',
-                due_id: dueId,
-                amount: amount,
-                one_time_discount: oneTimeDiscount
-            }, function(response) {
-                $('#payDueModal').modal('hide');
-                loadStudentData();
-                alert(response.message || 'Payment recorded successfully!');
-            }).fail(function(xhr) {
-                let msg = 'Payment failed. Please try again.';
-                if (xhr.responseJSON && xhr.responseJSON.message) {
-                    msg = xhr.responseJSON.message;
-                } else if (xhr.status === 403) {
-                    msg = 'You do not have permission to make payments.';
-                }
-                alert(msg);
+            Swal.fire({
+                title: 'Confirm Payment',
+                html: `
+                    <div style="text-align: left; font-size: 14px;">
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">Due Amount</span>
+                            <span style="font-weight: 600;">${parseFloat(dueAmount).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">Already Paid</span>
+                            <span style="font-weight: 600;">${parseFloat(paidAmount).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">Remaining After Discount</span>
+                            <span style="font-weight: 600;">${parseFloat(remaining).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0; border-bottom: 1px solid #eee;">
+                            <span style="color: #666;">One-Time Discount</span>
+                            <span style="font-weight: 600; color: #e53e3e;">${parseFloat(oneTimeDiscount).toFixed(2)}</span>
+                        </div>
+                        <div style="display: flex; justify-content: space-between; padding: 6px 0;">
+                            <span style="color: #666; font-weight: 600;">Additional Pay Amount</span>
+                            <span style="font-weight: 700; color: #059669;">${parseFloat(amount).toFixed(2)}</span>
+                        </div>
+                    </div>
+                `,
+                icon: 'question',
+                showCancelButton: true,
+                confirmButtonColor: '#059669',
+                cancelButtonColor: '#d33',
+                confirmButtonText: 'Yes, submit!',
+                cancelButtonText: 'Cancel'
+            }).then((result) => {
+                if (!result.isConfirmed) return;
+
+                $.post("{{ route('admin.due-collections.pay') }}", {
+                    _token: '{{ csrf_token() }}',
+                    due_id: dueId,
+                    amount: amount,
+                    one_time_discount: oneTimeDiscount
+                }, function(response) {
+                    $('#payDueModal').modal('hide');
+                    loadStudentData();
+                    Swal.fire('Success!', response.message || 'Payment recorded successfully!', 'success');
+                }).fail(function(xhr) {
+                    let msg = 'Payment failed. Please try again.';
+                    if (xhr.responseJSON && xhr.responseJSON.message) {
+                        msg = xhr.responseJSON.message;
+                    } else if (xhr.status === 403) {
+                        msg = 'You do not have permission to make payments.';
+                    }
+                    Swal.fire('Error!', msg, 'error');
+                });
             });
         });
 
@@ -1644,5 +1734,39 @@ $(document).on('click', '.search-result-item', function() {
                 alert(xhr.responseJSON?.message || 'Failed to remove flag');
             });
         }
+
+        // --- Sticky info card compaction ---
+        let stickyObserver = null;
+
+        function setupStickyCompaction() {
+            if (stickyObserver) { stickyObserver.disconnect(); stickyObserver = null; }
+
+            const el = document.querySelector('.info-card.sticky-info');
+            if (!el) return;
+            if (el.closest('#studentData') && $('#studentData').is(':hidden')) return;
+
+            const elRect = el.getBoundingClientRect();
+            const isAtTop = elRect.top <= 2;
+            el.classList.toggle('compact', isAtTop);
+
+            const observer = new IntersectionObserver(
+                ([e]) => {
+                    el.classList.toggle('compact', e.intersectionRatio < 1);
+                },
+                { threshold: [1] }
+            );
+
+            observer.observe(el);
+            stickyObserver = observer;
+        }
+
+        // Re-setup after student data loads and on scroll
+        $(document).on('ajaxComplete', function() {
+            setTimeout(setupStickyCompaction, 200);
+        });
+
+        $(function() {
+            setupStickyCompaction();
+        });
     </script>
 @endsection

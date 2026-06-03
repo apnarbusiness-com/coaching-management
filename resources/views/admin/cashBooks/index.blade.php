@@ -384,7 +384,17 @@
                 </h4>
                 <p class="text-muted small mb-0">Manage your financial assets.</p>
             </div>
-            <div class="d-flex gap-2">
+            <div class="d-flex gap-2 align-items-center">
+                @can('cash_book_edit')
+                    <form method="POST" action="{{ route('admin.cash-books.update-display-type') }}" class="d-flex align-items-center gap-2 me-2">
+                        @csrf
+                        <span class="text-muted small">Display:</span>
+                        <select name="display_type" class="form-select form-select-sm" style="width: auto;" onchange="this.form.submit()">
+                            <option value="select" {{ setting('cashbook_display_type') == 'select' ? 'selected' : '' }}>Select Box</option>
+                            <option value="card" {{ setting('cashbook_display_type') == 'card' ? 'selected' : '' }}>Cards</option>
+                        </select>
+                    </form>
+                @endcan
                 @can('cash_book_create')
                     <a href="{{ route('admin.cash-books.create') }}" class="action-btn action-btn-primary">
                         <span class="action-btn-icon"><i class="fa fa-plus"></i></span>
@@ -435,21 +445,34 @@
                     <h4 class="fund-title-bn">{{ $cashBook->title }}</h4>
                     <p class="fund-amount">Tk {{ number_format($cashBook->amount, 2) }}</p>
                     <span class="status-tag">{{ $cashBook->status === 'active' ? 'Active' : 'Inactive' }}</span>
+                    @if ($cashBook->is_default)
+                        <span class="badge bg-success position-absolute" style="bottom: 5px; left: 24px; font-size: 9px;">DEFAULT</span>
+                    @endif
                     @if ($cashBook->is_financial_account)
                         <span class="badge bg-info position-absolute" style="bottom: 5px; left: 50%; font-size: 9px;transform: translateX(-50%);">FINANCIAL</span>
                     @endif
-                    @can('cash_book_edit')
-                        <button class="btn btn-sm btn-outline-primary position-absolute btn-details" style="top: 1rem; right: 1.5rem;"
-                            onclick="openEditModal({{ $cashBook->id }}, {{ json_encode($cashBook->title) }}, {{ $cashBook->amount }}, {{ json_encode($cashBook->image ?? '') }}, {{ json_encode($cashBook->icon ?? '') }}, {{ $cashBook->is_financial_account ? 'true' : 'false' }})">
-                            <i class="fas fa-edit"></i>
-                        </button>
-                    @endcan
-                    @can('cash_book_access')
-                        <button class="btn btn-sm btn-outline-info position-absolute" style="top: 1rem; right: {{ Auth::user()->can('cash_book_edit') ? '5.5rem' : '1.5rem' }};"
-                            onclick="openTransactionDrawer({{ $cashBook->id }}, {{ json_encode($cashBook->title) }})">
-                            <i class="fas fa-info-circle"></i>
-                        </button>
-                    @endcan
+                    <div class="position-absolute d-flex gap-1" style="top: 0.75rem; right: 1.5rem;">
+                        @can('cash_book_access')
+                            <button class="btn btn-sm btn-outline-info" style="padding: 0.25rem 0.5rem; font-size: 11px;"
+                                onclick="openTransactionDrawer({{ $cashBook->id }}, {{ json_encode($cashBook->title) }})">
+                                <i class="fas fa-info-circle"></i>
+                            </button>
+                        @endcan
+                        @can('cash_book_edit')
+                            <button class="btn btn-sm btn-outline-primary" style="padding: 0.25rem 0.5rem; font-size: 11px;"
+                                onclick="openEditModal({{ $cashBook->id }}, {{ json_encode($cashBook->title) }}, {{ $cashBook->amount }}, {{ json_encode($cashBook->image ?? '') }}, {{ json_encode($cashBook->icon ?? '') }}, {{ $cashBook->is_financial_account ? 'true' : 'false' }}, {{ $cashBook->is_default ? 'true' : 'false' }}, {{ $cashBook->order }})">
+                                <i class="fas fa-edit"></i>
+                            </button>
+                            @if (!$cashBook->is_default)
+                                <form method="POST" action="{{ route('admin.cash-books.set-default', $cashBook->id) }}" style="display:inline;">
+                                    @csrf
+                                    <button type="submit" class="btn btn-sm btn-outline-success" style="padding: 0.25rem 0.5rem; font-size: 11px;" title="Set as Default">
+                                        <i class="fas fa-check-circle"></i>
+                                    </button>
+                                </form>
+                            @endif
+                        @endcan
+                    </div>
                 </div>
             </div>
         @empty
@@ -530,6 +553,20 @@
                                         <strong>Financial Account</strong>
                                     </label>
                                     <small class="d-block text-muted">Appears in Earning & Expense forms for auto balance update.</small>
+                                </div>
+                            </div>
+                            <div class="row mb-3">
+                                <div class="col-6">
+                                    <label class="form-label">Order</label>
+                                    <input type="number" name="order" id="editOrder" class="form-control" min="0">
+                                </div>
+                                <div class="col-6 d-flex align-items-end">
+                                    <div class="form-check">
+                                        <input type="checkbox" name="is_default" class="form-check-input" id="editIsDefault" value="1">
+                                        <label class="form-check-label" for="editIsDefault">
+                                            <strong>Default Account</strong>
+                                        </label>
+                                    </div>
                                 </div>
                             </div>
                             <div class="mb-3">
@@ -740,7 +777,7 @@
 @can('cash_book_edit')
     @push('scripts')
         <script>
-            function openEditModal(id, title, amount, image, icon, isFinancial) {
+            function openEditModal(id, title, amount, image, icon, isFinancial, isDefault = false, order = 0) {
                 document.getElementById('editTitle').value = title;
                 document.getElementById('editAmount').value = amount;
                 document.getElementById('editNote').value = '';
@@ -750,6 +787,8 @@
                 document.getElementById('editIconSelect').value = icon || '';
                 document.getElementById('editIconValue').value = icon || '';
                 document.getElementById('editIsFinancialAccount').checked = isFinancial === true || isFinancial === 1 || isFinancial === '1';
+                document.getElementById('editIsDefault').checked = isDefault === true || isDefault === 1 || isDefault === '1';
+                document.getElementById('editOrder').value = order;
 
                 document.getElementById('editCashBookForm').action = '/admin/cash-books/' + id;
                 document.getElementById('deleteBtn').onclick = function() {

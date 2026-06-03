@@ -55,6 +55,8 @@ class DueCalculationService
         $dueAmount = $this->calculateDueAmountDirect($batch, $totalDiscount, $customFee);
         $dueDate = Carbon::createFromDate($year, $month, $this->dueDateDay);
 
+        $status = $dueAmount <= 0 ? 'free' : 'unpaid';
+
         $due = StudentMonthlyDue::create([
             'student_id' => $student->id,
             'batch_id' => $batch->id,
@@ -67,7 +69,7 @@ class DueCalculationService
             'paid_amount' => 0,
             'discount_amount' => $totalDiscount,
             'due_remaining' => $dueAmount,
-            'status' => 'unpaid',
+            'status' => $status,
             'due_date' => $dueDate->format('Y-m-d'),
         ]);
 
@@ -210,6 +212,8 @@ class DueCalculationService
 
                     $dueDate = Carbon::createFromDate($year, $month, $this->dueDateDay);
 
+                    $dueStatus = $dueAmount <= 0 ? 'free' : 'unpaid';
+
                     $dueRecord = StudentMonthlyDue::create([
                         'student_id' => $student->id,
                         'batch_id' => $batch->id,
@@ -222,7 +226,7 @@ class DueCalculationService
                         'paid_amount' => 0,
                         'discount_amount' => ($pivot->per_student_discount ?? 0) + ($pivot->one_time_discount ?? 0),
                         'due_remaining' => $dueAmount,
-                        'status' => 'unpaid',
+                        'status' => $dueStatus,
                         'due_date' => $dueDate->format('Y-m-d'),
                     ]);
 

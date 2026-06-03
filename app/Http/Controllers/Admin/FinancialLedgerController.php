@@ -63,6 +63,7 @@ class FinancialLedgerController extends Controller
         for ($m = 1; $m <= 12; $m++) {
             $amount = Earning::whereYear('earning_date', $year)
                 ->whereMonth('earning_date', $m)
+                ->whereNotNull('batch_id')
                 ->sum('amount');
             $totalPerMonth[$m] = $amount;
             $grandTotal += $amount;
@@ -80,7 +81,7 @@ class FinancialLedgerController extends Controller
             $grandTotalExtraEarning += $amount;
         }
 
-        // --- Teacher Salary Expenses ---
+        // --- Batch Expenses ---
 
         $batchExpenses = [];
         foreach ($batches as $batch) {
@@ -89,9 +90,8 @@ class FinancialLedgerController extends Controller
 
             for ($m = 1; $m <= 12; $m++) {
                 $amount = Expense::where('batch_id', $batch->id)
-                    ->where('expense_month', $m)
-                    ->where('expense_year', $year)
-                    ->whereNotNull('teacher_id')
+                    ->whereMonth('expense_date', $m)
+                    ->whereYear('expense_date', $year)
                     ->sum('amount');
 
                 $monthlyExpenses[$m] = $amount;
@@ -111,23 +111,22 @@ class FinancialLedgerController extends Controller
         $totalExpensePerMonth = [];
         $grandTotalExpense = 0;
         for ($m = 1; $m <= 12; $m++) {
-            $amount = Expense::where('expense_month', $m)
-                ->where('expense_year', $year)
-                ->whereNotNull('teacher_id')
+            $amount = Expense::whereMonth('expense_date', $m)
+                ->whereYear('expense_date', $year)
                 ->whereNotNull('batch_id')
                 ->sum('amount');
             $totalExpensePerMonth[$m] = $amount;
             $grandTotalExpense += $amount;
         }
 
-        // --- Other Expenses (non-teacher) ---
+        // --- Other Expenses (non-batch) ---
 
         $totalOtherExpensePerMonth = [];
         $grandTotalOtherExpense = 0;
         for ($m = 1; $m <= 12; $m++) {
-            $amount = Expense::where('expense_month', $m)
-                ->where('expense_year', $year)
-                ->whereNull('teacher_id')
+            $amount = Expense::whereMonth('expense_date', $m)
+                ->whereYear('expense_date', $year)
+                ->whereNull('batch_id')
                 ->sum('amount');
             $totalOtherExpensePerMonth[$m] = $amount;
             $grandTotalOtherExpense += $amount;
@@ -136,11 +135,17 @@ class FinancialLedgerController extends Controller
         $batchOtherExpenses = $grandTotalOtherExpense > 0
             ? [[
                 'batch_id' => 0,
-                'batch_name' => 'All Other Expenses',
+                'batch_name' => 'Other Expenses',
                 'monthly' => $totalOtherExpensePerMonth,
                 'total' => $grandTotalOtherExpense,
             ]]
             : [];
+
+        // --- Uncategorized (missing month/year) ---
+        $uncategorizedEarningTotal = Earning::whereNull('earning_date')->sum('amount');
+        $uncategorizedEarningCount = Earning::whereNull('earning_date')->count();
+        $uncategorizedExpenseTotal = Expense::whereNull('expense_date')->sum('amount');
+        $uncategorizedExpenseCount = Expense::whereNull('expense_date')->count();
 
         // --- Cash Book ---
 
@@ -159,6 +164,8 @@ class FinancialLedgerController extends Controller
         $percentChange = $previousYearEarning > 0 ? round((($grandTotal - $previousYearEarning) / $previousYearEarning) * 100, 1) : 0;
 
         $todayEarning = Earning::whereDate('earning_date', today())->sum('amount');
+        $todayExpense = Expense::whereDate('expense_date', today())->sum('amount');
+        $todayNetCash = $todayEarning - $todayExpense;
         $thisWeekEarning = Earning::whereBetween('earning_date', [now()->startOfWeek(), now()->endOfWeek()])->sum('amount');
 
         return view('admin.financialLedgers.index', compact(
@@ -183,7 +190,13 @@ class FinancialLedgerController extends Controller
             'percentChange',
             'statusFilter',
             'todayEarning',
-            'thisWeekEarning'
+            'todayExpense',
+            'todayNetCash',
+            'thisWeekEarning',
+            'uncategorizedEarningTotal',
+            'uncategorizedEarningCount',
+            'uncategorizedExpenseTotal',
+            'uncategorizedExpenseCount'
         ));
     }
 
@@ -197,35 +210,29 @@ class FinancialLedgerController extends Controller
 
         $batch = Batch::findOrFail($batchId);
         $expenses = Expense::where('batch_id', $batchId)
-            ->where('expense_month', $month)
-            ->where('expense_year', $year)
-            ->whereNotNull('teacher_id')
+            ->whereMonth('expense_date', $month)
+            ->whereYear('expense_date', $year)
             ->get();
 
-        $batchTeachers = $batch->teachers()->get()->keyBy('id');
-
-        $teachers = [];
+        $items = [];
         foreach ($expenses as $exp) {
-            $teacher = Teacher::find($exp->teacher_id);
-            $teacherName = $teacher ? trim($teacher->name ?? $teacher->first_name . ' ' . $teacher->last_name) : 'Unknown';
+            $category = $exp->expense_category_id ? ExpenseCategory::find($exp->expense_category_id) : null;
+            $teacher = $exp->teacher_id ? Teacher::find($exp->teacher_id) : null;
 
-            $batchTeacher = $batchTeachers->get($exp->teacher_id);
-            $salaryType = $batchTeacher ? ($batchTeacher->pivot->salary_amount_type ?? 'fixed') : 'fixed';
-            $salaryAmount = $batchTeacher ? ($batchTeacher->pivot->salary_amount ?? 0) : 0;
-
-            $teachers[] = [
-                'teacher_id' => $exp->teacher_id,
-                'teacher_name' => $teacherName,
+            $items[] = [
+                'id' => $exp->id,
+                'title' => $exp->title ?? 'Untitled',
+                'category' => $category ? $category->name : 'Uncategorized',
+                'details' => $exp->details ?? '',
                 'amount' => (float) $exp->amount,
-                'salary_type' => $salaryType,
-                'salary_amount' => (float) $salaryAmount,
+                'teacher_name' => $teacher ? trim($teacher->name ?? $teacher->first_name . ' ' . $teacher->last_name) : null,
             ];
         }
 
         return response()->json([
             'batch_name' => $batch->batch_name,
             'month' => $month,
-            'teachers' => $teachers
+            'expenses' => $items
         ]);
     }
 
@@ -311,20 +318,13 @@ class FinancialLedgerController extends Controller
     {
         abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $batchId = $request->input('batch_id');
         $month = $request->input('month');
         $year = $request->input('year', date('Y'));
 
-        $expensesQuery = Expense::where('expense_month', $month)
-            ->where('expense_year', $year)
-            ->whereNull('teacher_id');
-
-        if ($batchId != 0) {
-            $expensesQuery->where('batch_id', $batchId);
-        }
-
-        $expenses = $expensesQuery->get();
-        $batch = $batchId != 0 ? Batch::find($batchId) : null;
+        $expenses = Expense::whereMonth('expense_date', $month)
+            ->whereYear('expense_date', $year)
+            ->whereNull('batch_id')
+            ->get();
 
         $items = [];
         foreach ($expenses as $exp) {
@@ -340,8 +340,58 @@ class FinancialLedgerController extends Controller
         }
 
         return response()->json([
-            'batch_name' => $batch ? $batch->batch_name : 'All Other Expenses',
             'month' => $month,
+            'expenses' => $items,
+        ]);
+    }
+
+    public function getUncategorizedEarningDetails()
+    {
+        abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $earnings = Earning::whereNull('earning_date')->get();
+
+        $items = [];
+        foreach ($earnings as $earning) {
+            $category = $earning->earning_category_id ? EarningCategory::find($earning->earning_category_id) : null;
+            $student = $earning->student_id ? StudentBasicInfo::find($earning->student_id) : null;
+
+            $items[] = [
+                'id' => $earning->id,
+                'title' => $earning->title ?? 'Untitled',
+                'category' => $category ? $category->name : 'Uncategorized',
+                'student_name' => $student ? trim($student->first_name . ' ' . $student->last_name) : 'N/A',
+                'amount' => (float) $earning->amount,
+                'created_at' => $earning->created_at ? $earning->created_at->format('d M Y') : 'N/A',
+            ];
+        }
+
+        return response()->json([
+            'earnings' => $items,
+        ]);
+    }
+
+    public function getUncategorizedExpenseDetails()
+    {
+        abort_if(Gate::denies('financial_ledger_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $expenses = Expense::whereNull('expense_date')->get();
+
+        $items = [];
+        foreach ($expenses as $exp) {
+            $category = $exp->expense_category_id ? ExpenseCategory::find($exp->expense_category_id) : null;
+
+            $items[] = [
+                'id' => $exp->id,
+                'title' => $exp->title ?? 'Untitled',
+                'category' => $category ? $category->name : 'Uncategorized',
+                'details' => $exp->details ?? '',
+                'amount' => (float) $exp->amount,
+                'created_at' => $exp->created_at ? $exp->created_at->format('d M Y') : 'N/A',
+            ];
+        }
+
+        return response()->json([
             'expenses' => $items,
         ]);
     }

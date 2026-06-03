@@ -88,6 +88,9 @@
                 <h3>Monthly Due Collection - {{ \Carbon\Carbon::createFromDate(null, $month, 1)->format('F') }} {{ $year }}</h3>
             </div>
             <div class="col-md-6 text-right">
+                <a href="{{ route('admin.due-collections.summary', request()->query()) }}" class="btn btn-info">
+                    <i class="fa fa-users"></i> Summary View
+                </a>
                 <form action="{{ route('admin.due-collections.generate') }}" method="POST" style="display:inline;">
                     @csrf
                     <input type="hidden" name="month" value="{{ $month }}">
@@ -96,9 +99,6 @@
                         Generate Dues
                     </button>
                 </form>
-                {{-- <button type="button" class="btn btn-success" data-toggle="modal" data-target="#quickPayModal">
-                    Quick Pay
-                </button> --}}
             </div>
         </div>
     </div>
@@ -126,7 +126,7 @@
                 <select class="form-control filter-select" id="filter-batch">
                     <option value="">All Batches</option>
                     @foreach($batches as $id => $name)
-                        <option value="{{ $id }}">{{ $name }}</option>
+                        <option value="{{ $id }}" {{ $id == $batchId ? 'selected' : '' }}>{{ $name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -135,7 +135,7 @@
                 <select class="form-control filter-select" id="filter-class">
                     <option value="">All Classes</option>
                     @foreach($classes as $id => $name)
-                        <option value="{{ $id }}">{{ $name }}</option>
+                        <option value="{{ $id }}" {{ $id == $classId ? 'selected' : '' }}>{{ $name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -143,9 +143,9 @@
                 <label>Status</label>
                 <select class="form-control filter-select" id="filter-status">
                     <option value="">All</option>
-                    <option value="paid">Paid</option>
-                    <option value="partial">Partial</option>
-                    <option value="unpaid">Unpaid</option>
+                    <option value="paid" {{ $status == 'paid' ? 'selected' : '' }}>Paid</option>
+                    <option value="partial" {{ $status == 'partial' ? 'selected' : '' }}>Partial</option>
+                    <option value="unpaid" {{ $status == 'unpaid' ? 'selected' : '' }}>Unpaid</option>
                 </select>
             </div>
             <div class="form-group">
@@ -249,11 +249,11 @@ $(function() {
         ajax: {
             url: "{{ route('admin.due-collections.index') }}",
             data: function(d) {
-                d.month = '{{ $month }}';
-                d.year = '{{ $year }}';
-                d.batch_id = '{{ request('batch_id') }}';
-                d.class_id = '{{ request('class_id') }}';
-                d.status = '{{ request('status') }}';
+                d.month = $('#filter-month').val();
+                d.year = $('#filter-year').val();
+                d.batch_id = $('#filter-batch').val();
+                d.class_id = $('#filter-class').val();
+                d.status = $('#filter-status').val();
             }
         },
         columns: [

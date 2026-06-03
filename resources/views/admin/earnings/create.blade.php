@@ -233,74 +233,47 @@
                         </h3>
                         <div class="space-y-8">
                             @if ($cashBooks->isNotEmpty())
-                                <div class="space-y-1.5">
+                                <div id="payment-method-section" class="space-y-2">
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                        Deposit to Account <span class="text-red-500">*</span>
+                                        Payment Method <span class="text-red-500">*</span>
                                     </label>
-                                    <select name="cash_book_id" id="cash_book_id" class="form-control select2-cashbook"
-                                        required style="width: 100%;">
-                                        <option value="">— Select Account —</option>
-                                        @foreach ($cashBooks as $cb)
-                                            <option value="{{ $cb->id }}"
-                                                data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}"
-                                                data-icon="{{ $cb->icon ?? '' }}"
-                                                {{ old('cash_book_id') == $cb->id ? 'selected' : '' }}>{{ $cb->title }}
-                                            </option>
-                                        @endforeach
-                                    </select>
-                                    <p class="text-[10px] text-slate-400">The selected account balance will increase by
-                                        this earning amount.</p>
+                                            @if (setting('cashbook_display_type') == 'card')
+                                        @php
+                                            $icons = ['wallet'=>'💰','money'=>'💵','bank'=>'🏦','mobile'=>'📱','card'=>'💳','gift'=>'🎁','gold'=>'🪙','dollar'=>'💲'];
+                                        @endphp
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            @foreach ($cashBooks as $cb)
+                                                <label class="relative cursor-pointer">
+                                                    <input class="payment-card-input sr-only" type="radio" name="cash_book_id"
+                                                        value="{{ $cb->id }}"
+                                                        {{ old('cash_book_id') == $cb->id ? 'checked' : ($defaultCashBook && $defaultCashBook->id == $cb->id ? 'checked' : ($loop->first ? 'checked' : '')) }}>
+                                                    <div class="payment-card flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] transition-all hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500">
+                                                        @if ($cb->image)
+                                                            <img src="{{ Storage::url($cb->image) }}" class="w-8 h-8 mb-1 object-contain">
+                                                        @elseif ($cb->icon && isset($icons[$cb->icon]))
+                                                            <span class="text-2xl mb-1">{{ $icons[$cb->icon] }}</span>
+                                                        @else
+                                                            <span class="material-symbols-outlined mb-1">account_balance</span>
+                                                        @endif
+                                                        <span class="text-sm font-medium">{{ $cb->title }}</span>
+                                                    </div>
+                                                </label>
+                                            @endforeach
+                                        </div>
+                                    @else
+                                        <select name="cash_book_id" id="cash_book_id" class="form-control select2-cashbook" required style="width: 100%;">
+                                            <option value="">— Select Account —</option>
+                                            @foreach ($cashBooks as $cb)
+                                                <option value="{{ $cb->id }}"
+                                                    data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}"
+                                                    data-icon="{{ $cb->icon ?? '' }}"
+                                                    {{ old('cash_book_id') == $cb->id ? 'selected' : ($defaultCashBook && $defaultCashBook->id == $cb->id ? 'selected' : '') }}>{{ $cb->title }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @endif
                                 </div>
                             @endif
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Payment Method
-                                </label>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    <label class="relative cursor-pointer">
-                                        <input checked="" class="peer sr-only" name="payment_method" type="radio"
-                                            value="cash" />
-                                        <div
-                                            class="flex flex-col items-center justify-center 
-                                                                                            p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white 
-                                                                                            dark:bg-[#111827] peer-checked:border-[#2563EB] 
-                                                                                            dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 
-                                                                                            dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] 
-                                                                                            dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800
-                                                                                            text-slate-500">
-                                            <span class="material-symbols-outlined mb-1">attach_money</span>
-                                            <span class="text-sm font-medium">Cash</span>
-                                        </div>
-                                    </label>
-                                    <label class="relative cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio"
-                                            value="bank" />
-                                        <div
-                                            class="text-slate-500 flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] peer-checked:border-[#2563EB] dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
-                                            <span class="material-symbols-outlined mb-1">account_balance</span>
-                                            <span class="text-sm font-medium">Bank Transfer</span>
-                                        </div>
-                                    </label>
-                                    <label class="relative cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio"
-                                            value="mobile_banking" />
-                                        <div
-                                            class="text-slate-500 flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] peer-checked:border-[#2563EB] dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
-                                            <span class="material-symbols-outlined mb-1">account_balance_wallet</span>
-                                            <span class="text-sm font-medium">Mobile Banking</span>
-                                        </div>
-                                    </label>
-                                    <!-- <label class="relative cursor-pointer">
-                                                                                                                                                                                                        <input class="peer sr-only" name="payment_method" type="radio"
-                                                                                                                                                                                                            value="check" />
-                                                                                                                                                                                                        <div
-                                                                                                                                                                                                            class="flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] peer-checked:border-[#2563EB] dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
-                                                                                                                                                                                                            <span class="material-symbols-outlined mb-1">check_circle</span>
-                                                                                                                                                                                                            <span class="text-sm font-medium">Check</span>
-                                                                                                                                                                                                        </div>
-                                                                                                                                                                                                    </label> -->
-                                </div>
-                            </div>
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-1.5">
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Paid
@@ -444,6 +417,16 @@
 
 @section('styles')
     <style>
+        .payment-card-input:checked + .payment-card {
+            border-color: #2563EB !important;
+            background-color: rgba(239, 246, 255, 0.5) !important;
+            color: #2563EB !important;
+        }
+        .dark .payment-card-input:checked + .payment-card {
+            border-color: #60A5FA !important;
+            background-color: rgba(96, 165, 250, 0.2) !important;
+            color: #60A5FA !important;
+        }
         /* Dropzone State Handling */
         .dz-preview.dz-success .dz-success-mark {
             opacity: 1 !important;
@@ -658,20 +641,24 @@
 
             function toggleDueFields() {
                 const isChecked = document.getElementById('isDueToggle')?.checked;
-                const cashBookSelect = $('#cash_book_id');
+                const section = document.getElementById('payment-method-section');
                 const submitBtn = $('#submitBtn');
                 const submitText = $('#submitBtnText');
 
                 if (isChecked) {
-                    cashBookSelect.prop('required', false).closest('.space-y-1\\.5').find('label .text-red-500').hide();
-                    cashBookSelect.closest('.space-y-1\\.5').find('p.text-\\[10px\\]').text('Optional for due items. Balance will update when collected.');
+                    if (section) {
+                        section.style.display = 'none';
+                        section.querySelectorAll('[name="cash_book_id"]').forEach(el => el.removeAttribute('required'));
+                    }
                     submitBtn.removeClass('bg-[#2563EB] dark:bg-[#60A5FA] hover:bg-[#2563EB]/90 dark:hover:bg-[#60A5FA]/90 shadow-blue-500/20')
                         .addClass('bg-amber-600 hover:bg-amber-700 shadow-amber-500/20');
                     submitText.text('Save as Due');
                     $('.student-fee-field').slideDown(300);
                 } else {
-                    cashBookSelect.prop('required', true).closest('.space-y-1\\.5').find('label .text-red-500').show();
-                    cashBookSelect.closest('.space-y-1\\.5').find('p.text-\\[10px\\]').text('The selected account balance will increase by this earning amount.');
+                    if (section) {
+                        section.style.display = '';
+                        section.querySelectorAll('[name="cash_book_id"]').forEach(el => el.setAttribute('required', 'required'));
+                    }
                     submitBtn.removeClass('bg-amber-600 hover:bg-amber-700 shadow-amber-500/20')
                         .addClass('bg-[#2563EB] dark:bg-[#60A5FA] hover:bg-[#2563EB]/90 dark:hover:bg-[#60A5FA]/90 shadow-blue-500/20');
                     submitText.text('Record Payment');

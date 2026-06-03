@@ -1,0 +1,231 @@
+<!DOCTYPE html>
+<html>
+<head>
+<meta charset="UTF-8">
+<title>Advance Payment &amp; Yearly Subscription System — Plan</title>
+<style>
+body { font-family: 'Calibri', 'Segoe UI', Arial, sans-serif; max-width: 900px; margin: 40px auto; padding: 0 40px; color: #1a1a1a; line-height: 1.6; }
+h1 { font-size: 26px; color: #1e3a5f; border-bottom: 3px solid #1e3a5f; padding-bottom: 12px; margin-top: 40px; }
+h2 { font-size: 20px; color: #1e3a5f; margin-top: 36px; border-bottom: 1px solid #d0d0d0; padding-bottom: 6px; }
+h3 { font-size: 16px; color: #2d5a87; margin-top: 24px; }
+table { width: 100%; border-collapse: collapse; margin: 16px 0; font-size: 14px; }
+table th { background: #1e3a5f; color: #fff; padding: 10px 12px; text-align: left; }
+table td { padding: 8px 12px; border: 1px solid #d0d0d0; }
+table tr:nth-child(even) { background: #f6f8fa; }
+.example-box { background: #f0f4f8; border-left: 4px solid #1e3a5f; padding: 16px 20px; margin: 16px 0; border-radius: 0 6px 6px 0; font-size: 14px; }
+.example-box strong { color: #1e3a5f; }
+ul { margin: 8px 0; padding-left: 24px; }
+li { margin-bottom: 6px; }
+.pro-con { display: flex; gap: 24px; margin: 16px 0; }
+.pro-con > div { flex: 1; padding: 16px; border-radius: 8px; }
+.pro { background: #e8f5e9; border: 1px solid #a5d6a7; }
+.con { background: #fbe9e7; border: 1px solid #ef9a9a; }
+.footer { margin-top: 48px; padding-top: 16px; border-top: 1px solid #d0d0d0; font-size: 13px; color: #666; text-align: center; }
+</style>
+</head>
+<body>
+
+<h1>Advance Payment &amp; Yearly Subscription System</h1>
+<p style="font-size:16px;color:#555;"><strong>Plan Document</strong> — Prepared for Client Review</p>
+
+<!-- ============================================================ -->
+<h2>1. Why This Feature?</h2>
+
+<p>Currently, a student can only pay <strong>after</strong> a monthly due is generated. There is no way to handle:</p>
+
+<ul>
+  <li>A student who wants to pay <strong>early</strong> (e.g., June's fees in May)</li>
+  <li>A student who wants to pay <strong>yearly</strong> at a <strong>discounted rate</strong></li>
+</ul>
+
+<p><strong>Two real scenarios:</strong></p>
+
+<div class="example-box">
+  <strong>Scenario 1 — Advance:</strong> A student wants to pay June's fees in May. There is no "June" due yet, so the system cannot accept the payment.<br><br>
+  <strong>Scenario 2 — Yearly Subscription:</strong> A student wants to pay the whole year at once (12 &times; 1,000 = 12,000 Tk) and you offer a discount: "Pay 10,000 Tk for the entire year." The system has no way to track this package or apply the monthly discount automatically.
+</div>
+
+<!-- ============================================================ -->
+<h2>2. The Solution: Student Advance Balance</h2>
+
+<p>Instead of forcing every payment to match a specific month's due, each student gets an <strong>Advance Balance</strong> — a prepaid wallet that holds their credit.</p>
+
+<table>
+  <tr><th>Term</th><th>Meaning</th></tr>
+  <tr><td><strong>Advance Balance</strong></td><td>Money the student has paid in advance, sitting as credit on their account</td></tr>
+  <tr><td><strong>Auto-Consume</strong></td><td>When a new monthly due is generated, if the student has advance balance, the system automatically uses it to pay</td></tr>
+  <tr><td><strong>Zero-Due Rule</strong></td><td>A student can only add advance money when <strong>all</strong> their past dues are fully cleared</td></tr>
+</table>
+
+<h3>Example — Simple Advance (Monthly)</h3>
+
+<div class="example-box">
+  <strong>Student:</strong> Rafiq wants to pay June's 1,000 Tk fee in May.<br><br>
+  <strong>Step 1:</strong> Staff checks — Rafiq has no unpaid dues from previous months. <span style="color:#2e7d32;">&#10003;</span><br>
+  <strong>Step 2:</strong> Staff enters an Advance Payment of 1,000 Tk.<br>
+  <strong>Step 3:</strong> System records this as an earning and adds 1,000 to Rafiq's advance balance.<br>
+  <strong>Step 4:</strong> In June, when dues are generated, the system sees Rafiq has 1,000 advance balance. His June due is 1,000. The system automatically matches them.<br>
+  <strong>Step 5:</strong> June's due shows as <strong>Paid</strong>, advance balance becomes 0.<br>
+  <strong>Result:</strong> Staff sees a clear record: "Paid via advance on 15-May-2026."
+</div>
+
+<!-- ============================================================ -->
+<h2>3. Yearly Subscription — Handling the Discount</h2>
+
+<p>This is the trickiest case. A student's batch fee is 1,000 Tk/month. The yearly total is 12,000 Tk. But you offer a deal: <strong>pay 10,000 Tk and cover the whole year.</strong></p>
+
+<p>If you simply add 10,000 to the advance balance, the system would consume 1,000 each month. By month 10 the balance runs out — but the student effectively paid only 833.33/month. We need a smarter approach.</p>
+
+<h3>How It Works</h3>
+
+<table>
+  <tr><th>Concept</th><th>How It Works</th></tr>
+  <tr>
+    <td><strong>Yearly Package</strong></td>
+    <td>Staff enters: Batch = SSC Batch, Coverage = 12 months (June 2026 – May 2027), Paid Amount = <strong>10,000 Tk</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Effective Monthly Rate</strong></td>
+    <td>System calculates: 10,000 &divide; 12 = <strong>833.33 Tk/month</strong></td>
+  </tr>
+  <tr>
+    <td><strong>Bulk Discount</strong></td>
+    <td>Each month the system notes: "Full due is 1,000, package rate is 833.33. A <strong>166.67 discount</strong> is applied."</td>
+  </tr>
+  <tr>
+    <td><strong>Auto-Consume</strong></td>
+    <td>System deducts 833.33 from the advance balance each month</td>
+  </tr>
+</table>
+
+<h3>Monthly Breakdown — How It Looks in Records</h3>
+
+<table>
+  <tr><th>Month</th><th>Batch Fee</th><th>Bulk Discount</th><th>Net Due</th><th>Paid From</th><th>Advance Used</th></tr>
+  <tr><td>June 2026</td><td>1,000</td><td>166.67</td><td>833.33</td><td>Yearly Package</td><td>833.33</td></tr>
+  <tr><td>July 2026</td><td>1,000</td><td>166.67</td><td>833.33</td><td>Yearly Package</td><td>833.33</td></tr>
+  <tr><td>August 2026</td><td>1,000</td><td>166.67</td><td>833.33</td><td>Yearly Package</td><td>833.33</td></tr>
+  <tr><td colspan="6" style="text-align:center;font-style:italic;">... same for 12 months ...</td></tr>
+  <tr style="font-weight:bold;background:#e3f2fd;"><td>Total</td><td>12,000</td><td>2,000</td><td>10,000</td><td></td><td>10,000</td></tr>
+</table>
+
+<p><strong>Result:</strong> Every month shows a clear due and payment. The <strong>2,000 Tk discount</strong> is visible in the discount column. One earning entry records the full 10,000 Tk at the time of payment.</p>
+
+<!-- ============================================================ -->
+<h2>4. Step-by-Step Examples</h2>
+
+<h3>Example A — Student pays June's fee in May</h3>
+
+<div class="example-box">
+  <strong>May 15</strong> — Staff opens student profile. System checks: all previous dues are paid. <span style="color:#2e7d32;">&#10003;</span><br>
+  Staff clicks "Record Advance Payment" → enters 1,000 Tk → note: "Advance for June"<br>
+  Earning created. Advance balance = <strong>1,000 Tk</strong>.<br><br>
+  <strong>June 1</strong> — System generates monthly dues. Student has 1,000 advance balance.<br>
+  System auto-pays the June due. Due shows: <strong>Paid</strong> (via advance). Balance = <strong>0</strong>.
+</div>
+
+<h3>Example B — Student pays yearly with discount</h3>
+
+<div class="example-box">
+  Student says: "I want to pay for the whole year (June 2026 – May 2027). Full price 12,000, I'll pay <strong>10,000</strong>."<br><br>
+  <strong>Step 1:</strong> Staff creates a Yearly Package:<br>
+  &nbsp;&nbsp;&bull; Batch: SSC 2026 Batch<br>
+  &nbsp;&nbsp;&bull; Coverage: 12 months starting June 2026<br>
+  &nbsp;&nbsp;&bull; Paid Amount: <strong>10,000 Tk</strong><br>
+  &nbsp;&nbsp;&bull; Reference: "Yearly Subscription 2026-27"<br><br>
+  <strong>Step 2:</strong> Earning created for 10,000 Tk. Advance balance = 10,000 Tk.<br><br>
+  <strong>Step 3 (June):</strong> Due generated: 1,000 Tk. Bulk discount applied: 166.67 Tk. Net due = 833.33. Advance deducted: 833.33.<br><br>
+  <strong>Step 4 (July through May):</strong> Same pattern. After 12 months → package completed. Balance = 0.
+</div>
+
+<h3>Example C — Student with half-year payment</h3>
+
+<div class="example-box">
+  Student pays 5,000 Tk for 6 months (half year).<br>
+  Batch fee = 1,000/month. Half-year total = 6,000.<br><br>
+  Effective monthly rate = 5,000 &divide; 6 = <strong>833.33 Tk/month</strong><br><br>
+  <strong>Months 1-6:</strong> Due = 833.33 (after 166.67 bulk discount)<br>
+  <strong>Month 7 onwards:</strong> No more package → reverts to full 1,000/month<br>
+  <strong>Unused balance:</strong> Refundable or adjustable.
+</div>
+
+<!-- ============================================================ -->
+<h2>5. The "Clear Dues First" Rule</h2>
+
+<p>Enforced everywhere — before recording any advance or yearly payment:</p>
+
+<div class="example-box" style="border-left-color:#c62828;">
+  <strong>Check:</strong> Does the student have any <strong>Unpaid</strong> or <strong>Partial</strong> dues?<br><br>
+  <strong>If YES</strong> <span style="color:#c62828;">&#10060;</span> → Show error: "Please clear all outstanding dues first"<br>
+  <strong>If NO</strong> <span style="color:#2e7d32;">&#10003;</span> → Allow advance / yearly payment
+</div>
+
+<p>This prevents confusion where a student has old unpaid fees but also credit.</p>
+
+<!-- ============================================================ -->
+<h2>6. Reports &amp; Visibility</h2>
+
+<h3>In the Student's Payment History</h3>
+
+<table>
+  <tr><th>Month</th><th>Batch Fee</th><th>Discount</th><th>Due</th><th>Paid</th><th>Source</th><th>Remaining</th></tr>
+  <tr><td>June</td><td>1,000</td><td>166.67</td><td>833.33</td><td>833.33</td><td>Yearly Package</td><td>0</td></tr>
+  <tr><td>July</td><td>1,000</td><td>166.67</td><td>833.33</td><td>833.33</td><td>Yearly Package</td><td>0</td></tr>
+</table>
+
+<h3>For the Staff Dashboard (New Section)</h3>
+
+<ul>
+  <li><strong>Advance Payments Overview:</strong> Total advance collected this month</li>
+  <li><strong>Consumption Report:</strong> How much advance has been consumed vs. remaining</li>
+  <li><strong>Active Packages:</strong> List of students with active yearly packages and their expiry dates</li>
+</ul>
+
+<h3>In the Financial Ledger</h3>
+
+<p>The advance payment appears as an earning under category <strong>"Advance Payment"</strong> with clear reference notes.</p>
+
+<!-- ============================================================ -->
+<h2>7. Handling Edge Cases</h2>
+
+<table>
+  <tr><th>Risk</th><th>Solution</th></tr>
+  <tr><td>Student leaves mid-year after yearly payment</td><td>Remaining balance is refundable. Staff issues a refund entry; balance returned to student.</td></tr>
+  <tr><td>Student changes batch mid-year</td><td>Prorate the remaining balance — either transfer to new batch or refund.</td></tr>
+  <tr><td>Fee amount increases mid-year</td><td>Yearly package honored at the agreed rate. Difference absorbed as additional discount.</td></tr>
+  <tr><td>Fee amount decreases mid-year</td><td>Package rate adjusted downward; remaining balance lasts longer or is partially refunded.</td></tr>
+  <tr><td>Wrong coverage period entered</td><td>Staff can edit the package if no dues have been consumed yet. If consumed, requires prorated adjustment.</td></tr>
+  <tr><td>Discount stacking (bulk + per-student)</td><td>Both discounts add together. Total discount never reduces due below 0 Tk.</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>8. Summary Comparison</h2>
+
+<table>
+  <tr><th>Feature</th><th>Simple Advance</th><th>Yearly Subscription</th></tr>
+  <tr><td>Student pays early</td><td style="text-align:center;color:#2e7d32;">&#10003;</td><td style="text-align:center;color:#2e7d32;">&#10003;</td></tr>
+  <tr><td>Discount for bulk payment</td><td style="text-align:center;color:#c62828;">&#10060;</td><td style="text-align:center;color:#2e7d32;">&#10003;</td></tr>
+  <tr><td>Monthly auto-consumption</td><td style="text-align:center;color:#2e7d32;">&#10003; (100% of due)</td><td style="text-align:center;color:#2e7d32;">&#10003; (pro-rated)</td></tr>
+  <tr><td>Clear audit trail per month</td><td style="text-align:center;color:#2e7d32;">&#10003;</td><td style="text-align:center;color:#2e7d32;">&#10003;</td></tr>
+  <tr><td>One-time earning entry</td><td style="text-align:center;color:#2e7d32;">&#10003;</td><td style="text-align:center;color:#2e7d32;">&#10003;</td></tr>
+  <tr><td>Requires all prior dues cleared</td><td style="text-align:center;color:#2e7d32;">&#10003;</td><td style="text-align:center;color:#2e7d32;">&#10003;</td></tr>
+</table>
+
+<!-- ============================================================ -->
+<h2>9. Database Changes Required</h2>
+
+<table>
+  <tr><th>Table</th><th>Purpose</th></tr>
+  <tr><td><code>student_basic_infos</code></td><td>New column: <code>advance_balance</code> (decimal, default 0)</td></tr>
+  <tr><td><code>student_advance_payments</code> <span style="color:#c62828;font-weight:bold;">(NEW)</span></td><td>Stores each advance/yearly entry, including payment type, original total, effective monthly rate, coverage period, remaining balance</td></tr>
+</table>
+
+<p>These are internal details — no visible change for students or parents.</p>
+
+<!-- ============================================================ -->
+<div class="footer">
+  Prepared for client discussion &bull; System: Coaching Management &bull; Confidential
+</div>
+
+</body>
+</html>

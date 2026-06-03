@@ -229,48 +229,48 @@
                             Payment Confirmation
                         </h3>
                         <div class="space-y-8">
-                            <div class="space-y-2">
-                                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
-                                    Payment Method
-                                </label>
-                                <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
-                                    @php $currentMethod = old('payment_method', $earning->payment_method); @endphp
-                                    <label class="relative cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio" value="cash"
-                                            {{ $currentMethod == 'cash' ? 'checked' : '' }} />
-                                        <div
-                                            class="flex flex-col items-center justify-center 
-                                            p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white 
-                                            dark:bg-[#111827] peer-checked:border-[#2563EB] 
-                                            dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 
-                                            dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] 
-                                            dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800
-                                            text-slate-500">
-                                            <span class="material-symbols-outlined mb-1">attach_money</span>
-                                            <span class="text-sm font-medium">Cash</span>
-                                        </div>
+                            @if ($cashBooks->isNotEmpty())
+                                <div id="payment-method-section" class="space-y-2">
+                                    <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">
+                                        Payment Method <span class="text-red-500">*</span>
                                     </label>
-                                    <label class="relative cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio" value="bank"
-                                            {{ $currentMethod == 'bank' ? 'checked' : '' }} />
-                                        <div
-                                            class="text-slate-500 flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] peer-checked:border-[#2563EB] dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
-                                            <span class="material-symbols-outlined mb-1">account_balance</span>
-                                            <span class="text-sm font-medium">Bank Transfer</span>
+                                    @if (setting('cashbook_display_type') == 'card')
+                                        @php
+                                            $icons = ['wallet'=>'💰','money'=>'💵','bank'=>'🏦','mobile'=>'📱','card'=>'💳','gift'=>'🎁','gold'=>'🪙','dollar'=>'💲'];
+                                        @endphp
+                                        <div class="grid grid-cols-2 md:grid-cols-4 gap-3">
+                                            @foreach ($cashBooks as $cb)
+                                                <label class="relative cursor-pointer">
+                                                    <input class="payment-card-input sr-only" type="radio" name="cash_book_id"
+                                                        value="{{ $cb->id }}"
+                                                        {{ old('cash_book_id', $earning->cash_book_id) == $cb->id ? 'checked' : ($defaultCashBook && $defaultCashBook->id == $cb->id ? 'checked' : ($loop->first ? 'checked' : '')) }}>
+                                                    <div class="payment-card flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] transition-all hover:bg-slate-50 dark:hover:bg-slate-800 text-slate-500">
+                                                        @if ($cb->image)
+                                                            <img src="{{ Storage::url($cb->image) }}" class="w-8 h-8 mb-1 object-contain">
+                                                        @elseif ($cb->icon && isset($icons[$cb->icon]))
+                                                            <span class="text-2xl mb-1">{{ $icons[$cb->icon] }}</span>
+                                                        @else
+                                                            <span class="material-symbols-outlined mb-1">account_balance</span>
+                                                        @endif
+                                                        <span class="text-sm font-medium">{{ $cb->title }}</span>
+                                                    </div>
+                                                </label>
+                                            @endforeach
                                         </div>
-                                    </label>
-                                    <label class="relative cursor-pointer">
-                                        <input class="peer sr-only" name="payment_method" type="radio"
-                                            value="mobile_banking"
-                                            {{ $currentMethod == 'mobile_banking' ? 'checked' : '' }} />
-                                        <div
-                                            class="text-slate-500 flex flex-col items-center justify-center p-3 rounded-lg border border-slate-200 dark:border-slate-700 bg-white dark:bg-[#111827] peer-checked:border-[#2563EB] dark:peer-checked:border-[#60A5FA] peer-checked:bg-blue-50/50 dark:peer-checked:bg-blue-900/20 peer-checked:text-[#2563EB] dark:peer-checked:text-[#60A5FA] transition-all hover:bg-slate-50 dark:hover:bg-slate-800">
-                                            <span class="material-symbols-outlined mb-1">account_balance_wallet</span>
-                                            <span class="text-sm font-medium">Mobile Banking</span>
-                                        </div>
-                                    </label>
+                                    @else
+                                        <select name="cash_book_id" id="cash_book_id" class="form-control select2-cashbook" required style="width: 100%;">
+                                            <option value="">— Select Account —</option>
+                                            @foreach ($cashBooks as $cb)
+                                                <option value="{{ $cb->id }}"
+                                                    data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}"
+                                                    data-icon="{{ $cb->icon ?? '' }}"
+                                                    {{ old('cash_book_id', $earning->cash_book_id) == $cb->id ? 'selected' : ($defaultCashBook && $defaultCashBook->id == $cb->id ? 'selected' : '') }}>{{ $cb->title }}
+                                                </option>
+                                            @endforeach
+                                        </select>
+                                    @endif
                                 </div>
-                            </div>
+                            @endif
                             <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
                                 <div class="space-y-1.5">
                                     <label class="block text-sm font-medium text-slate-700 dark:text-slate-300">Paid
@@ -402,6 +402,16 @@
 
 @section('styles')
     <style>
+        .payment-card-input:checked + .payment-card {
+            border-color: #2563EB !important;
+            background-color: rgba(239, 246, 255, 0.5) !important;
+            color: #2563EB !important;
+        }
+        .dark .payment-card-input:checked + .payment-card {
+            border-color: #60A5FA !important;
+            background-color: rgba(96, 165, 250, 0.2) !important;
+            color: #60A5FA !important;
+        }
         /* Dropzone State Handling */
         .dz-preview.dz-success .dz-success-mark {
             opacity: 1 !important;

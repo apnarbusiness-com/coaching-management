@@ -273,7 +273,7 @@
             <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
                 <div class="bg-white border border-outline-variant p-4 flex items-center justify-between">
                     <div class="flex flex-col justify-center">
-                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Teacher Salary</span>
+                        <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Batch Expenses</span>
                         <span class="text-2xl font-bold text-danger">{{ number_format($grandTotalExpense) }} BDT</span>
                         <div class="text-[10px] text-slate-400 font-normal mt-1">Year: {{ $year }}</div>
                     </div>
@@ -307,6 +307,48 @@
 
 
 
+
+            <!-- Today's Cash -->
+            <div class="bg-white border-2 border-amber-600 shadow-lg mt-6">
+                <div class="p-4 bg-amber-600 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Today's Cash</h2>
+                    <span class="text-xs text-white opacity-80">{{ date('d M Y') }}</span>
+                </div>
+                <div class="p-4">
+                    <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                        <div class="bg-white border border-emerald-300 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Earning</span>
+                                <span class="text-2xl font-bold text-emerald-600">{{ number_format($todayEarning) }} BDT</span>
+                                <div class="text-[10px] text-slate-400 font-normal mt-1">Today's income</div>
+                            </div>
+                            <div class="card-icon" style="background: #e0f5ec; color: #059669;">
+                                <i class="fas fa-arrow-up"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-red-300 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Cost</span>
+                                <span class="text-2xl font-bold text-red-600">{{ number_format($todayExpense) }} BDT</span>
+                                <div class="text-[10px] text-slate-400 font-normal mt-1">Today's expenses</div>
+                            </div>
+                            <div class="card-icon" style="background: #fde8e8; color: #dc2626;">
+                                <i class="fas fa-arrow-down"></i>
+                            </div>
+                        </div>
+                        <div class="bg-white border border-blue-300 rounded-lg p-4 flex items-center justify-between">
+                            <div class="flex flex-col justify-center">
+                                <span class="text-label-sm text-secondary uppercase tracking-wider mb-1">Cash</span>
+                                <span class="text-2xl font-bold {{ $todayNetCash >= 0 ? 'text-blue-600' : 'text-red-600' }}">{{ number_format($todayNetCash) }} BDT</span>
+                                <div class="text-[10px] text-slate-400 font-normal mt-1">Earning − Cost</div>
+                            </div>
+                            <div class="card-icon" style="background: #e0f2fe; color: #0284c7;">
+                                <i class="fas fa-wallet"></i>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+            </div>
 
             <!-- Cash Book Overview -->
             <div class="bg-white border-2 border-emerald-700 shadow-lg mt-6">
@@ -497,7 +539,7 @@
             <!-- Expenses Table -->
             <div class="bg-white border-2 border-red-800 shadow-lg mt-6">
                 <div class="p-4 bg-red-800 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-white">Batch Expenses (Teacher's Salary) - {{ $year }}</h2>
+                    <h2 class="text-lg font-bold text-white">Batch Expenses - {{ $year }}</h2>
                 </div>
                 <div class="table-wrapper">
                     <table class="excel-table min-w-full expense-table" id="financialExpenseTable">
@@ -568,7 +610,7 @@
             <!-- Other Expenses Table -->
             <div class="bg-white border-2 border-orange-600 shadow-lg mt-6">
                 <div class="p-4 bg-orange-600 flex justify-between items-center">
-                    <h2 class="text-lg font-bold text-white">Batch Other Expenses - {{ $year }}</h2>
+                    <h2 class="text-lg font-bold text-white">Other Expenses - {{ $year }}</h2>
                 </div>
                 <div class="table-wrapper">
                     <table class="excel-table min-w-full expense-table" id="financialOtherExpenseTable">
@@ -576,7 +618,7 @@
                             <tr class="bg-orange-600">
                                 <th
                                     class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-orange-700 fixed-col fixed-left">
-                                    Batch
+                                    Source
                                 </th>
                                 @foreach ($months as $month)
                                     <th
@@ -638,6 +680,56 @@
             </div>
 
 
+
+            <!-- Uncategorized Entries Table -->
+            @if ($uncategorizedEarningCount > 0 || $uncategorizedExpenseCount > 0)
+            <div class="bg-white border-2 border-purple-600 shadow-lg mt-6">
+                <div class="p-4 bg-purple-600 flex justify-between items-center">
+                    <h2 class="text-lg font-bold text-white">Uncategorized Entries</h2>
+                    <span class="text-xs text-white opacity-80">Missing month/year</span>
+                </div>
+                <div class="table-wrapper">
+                    <table class="excel-table min-w-full">
+                        <thead>
+                            <tr class="bg-purple-600">
+                                <th class="grid-cell px-4 py-2 text-left font-header-primary text-white border-r-purple-700 fixed-col fixed-left">Type</th>
+                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-purple-700">Records</th>
+                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-white border-r-purple-700">Total Amount</th>
+                                <th class="grid-cell px-4 py-2 text-center font-header-primary text-white fixed-col fixed-right">Details</th>
+                            </tr>
+                        </thead>
+                        <tbody class="text-cell-data font-cell-data text-on-surface">
+                            @if ($uncategorizedEarningCount > 0)
+                            <tr class="bg-white hover:bg-slate-50 text-purple-900">
+                                <td class="grid-cell px-4 py-1.5 font-bold fixed-col fixed-left">Earnings (no date)</td>
+                                <td class="grid-cell px-4 py-1.5 text-center">{{ $uncategorizedEarningCount }}</td>
+                                <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($uncategorizedEarningTotal) }} BDT</td>
+                                <td class="grid-cell px-4 py-1.5 text-center fixed-col fixed-right">
+                                    <button type="button" class="btn btn-sm" style="background: #9333ea; color: white; padding: 2px 10px; font-size: 12px; border-radius: 4px;"
+                                        onclick="loadUncategorizedEarningDetails()">
+                                        <i class="fas fa-info-circle"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            @endif
+                            @if ($uncategorizedExpenseCount > 0)
+                            <tr class="bg-white hover:bg-slate-50 text-purple-900">
+                                <td class="grid-cell px-4 py-1.5 font-bold fixed-col fixed-left">Expenses (no month/year)</td>
+                                <td class="grid-cell px-4 py-1.5 text-center">{{ $uncategorizedExpenseCount }}</td>
+                                <td class="grid-cell px-4 py-1.5 text-right">{{ number_format($uncategorizedExpenseTotal) }} BDT</td>
+                                <td class="grid-cell px-4 py-1.5 text-center fixed-col fixed-right">
+                                    <button type="button" class="btn btn-sm" style="background: #9333ea; color: white; padding: 2px 10px; font-size: 12px; border-radius: 4px;"
+                                        onclick="loadUncategorizedExpenseDetails()">
+                                        <i class="fas fa-info-circle"></i> View
+                                    </button>
+                                </td>
+                            </tr>
+                            @endif
+                        </tbody>
+                    </table>
+                </div>
+            </div>
+            @endif
 
             <!-- Expense Drawer -->
             <div class="expense-drawer-overlay" id="expenseDrawerOverlay" onclick="closeExpenseDrawer()"></div>
@@ -726,7 +818,7 @@
                 });
         }
 
-        // Expense details loader
+        // Expense details loader (all batch expenses)
         function loadExpenseDetails(batchId, batchName, month, year) {
             const drawer = document.getElementById('expenseDrawer');
             const overlay = document.getElementById('expenseDrawerOverlay');
@@ -746,30 +838,36 @@
                 .then(data => {
                     let html = '<div class="space-y-4">';
 
-                    if (data.teachers && data.teachers.length > 0) {
-                        data.teachers.forEach(teacher => {
-                            const salaryLabel = teacher.salary_type === 'percentage' ?
-                                teacher.salary_amount + '%' :
-                                teacher.salary_amount.toLocaleString() + ' BDT';
+                    if (data.expenses && data.expenses.length > 0) {
+                        let totalAmount = 0;
 
-                            html += '<div class="border rounded-lg p-3">';
+                        data.expenses.forEach(expense => {
+                            totalAmount += expense.amount;
+
+                            html += '<div class="border rounded-lg p-3 border-red-300">';
                             html += '<div class="flex justify-between items-center mb-2">';
-                            html += '<h4 class="font-bold text-red-800">' + teacher.teacher_name + '</h4>';
-                            html += '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">' + teacher
-                                .salary_type + '</span>';
+                            html += '<h4 class="font-bold text-red-800">' + expense.title + '</h4>';
+                            html += '<span class="text-xs bg-red-100 text-red-800 px-2 py-1 rounded">' +
+                                expense.category + '</span>';
                             html += '</div>';
+                            if (expense.details) {
+                                html += '<p class="text-sm text-gray-600 mb-2">' + expense.details + '</p>';
+                            }
+                            if (expense.teacher_name) {
+                                html += '<p class="text-xs text-gray-500 mb-1">Teacher: ' + expense.teacher_name + '</p>';
+                            }
                             html += '<table class="w-full text-sm">';
                             html +=
-                                '<tr><td class="py-1 text-gray-600">Salary Type:</td><td class="py-1 text-right">' +
-                                teacher.salary_type + '</td></tr>';
-                            html +=
-                                '<tr><td class="py-1 text-gray-600">Salary Amount:</td><td class="py-1 text-right">' +
-                                salaryLabel + '</td></tr>';
-                            html +=
-                                '<tr class="font-bold"><td class="py-1">Paid This Month:</td><td class="py-1 text-right">' +
-                                teacher.amount.toLocaleString() + ' BDT</td></tr>';
+                                '<tr class="font-bold"><td class="py-1">Amount:</td><td class="py-1 text-right">' +
+                                expense.amount.toLocaleString() + ' BDT</td></tr>';
                             html += '</table></div>';
                         });
+
+                        html += '<div class="border-t-2 border-red-800 pt-2 mt-2">';
+                        html += '<table class="w-full text-sm font-bold">';
+                        html += '<tr><td class="py-1">Total:</td><td class="py-1 text-right">' + totalAmount
+                            .toLocaleString() + ' BDT</td></tr>';
+                        html += '</table></div>';
                     } else {
                         html += '<p class="text-gray-500">No expenses for this month.</p>';
                     }
@@ -782,22 +880,21 @@
                 });
         }
 
-        // Other Expense details loader
+        // Other Expense details loader (non-batch expenses)
         function loadOtherExpenseDetails(batchId, batchName, month, year) {
             const drawer = document.getElementById('expenseDrawer');
             const overlay = document.getElementById('expenseDrawerOverlay');
             const title = document.getElementById('drawerTitle');
             const content = document.getElementById('drawerContent');
 
-            title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Other Expenses';
+            title.textContent = batchName + ' - ' + monthNames[month - 1] + ' Expenses';
             title.parentElement.style.background = '#ea580c';
             content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
 
             drawer.classList.add('open');
             overlay.classList.add('open');
 
-            fetch("{{ route('admin.financial-ledgers.other-expense-details') }}?batch_id=" + batchId + "&month=" + month +
-                    "&year=" + year)
+            fetch("{{ route('admin.financial-ledgers.other-expense-details') }}?month=" + month + "&year=" + year)
                 .then(response => response.json())
                 .then(data => {
                     let html = '<div class="space-y-4">';
@@ -889,6 +986,125 @@
                         html += '</table></div>';
                     } else {
                         html += '<p class="text-gray-500">No extra earnings for this month.</p>';
+                    }
+
+                    html += '</div>';
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+                });
+        }
+
+        // Uncategorized Earnings details loader
+        function loadUncategorizedEarningDetails() {
+            const drawer = document.getElementById('expenseDrawer');
+            const overlay = document.getElementById('expenseDrawerOverlay');
+            const title = document.getElementById('drawerTitle');
+            const content = document.getElementById('drawerContent');
+
+            title.textContent = 'Uncategorized Earnings (no date)';
+            title.parentElement.style.background = '#9333ea';
+            content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+
+            fetch("{{ route('admin.financial-ledgers.uncategorized-earning-details') }}")
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<div class="space-y-4">';
+
+                    if (data.earnings && data.earnings.length > 0) {
+                        let totalAmount = 0;
+
+                        data.earnings.forEach(earning => {
+                            totalAmount += earning.amount;
+
+                            html += '<div class="border rounded-lg p-3 border-purple-300">';
+                            html += '<div class="flex justify-between items-center mb-2">';
+                            html += '<h4 class="font-bold text-purple-800">' + earning.title + '</h4>';
+                            html += '<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">' +
+                                earning.category + '</span>';
+                            html += '</div>';
+                            html += '<table class="w-full text-sm">';
+                            if (earning.student_name && earning.student_name !== 'N/A') {
+                                html += '<tr><td class="py-1 text-gray-600">Student:</td><td class="py-1 text-right">' +
+                                    earning.student_name + '</td></tr>';
+                            }
+                            html += '<tr><td class="py-1 text-gray-600">Created:</td><td class="py-1 text-right">' +
+                                earning.created_at + '</td></tr>';
+                            html += '<tr class="font-bold"><td class="py-1">Amount:</td><td class="py-1 text-right">' +
+                                earning.amount.toLocaleString() + ' BDT</td></tr>';
+                            html += '</table></div>';
+                        });
+
+                        html += '<div class="border-t-2 border-purple-600 pt-2 mt-2">';
+                        html += '<table class="w-full text-sm font-bold">';
+                        html += '<tr><td class="py-1">Total:</td><td class="py-1 text-right">' + totalAmount
+                            .toLocaleString() + ' BDT</td></tr>';
+                        html += '</table></div>';
+                    } else {
+                        html += '<p class="text-gray-500">No uncategorized earnings.</p>';
+                    }
+
+                    html += '</div>';
+                    content.innerHTML = html;
+                })
+                .catch(error => {
+                    content.innerHTML = '<p class="text-red-500">Error loading data.</p>';
+                });
+        }
+
+        // Uncategorized Expenses details loader
+        function loadUncategorizedExpenseDetails() {
+            const drawer = document.getElementById('expenseDrawer');
+            const overlay = document.getElementById('expenseDrawerOverlay');
+            const title = document.getElementById('drawerTitle');
+            const content = document.getElementById('drawerContent');
+
+            title.textContent = 'Uncategorized Expenses (no month/year)';
+            title.parentElement.style.background = '#9333ea';
+            content.innerHTML = '<div class="text-center py-8"><i class="fas fa-spinner fa-spin text-2xl"></i></div>';
+
+            drawer.classList.add('open');
+            overlay.classList.add('open');
+
+            fetch("{{ route('admin.financial-ledgers.uncategorized-expense-details') }}")
+                .then(response => response.json())
+                .then(data => {
+                    let html = '<div class="space-y-4">';
+
+                    if (data.expenses && data.expenses.length > 0) {
+                        let totalAmount = 0;
+
+                        data.expenses.forEach(expense => {
+                            totalAmount += expense.amount;
+
+                            html += '<div class="border rounded-lg p-3 border-purple-300">';
+                            html += '<div class="flex justify-between items-center mb-2">';
+                            html += '<h4 class="font-bold text-purple-800">' + expense.title + '</h4>';
+                            html += '<span class="text-xs bg-purple-100 text-purple-800 px-2 py-1 rounded">' +
+                                expense.category + '</span>';
+                            html += '</div>';
+                            if (expense.details) {
+                                html += '<p class="text-sm text-gray-600 mb-2">' + expense.details + '</p>';
+                            }
+                            html += '<table class="w-full text-sm">';
+                            html += '<tr><td class="py-1 text-gray-600">Created:</td><td class="py-1 text-right">' +
+                                expense.created_at + '</td></tr>';
+                            html += '<tr class="font-bold"><td class="py-1">Amount:</td><td class="py-1 text-right">' +
+                                expense.amount.toLocaleString() + ' BDT</td></tr>';
+                            html += '</table></div>';
+                        });
+
+                        html += '<div class="border-t-2 border-purple-600 pt-2 mt-2">';
+                        html += '<table class="w-full text-sm font-bold">';
+                        html += '<tr><td class="py-1">Total:</td><td class="py-1 text-right">' + totalAmount
+                            .toLocaleString() + ' BDT</td></tr>';
+                        html += '</table></div>';
+                    } else {
+                        html += '<p class="text-gray-500">No uncategorized expenses.</p>';
                     }
 
                     html += '</div>';
