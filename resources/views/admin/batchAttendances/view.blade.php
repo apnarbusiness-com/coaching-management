@@ -311,6 +311,20 @@
         border-top: 2px solid #e2e8f0;
     }
     .td-center { text-align: center; }
+    .mobile-toggle-container { text-align: center; }
+    .show-calendar-btn {
+        display: none;
+        padding: 8px 16px;
+        background: #2563eb;
+        color: #fff;
+        border: none;
+        border-radius: 8px;
+        font-size: 13px;
+        font-weight: 600;
+        cursor: pointer;
+        margin-bottom: 10px;
+    }
+    .show-calendar-btn:hover { opacity: 0.9; }
     @media (max-width: 768px) {
         .att-view-wrap { padding: 10px; }
         .att-view-hero { padding: 14px; }
@@ -333,6 +347,38 @@
         }
         .legend-bar { flex-wrap: wrap; gap: 10px; }
         .legend-bar > div:last-child { margin-left: 0; width: 100%; text-align: center; }
+
+        .att-table th.cal-header,
+        .att-table td.cal-day-cell {
+            display: none;
+        }
+        .att-table.show-calendar th.cal-header,
+        .att-table.show-calendar td.cal-day-cell {
+            display: table-cell;
+        }
+        .att-table th.sticky-left,
+        .att-table td.sticky-left {
+            position: static;
+            width: auto !important;
+        }
+        .att-table th.sticky-left-2,
+        .att-table td.sticky-left-2 {
+            position: static;
+            width: auto !important;
+        }
+        .att-table th.sticky-left-3,
+        .att-table td.sticky-left-3 {
+            position: static;
+            width: auto !important;
+        }
+        .att-table th { font-size: 10px; padding: 6px; white-space: normal; }
+        .att-table td { padding: 6px; font-size: 12px; }
+        .cal-cell { width: 22px; height: 22px; font-size: 9px; }
+        .student-name { font-size: 13px; }
+        .student-meta { font-size: 10px; }
+        .batch-badge { font-size: 10px; padding: 1px 6px; }
+        .rate-pill { font-size: 10px; padding: 2px 6px; }
+        .show-calendar-btn { display: inline-block; }
     }
     @media (max-width: 480px) {
         .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
@@ -419,8 +465,13 @@
     </div>
 
     <div class="table-container">
+        <div class="mobile-toggle-container">
+            <button type="button" class="show-calendar-btn" onclick="toggleCalendar()">
+                <i class="fa fa-calendar"></i> Show Calendar Days
+            </button>
+        </div>
         <div class="table-scroll">
-            <table class="att-table">
+            <table class="att-table" id="att-table">
                 <thead>
                     <tr>
                         <th class="sticky-left" style="width:60px;">ID</th>
@@ -472,7 +523,7 @@
                                     $status = $row['daily'][$day] ?? 'no_class';
                                     $cellClass = $status === 'present' ? 'present' : ($status === 'absent' ? 'absent' : ($status === 'late' ? 'late' : ($status === 'not_marked' ? 'not-marked' : 'no-class')));
                                 @endphp
-                                <td class="td-center" style="padding:2px;">
+                                <td class="td-center cal-day-cell" style="padding:2px;">
                                     <div class="cal-cell {{ $cellClass }}">{{ $day }}</div>
                                 </td>
                             @endfor
@@ -531,5 +582,16 @@ document.addEventListener('DOMContentLoaded', function() {
         });
     });
 });
+
+function toggleCalendar() {
+    const table = document.getElementById('att-table');
+    const btn = document.querySelector('.show-calendar-btn');
+    if (!table || !btn) return;
+    table.classList.toggle('show-calendar');
+    const showing = table.classList.contains('show-calendar');
+    btn.innerHTML = showing
+        ? '<i class="fa fa-calendar"></i> Hide Calendar Days'
+        : '<i class="fa fa-calendar"></i> Show Calendar Days';
+}
 </script>
 @endsection
