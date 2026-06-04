@@ -345,11 +345,22 @@
                     @can('batch_attendance_access')
                         <li class="c-sidebar-nav-item">
                             <a href="{{ route('admin.batch-attendances.index') }}"
-                                class="c-sidebar-nav-link {{ request()->is('admin/batch-attendances') || request()->is('admin/batch-attendances/*') ? 'c-active' : '' }}">
+                                class="c-sidebar-nav-link {{ request()->is('admin/batch-attendances') && !request()->is('admin/batch-attendances/view') ? 'c-active' : '' }}">
                                 <i class="fa-fw fas fa-clipboard-check c-sidebar-nav-icon">
 
                                 </i>
-                                Batch Attendance
+                                Take Attendance
+                            </a>
+                        </li>
+                    @endcan
+                    @can('batch_attendance_view')
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.batch-attendances.view') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/batch-attendances/view') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-eye c-sidebar-nav-icon">
+
+                                </i>
+                                Attendance View
                             </a>
                         </li>
                     @endcan

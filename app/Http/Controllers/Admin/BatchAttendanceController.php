@@ -430,4 +430,146 @@ class BatchAttendanceController extends Controller
             'totalStudents'
         ));
     }
+
+    public function view(Request $request)
+    {
+        abort_if(Gate::denies('batch_attendance_view'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $selectedBatchId = $request->input('batch_id');
+
+        $monthInput = $request->input('month');
+        if ($monthInput && str_contains($monthInput, '-')) {
+            $parsed = explode('-', $monthInput);
+            $selectedYear = (int) $parsed[0];
+            $selectedMonth = (int) $parsed[1];
+        } else {
+            $selectedMonth = (int) ($monthInput ?: Carbon::now()->month);
+            $selectedYear = (int) ($request->input('year', Carbon::now()->year));
+        }
+
+        $batches = Batch::with('subject')
+            ->orderBy('batch_name')
+            ->get()
+            ->map(fn ($b) => [
+                'id' => $b->id,
+                'name' => $b->batch_name,
+                'subject' => $b->subject?->name ?? 'N/A',
+            ]);
+
+        $rows = collect();
+
+        if ($selectedBatchId) {
+            $batch = Batch::with('subject')->findOrFail($selectedBatchId);
+            $students = $batch->students()
+                ->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
+                ->orderBy('first_name')
+                ->orderBy('last_name')
+                ->get();
+
+            $attendances = BatchAttendance::where('batch_id', $selectedBatchId)
+                ->whereMonth('attendance_date', $selectedMonth)
+                ->whereYear('attendance_date', $selectedYear)
+                ->get()
+                ->groupBy('student_id');
+
+            foreach ($students as $student) {
+                $rows->push($this->buildViewRow($student, $batch, $attendances->get($student->id, collect()), $selectedMonth, $selectedYear));
+            }
+        } else {
+            $batchesWithStudents = Batch::with('subject')
+                ->whereHas('students', function ($q) use ($selectedMonth, $selectedYear) {
+                    $q->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                        ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear);
+                })
+                ->with(['students' => function ($q) use ($selectedMonth, $selectedYear) {
+                    $q->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                        ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
+                        ->orderBy('first_name')
+                        ->orderBy('last_name');
+                }])
+                ->orderBy('batch_name')
+                ->get();
+
+            $allAttendance = BatchAttendance::whereMonth('attendance_date', $selectedMonth)
+                ->whereYear('attendance_date', $selectedYear)
+                ->get()
+                ->groupBy(fn ($a) => $a->batch_id.'_'.$a->student_id);
+
+            foreach ($batchesWithStudents as $batch) {
+                foreach ($batch->students as $student) {
+                    $key = $batch->id.'_'.$student->id;
+                    $rows->push($this->buildViewRow($student, $batch, $allAttendance->get($key, collect()), $selectedMonth, $selectedYear));
+                }
+            }
+        }
+
+        $totalStudents = $rows->count();
+        $totalPresent = $rows->sum('present');
+        $totalAbsent = $rows->sum('absent');
+        $totalLate = $rows->sum('late');
+        $avgRate = $totalStudents > 0 ? round($rows->avg('att_rate'), 1) : 0;
+
+        $criticalDrop = $rows->filter(fn ($r) => $r['att_rate'] < 50)->count();
+        $topBatch = $rows->groupBy('batch_name')->map(fn ($g) => round($g->avg('att_rate'), 1))->sortDesc()->keys()->first();
+
+        $monthLabel = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format('F Y');
+
+        return view('admin.batchAttendances.view', compact(
+            'rows', 'batches', 'selectedMonth', 'selectedYear', 'selectedBatchId',
+            'monthLabel', 'totalStudents', 'totalPresent', 'totalAbsent', 'totalLate',
+            'avgRate', 'criticalDrop', 'topBatch'
+        ));
+    }
+
+    private function buildViewRow($student, $batch, $attendances, $month, $year)
+    {
+        $attendancesByDay = $attendances->keyBy(fn ($a) => (int) Carbon::parse($a->attendance_date)->format('d'));
+
+        $schedule = $batch->getAttributes()['class_schedule'] ?? null;
+        $classDays = $schedule ? array_keys(is_array($schedule) ? $schedule : json_decode($schedule, true) ?? []) : [];
+
+        $daysInMonth = Carbon::createFromDate($year, $month, 1)->daysInMonth;
+        $present = 0;
+        $absent = 0;
+        $late = 0;
+        $totalClassDays = 0;
+        $daily = [];
+
+        for ($day = 1; $day <= $daysInMonth; $day++) {
+            $date = Carbon::createFromDate($year, $month, $day);
+            $dayName = strtolower($date->format('l'));
+            $hasClass = in_array($dayName, $classDays);
+
+            if (isset($attendancesByDay[$day])) {
+                $status = $attendancesByDay[$day]->status;
+                $daily[$day] = $status;
+                if ($status === 'present') $present++;
+                elseif ($status === 'absent') $absent++;
+                elseif ($status === 'late') $late++;
+                $totalClassDays++;
+            } else {
+                $daily[$day] = $hasClass ? 'not_marked' : 'no_class';
+                if ($hasClass) $totalClassDays++;
+            }
+        }
+
+        $attRate = $totalClassDays > 0 ? round(($present + $late) / $totalClassDays * 100, 1) : 0;
+
+        return [
+            'student_id' => $student->id,
+            'student_name' => trim(($student->first_name ?? '').' '.($student->last_name ?? '')),
+            'roll' => $student->roll ?? '',
+            'id_no' => $student->id_no ?? '',
+            'batch_id' => $batch->id,
+            'batch_name' => $batch->batch_name,
+            'subject' => $batch->subject?->name ?? 'N/A',
+            'total_days' => $totalClassDays,
+            'present' => $present,
+            'absent' => $absent,
+            'late' => $late,
+            'att_rate' => $attRate,
+            'daily' => $daily,
+        ];
+    }
 }

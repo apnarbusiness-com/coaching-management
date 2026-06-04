@@ -644,6 +644,11 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'financial_ledger_access',
                 'parent_id' => null,
             ],
+            [
+                'id'    => 117,
+                'title' => 'batch_attendance_view',
+                'parent_id' => 19,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);
