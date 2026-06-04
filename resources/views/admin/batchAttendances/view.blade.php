@@ -312,12 +312,35 @@
     }
     .td-center { text-align: center; }
     @media (max-width: 768px) {
-        .att-view-wrap { padding: 12px; }
-        .stats-grid { grid-template-columns: repeat(2, 1fr); }
-        .filter-bar { flex-direction: column; }
+        .att-view-wrap { padding: 10px; }
+        .att-view-hero { padding: 14px; }
+        .att-view-hero h3 { font-size: 18px; }
+        .att-view-hero > div { flex-direction: column; gap: 10px; }
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 8px; }
+        .stat-card { padding: 10px; gap: 10px; }
+        .stat-icon { width: 36px; height: 36px; font-size: 16px; }
+        .stat-info .stat-value { font-size: 18px; }
+        .stat-info .stat-value.small { font-size: 14px; }
+        .filter-bar { flex-direction: column; gap: 10px; padding: 14px; }
+        .filter-group { width: 100%; }
         .filter-group select,
         .filter-group input { width: 100%; min-width: unset; }
-        .stat-card { padding: 12px; }
+        .filter-group input[type="month"] { width: 100%; }
+        .btn-filter, .btn-export {
+            width: 100%;
+            justify-content: center;
+            padding: 11px 20px;
+        }
+        .legend-bar { flex-wrap: wrap; gap: 10px; }
+        .legend-bar > div:last-child { margin-left: 0; width: 100%; text-align: center; }
+    }
+    @media (max-width: 480px) {
+        .stats-grid { grid-template-columns: repeat(2, 1fr); gap: 6px; }
+        .stat-card { flex-direction: column; text-align: center; padding: 10px 8px; }
+        .stat-info .stat-value { font-size: 16px; }
+        .stat-info .stat-label { font-size: 10px; }
+        .att-view-hero { padding: 12px; }
+        .filter-bar { padding: 10px; }
     }
 </style>
 
@@ -351,10 +374,10 @@
                 @endforeach
             </select>
         </div>
-        <div class="filter-group" style="flex:1; min-width:200px;">
+        <div class="filter-group" style="flex:1; min-width:180px;">
             <label>Search</label>
             <input type="text" id="student-search" placeholder="Search by name or roll..."
-                style="padding:9px 12px; border:1px solid #e2e8f0; border-radius:10px; font-size:14px; background:#fff; width:100%;">
+                style="padding:9px 12px; border:1px solid #e2e8f0; border-radius:10px; font-size:14px; background:#fff; width:100%; box-sizing:border-box;">
         </div>
         <button type="submit" class="btn-filter">
             <i class="fa fa-filter"></i> Apply Filters
