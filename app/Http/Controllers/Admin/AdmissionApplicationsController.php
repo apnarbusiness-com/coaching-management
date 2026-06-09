@@ -6,6 +6,7 @@ use App\Http\Controllers\Controller;
 use App\Models\StudentAdmissionApplication;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentDetailsInformation;
+use App\Services\ReferralService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Auth;
@@ -94,6 +95,15 @@ class AdmissionApplicationsController extends Controller
 
             return $student;
         });
+
+        if ($application->referred_by_user_id) {
+            try {
+                $referralService = app(ReferralService::class);
+                $referralService->processReferralReward($application);
+            } catch (\Exception $e) {
+                report($e);
+            }
+        }
 
         return redirect()
             ->route('admin.student-basic-infos.show', $student->id)

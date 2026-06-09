@@ -124,7 +124,7 @@
         @endcan
         @can('user_management_access')
             <li
-                class="c-sidebar-nav-dropdown {{ request()->is('admin/permissions*') ? 'c-show' : '' }} {{ request()->is('admin/roles*') ? 'c-show' : '' }} {{ request()->is('admin/users*') ? 'c-show' : '' }} {{ request()->is('admin/audit-logs*') ? 'c-show' : '' }}">
+                class="c-sidebar-nav-dropdown {{ request()->is('admin/permissions*') ? 'c-show' : '' }} {{ request()->is('admin/roles*') ? 'c-show' : '' }} {{ request()->is('admin/users*') ? 'c-show' : '' }} {{ request()->is('admin/audit-logs*') ? 'c-show' : '' }} {{ request()->is('admin/wallets*') ? 'c-show' : '' }} {{ request()->is('admin/withdraw-requests*') ? 'c-show' : '' }} {{ request()->is('admin/referral-campaigns*') ? 'c-show' : '' }}">
                 <a class="c-sidebar-nav-dropdown-toggle" href="#">
                     <i class="fa-fw fas fa-users c-sidebar-nav-icon">
 
@@ -171,6 +171,40 @@
 
                                 </i>
                                 {{ trans('cruds.user.title') }}
+                            </a>
+                        </li>
+                    @endcan
+                    @can('user_management_access')
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.wallets.index') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/wallets') || request()->is('admin/wallets/*') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-wallet c-sidebar-nav-icon">
+                                </i>
+                                Wallets
+                            </a>
+                        </li>
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.withdraw-requests.index') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/withdraw-requests*') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-hand-holding-usd c-sidebar-nav-icon">
+                                </i>
+                                Withdraw Requests
+                            </a>
+                        </li>
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.referral-campaigns.index') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/referral-campaigns*') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-bullhorn c-sidebar-nav-icon">
+                                </i>
+                                Referral Campaigns
+                            </a>
+                        </li>
+                        <li class="c-sidebar-nav-item">
+                            <a href="{{ route('admin.referral-settings.index') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/referral-settings*') ? 'c-active' : '' }}">
+                                <i class="fa-fw fas fa-cog c-sidebar-nav-icon">
+                                </i>
+                                Referral Settings
                             </a>
                         </li>
                     @endcan
@@ -492,6 +526,16 @@
                 </a>
             </li>
         @endcan
+        @if(auth()->user()->wallet_access)
+        <li class="c-sidebar-nav-item">
+            <a class="c-sidebar-nav-link {{ request()->is('admin/wallet') || request()->is('admin/wallet/*') ? 'c-active' : '' }}"
+                href="{{ route('admin.wallet.index') }}">
+                <i class="fa-fw fas fa-wallet c-sidebar-nav-icon">
+                </i>
+                My Wallet
+            </a>
+        </li>
+        @endif
         @if (file_exists(app_path('Http/Controllers/Auth/ChangePasswordController.php')))
             @can('profile_password_edit')
                 <li class="c-sidebar-nav-item">

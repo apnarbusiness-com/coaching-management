@@ -9,6 +9,7 @@ use Illuminate\Auth\Notifications\ResetPassword;
 use Illuminate\Contracts\Auth\MustVerifyEmail;
 use Illuminate\Database\Eloquent\Factories\HasFactory;
 use App\Traits\HasRoleCheck;
+use App\Traits\HasReferralCode;
 use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
@@ -16,7 +17,7 @@ use Laravel\Sanctum\HasApiTokens;
 
 class User extends Authenticatable
 {
-    use SoftDeletes, Notifiable, HasFactory, HasRoleCheck, HasApiTokens;
+    use SoftDeletes, Notifiable, HasFactory, HasRoleCheck, HasApiTokens, HasReferralCode;
 
     public $table = 'users';
 
@@ -44,7 +45,9 @@ class User extends Authenticatable
         'updated_at',
         'deleted_at',
         'user_name',
-        'admission_id'
+        'admission_id',
+        'referral_code',
+        'wallet_access'
     ];
 
     protected function serializeDate(DateTimeInterface $date)
@@ -92,5 +95,15 @@ class User extends Authenticatable
     public function student()
     {
         return $this->hasOne(StudentBasicInfo::class, 'user_id');
+    }
+
+    public function wallet()
+    {
+        return $this->hasOne(Wallet::class, 'user_id');
+    }
+
+    public function referredApplications()
+    {
+        return $this->hasMany(StudentAdmissionApplication::class, 'referred_by_user_id');
     }
 }

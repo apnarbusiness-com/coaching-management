@@ -43,6 +43,8 @@ class StudentAdmissionApplication extends Model
         'approved_by',
         'approved_at',
         'notes',
+        'referral_code',
+        'referred_by_user_id',
     ];
 
     protected $casts = [
@@ -65,5 +67,10 @@ class StudentAdmissionApplication extends Model
     public function approver()
     {
         return $this->belongsTo(User::class, 'approved_by');
+    }
+
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
     }
 }

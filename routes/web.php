@@ -6,11 +6,16 @@ use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CashBookController;
 use App\Http\Controllers\Admin\DueCollectionController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\ReferralCampaignController;
+use App\Http\Controllers\Admin\ReferralSettingsController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
 use App\Http\Controllers\Admin\TeacherBatchController;
 use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\TeachersPaymentController;
+use App\Http\Controllers\Admin\WalletController as AdminWalletController;
+use App\Http\Controllers\Admin\WithdrawRequestController;
 use App\Http\Controllers\AdmissionApplicationController;
+use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Auth;
 use Illuminate\Support\Facades\Route;
 
@@ -18,6 +23,7 @@ Route::redirect('/', '/login');
 Route::get('/admission', [AdmissionApplicationController::class, 'create'])->name('admission.public');
 Route::post('/admission', [AdmissionApplicationController::class, 'store'])->name('admission.public.store');
 Route::get('/admission/thank-you/{application}', [AdmissionApplicationController::class, 'thankYou'])->name('admission.public.thankyou');
+Route::get('/admission/check-referral', [AdmissionApplicationController::class, 'checkReferral'])->name('admission.public.check-referral');
 Route::get('/home', function () {
     if (session('status')) {
         return redirect()->route('admin.home')->with('status', session('status'));
@@ -240,6 +246,41 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::post('student-flags/assign', 'StudentFlagController@assignFlag')->name('student-flags.assign');
     Route::post('student-flags/remove', 'StudentFlagController@removeFlag')->name('student-flags.remove');
     Route::get('student-flags/student/{studentId}', 'StudentFlagController@getStudentFlags')->name('student-flags.student');
+
+    // Wallet (user's own wallet)
+    Route::get('wallet', [WalletController::class, 'index'])->name('wallet.index');
+    Route::get('wallet/generate-code', [WalletController::class, 'generateCode'])->name('wallet.generate.code');
+    Route::get('wallet/withdraw', [WalletController::class, 'withdrawForm'])->name('wallet.withdraw.form');
+    Route::post('wallet/withdraw', [WalletController::class, 'withdrawSubmit'])->name('wallet.withdraw.submit');
+
+    // Admin Wallet Management
+    Route::get('wallets', [AdminWalletController::class, 'index'])->name('wallets.index');
+    Route::get('wallets/{wallet}', [AdminWalletController::class, 'show'])->name('wallets.show');
+    Route::get('wallets/{wallet}/adjust', [AdminWalletController::class, 'adjustForm'])->name('wallets.adjust');
+    Route::post('wallets/{wallet}/adjust', [AdminWalletController::class, 'adjustSubmit'])->name('wallets.adjust.submit');
+
+    // Admin Withdraw Requests
+    Route::get('withdraw-requests', [WithdrawRequestController::class, 'index'])->name('withdraw-requests.index');
+    Route::post('withdraw-requests/{withdrawRequest}/approve', [WithdrawRequestController::class, 'approve'])->name('withdraw-requests.approve');
+    Route::post('withdraw-requests/{withdrawRequest}/reject', [WithdrawRequestController::class, 'reject'])->name('withdraw-requests.reject');
+
+    // Admin Referral Campaigns
+    Route::resource('referral-campaigns', ReferralCampaignController::class)->names([
+        'index' => 'referral-campaigns.index',
+        'create' => 'referral-campaigns.create',
+        'store' => 'referral-campaigns.store',
+        'edit' => 'referral-campaigns.edit',
+        'update' => 'referral-campaigns.update',
+        'destroy' => 'referral-campaigns.destroy',
+    ]);
+
+    // Referral Settings
+    Route::get('referral-settings', [ReferralSettingsController::class, 'index'])->name('referral-settings.index');
+    Route::post('referral-settings/toggle/{user}', [ReferralSettingsController::class, 'toggle'])->name('referral-settings.toggle');
+    Route::post('referral-settings/batch-toggle', [ReferralSettingsController::class, 'batchToggle'])->name('referral-settings.batch-toggle');
+    Route::post('referral-settings/batch-wise-toggle', [ReferralSettingsController::class, 'batchWiseToggle'])->name('referral-settings.batch-wise-toggle');
+    Route::post('referral-settings/enable-all', [ReferralSettingsController::class, 'enableAll'])->name('referral-settings.enable-all');
+    Route::post('referral-settings/disable-all', [ReferralSettingsController::class, 'disableAll'])->name('referral-settings.disable-all');
 
     // Batch Attendance
     Route::get('batch-attendances', [BatchAttendanceController::class, 'index'])->name('batch-attendances.index');

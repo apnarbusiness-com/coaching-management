@@ -649,6 +649,11 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'batch_attendance_view',
                 'parent_id' => 19,
             ],
+            [
+                'id'    => 118,
+                'title' => 'referral_settings_access',
+                'parent_id' => null,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);

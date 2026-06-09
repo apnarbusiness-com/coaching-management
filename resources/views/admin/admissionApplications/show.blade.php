@@ -110,6 +110,19 @@
                         @endif
                     </p>
                 </div>
+
+                @if($application->referral_code)
+                <div class="border-t border-slate-200 dark:border-slate-700 p-6">
+                    <p class="text-xs uppercase text-slate-500">Referral Info</p>
+                    <p class="font-semibold">
+                        Referral Code: <span class="font-mono">{{ $application->referral_code }}</span>
+                        @if($application->referredBy)
+                            · Referred by: {{ $application->referredBy->name }}
+                            (Wallet: {{ number_format($application->referredBy->wallet?->balance ?? 0, 2) }} TK)
+                        @endif
+                    </p>
+                </div>
+                @endif
             </div>
         </div>
     </div>

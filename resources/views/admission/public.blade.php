@@ -340,6 +340,21 @@
                 </div>
 
                 <div class="admission-section">
+                    <h4 class="section-title">Referral Code (Optional)</h4>
+                    <p class="text-muted small mb-3">
+                        If you were referred by a current student/teacher, enter their referral code here.
+                    </p>
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label>Referral Code</label>
+                            <input type="text" name="referral_code" class="form-control"
+                                value="{{ old('referral_code') }}" placeholder="e.g. REFJR4ABC" maxlength="20">
+                            <small class="text-muted" id="referral-status"></small>
+                        </div>
+                    </div>
+                </div>
+
+                <div class="admission-section">
                     <div class="terms-card mb-3">
                         <div class="custom-control custom-checkbox">
                             <input type="checkbox" class="custom-control-input" id="terms" name="terms"
@@ -359,6 +374,20 @@
             </form>
         </div>
     </div>
+    <script>
+        document.querySelector('input[name="referral_code"]')?.addEventListener('blur', function() {
+            const status = document.getElementById('referral-status');
+            const val = this.value.trim();
+            if (!val) { status.textContent = ''; return; }
+            fetch('{{ route("admission.public.check-referral") }}?code=' + encodeURIComponent(val))
+                .then(r => r.json())
+                .then(d => {
+                    status.textContent = d.valid ? 'Valid referral code from ' + d.name : 'Invalid referral code';
+                    status.style.color = d.valid ? 'green' : 'red';
+                })
+                .catch(() => { status.textContent = ''; });
+        });
+    </script>
 </body>
 
 </html>
