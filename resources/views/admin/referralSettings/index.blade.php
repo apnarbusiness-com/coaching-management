@@ -69,6 +69,24 @@
             </a>
         </div>
 
+        {{-- Search --}}
+        <form method="GET" action="{{ route('admin.referral-settings.index') }}">
+            <div class="flex gap-2">
+                <input type="hidden" name="filter" value="{{ $filter }}">
+                <input type="text" name="search" value="{{ $search ?? '' }}" placeholder="Search by name, email, roll, or user ID..."
+                    class="form-control max-w-md">
+                <button type="submit" class="px-4 py-2 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-semibold text-sm">
+                    Search
+                </button>
+                @if($search)
+                    <a href="{{ route('admin.referral-settings.index', ['filter' => $filter]) }}"
+                        class="px-4 py-2 bg-slate-200 text-slate-700 rounded-lg hover:bg-slate-300 font-semibold text-sm">
+                        Clear
+                    </a>
+                @endif
+            </div>
+        </form>
+
         {{-- User list --}}
         <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 overflow-hidden">
             <div class="p-4 border-b border-slate-200 dark:border-slate-700 flex flex-col md:flex-row md:items-center justify-between gap-3">
@@ -112,7 +130,22 @@
                                     <span class="inline-flex items-center rounded-full px-2 py-0.5 text-xs font-medium bg-slate-100 text-slate-700">{{ $role->title }}</span>
                                 @endforeach
                             </td>
-                            <td class="px-4 py-3 font-mono text-xs">{{ $user->referral_code ?? '—' }}</td>
+                            <td class="px-4 py-3">
+                                @if($user->referral_code)
+                                <div class="flex items-center gap-2">
+                                    <span class="font-mono text-xs font-semibold text-slate-900 dark:text-white">{{ $user->referral_code }}</span>
+                                    <button onclick="copyCode('{{ $user->referral_code }}', this)"
+                                        class="inline-flex items-center gap-1 px-2 py-0.5 rounded text-xs font-medium bg-slate-100 hover:bg-slate-200 text-slate-600 transition-all">
+                                        <svg class="h-3 w-3" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                                        </svg>
+                                        Copy
+                                    </button>
+                                </div>
+                                @else
+                                <span class="text-slate-400">—</span>
+                                @endif
+                            </td>
                             <td class="px-4 py-3 text-center">
                                 <form method="POST" action="{{ route('admin.referral-settings.toggle', $user->id) }}">
                                     @csrf
@@ -181,6 +214,20 @@ function batchAction(action) {
     });
 
     document.getElementById('batchToggleForm').submit();
+}
+
+function copyCode(code, btn) {
+    const textarea = document.createElement('textarea');
+    textarea.value = code;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+    const orig = btn.innerHTML;
+    btn.innerHTML = 'Copied!';
+    setTimeout(() => btn.innerHTML = orig, 1500);
 }
 </script>
 @endsection

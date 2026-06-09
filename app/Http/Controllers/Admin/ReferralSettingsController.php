@@ -17,17 +17,30 @@ class ReferralSettingsController extends Controller
         abort_if(Gate::denies('referral_settings_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $filter = $request->get('filter', 'all');
+        $search = $request->get('search');
 
         $users = User::with('student', 'roles')
+            ->when($search, function ($q) use ($search) {
+                $q->where(function ($q) use ($search) {
+                    $q->where('name', 'like', "%{$search}%")
+                      ->orWhere('email', 'like', "%{$search}%")
+                      ->orWhere('id', $search)
+                      ->orWhereHas('student', function ($q) use ($search) {
+                          $q->where('roll', 'like', "%{$search}%")
+                            ->orWhere('id_no', 'like', "%{$search}%")
+                            ->orWhere('id', $search);
+                      });
+                });
+            })
             ->when($filter === 'active', fn($q) => $q->where('wallet_access', true))
             ->when($filter === 'inactive', fn($q) => $q->where('wallet_access', false))
             ->orderBy('name')
             ->paginate(30)
-            ->appends(['filter' => $filter]);
+            ->appends(['filter' => $filter, 'search' => $search]);
 
         $batches = Batch::where('status', 1)->orderBy('batch_name')->get(['id', 'batch_name']);
 
-        return view('admin.referralSettings.index', compact('users', 'batches', 'filter'));
+        return view('admin.referralSettings.index', compact('users', 'batches', 'filter', 'search'));
     }
 
     public function toggle(User $user)
