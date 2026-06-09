@@ -34,11 +34,15 @@
                             <td class="px-4 py-3 font-medium text-slate-900 dark:text-white">{{ $campaign->name }}</td>
                             <td class="px-4 py-3 text-right font-semibold text-green-600">{{ number_format($campaign->reward_amount, 2) }} TK</td>
                             <td class="px-4 py-3 text-slate-500 text-xs">
-                                {{ $campaign->start_date?->format('d M Y') ?? 'Any' }} — {{ $campaign->end_date?->format('d M Y') ?? 'Unlimited' }}
+                                @if(is_null($campaign->start_date) && is_null($campaign->end_date))
+                                    <span class="text-green-600 dark:text-green-400 font-semibold">Always Active</span>
+                                @else
+                                    {{ $campaign->start_date?->format('d M Y') ?? 'Any' }} — {{ $campaign->end_date?->format('d M Y') ?? 'Unlimited' }}
+                                @endif
                             </td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
-                                    {{ $campaign->is_active ? 'bg-green-100 text-green-700' : 'bg-slate-100 text-slate-600' }}">
+                                    {{ $campaign->is_active ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : 'bg-slate-100 text-slate-600 dark:bg-slate-800 dark:text-slate-300' }}">
                                     {{ $campaign->is_active ? 'Active' : 'Inactive' }}
                                 </span>
                             </td>

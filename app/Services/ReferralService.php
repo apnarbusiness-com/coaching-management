@@ -33,6 +33,7 @@ class ReferralService
                 $q->whereNull('end_date')
                   ->orWhere('end_date', '>=', now()->format('Y-m-d'));
             })
+            ->orderBy('reward_amount', 'desc')
             ->first();
     }
 

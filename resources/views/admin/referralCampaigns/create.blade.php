@@ -29,22 +29,31 @@
                     <textarea name="description" class="form-control mt-1" rows="3">{{ old('description') }}</textarea>
                 </div>
 
-                <div class="form-row">
-                    <div class="form-group col-md-6">
-                        <label class="font-medium text-slate-700 dark:text-slate-300">Start Date</label>
-                        <input type="date" name="start_date" class="form-control mt-1" value="{{ old('start_date') }}">
-                    </div>
-                    <div class="form-group col-md-6">
-                        <label class="font-medium text-slate-700 dark:text-slate-300">End Date</label>
-                        <input type="date" name="end_date" class="form-control mt-1" value="{{ old('end_date') }}">
+                <div class="form-group mb-4">
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" id="alwaysActive" checked onchange="toggleDateFields()">
+                        <span class="font-medium text-slate-700 dark:text-slate-300">Always Active (no date limit)</span>
+                    </label>
+                </div>
+
+                <div id="dateFields" style="display:none">
+                    <div class="form-row">
+                        <div class="form-group col-md-6">
+                            <label class="font-medium text-slate-700 dark:text-slate-300">Start Date</label>
+                            <input type="date" name="start_date" class="form-control mt-1" value="{{ old('start_date') }}">
+                        </div>
+                        <div class="form-group col-md-6">
+                            <label class="font-medium text-slate-700 dark:text-slate-300">End Date</label>
+                            <input type="date" name="end_date" class="form-control mt-1" value="{{ old('end_date') }}">
+                        </div>
                     </div>
                 </div>
 
                 <div class="form-group mb-4">
-                    <div class="custom-control custom-checkbox">
-                        <input type="checkbox" class="custom-control-input" id="is_active" name="is_active" value="1" checked>
-                        <label class="custom-control-label" for="is_active">Active</label>
-                    </div>
+                    <label class="flex items-center gap-2 cursor-pointer">
+                        <input type="checkbox" name="is_active" value="1" checked class="h-4 w-4 rounded border-slate-300 text-teal-600">
+                        <span class="font-medium text-slate-700 dark:text-slate-300">Active (enable this campaign)</span>
+                    </label>
                 </div>
 
                 <div class="flex gap-3">
@@ -55,4 +64,13 @@
         </div>
     </div>
 </div>
+<script>
+function toggleDateFields() {
+    const always = document.getElementById('alwaysActive').checked;
+    document.getElementById('dateFields').style.display = always ? 'none' : '';
+    if (always) {
+        document.querySelectorAll('#dateFields input[type="date"]').forEach(el => el.value = '');
+    }
+}
+</script>
 @endsection
