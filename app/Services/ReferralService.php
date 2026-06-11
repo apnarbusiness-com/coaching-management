@@ -4,6 +4,7 @@ namespace App\Services;
 
 use App\Models\ReferralCampaign;
 use App\Models\StudentAdmissionApplication;
+use App\Models\StudentBasicInfo;
 use App\Models\User;
 
 class ReferralService
@@ -59,6 +60,31 @@ class ReferralService
             'App\Models\StudentAdmissionApplication',
             $application->id,
             "Referral reward for {$application->first_name} {$application->last_name} via campaign: {$campaign->name}"
+        );
+    }
+
+    public function processReferralRewardByStudent(StudentBasicInfo $student)
+    {
+        if (empty($student->referred_by_user_id)) {
+            return null;
+        }
+
+        $campaign = $this->getActiveCampaign();
+        if (!$campaign) {
+            return null;
+        }
+
+        $referrer = User::find($student->referred_by_user_id);
+        if (!$referrer || !$referrer->wallet_access) {
+            return null;
+        }
+
+        return $this->walletService->credit(
+            $referrer->id,
+            $campaign->reward_amount,
+            'App\Models\StudentBasicInfo',
+            $student->id,
+            "Referral reward for {$student->first_name} {$student->last_name} via campaign: {$campaign->name}"
         );
     }
 }

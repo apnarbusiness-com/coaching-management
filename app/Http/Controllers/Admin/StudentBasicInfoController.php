@@ -86,7 +86,7 @@ class StudentBasicInfoController extends Controller
                 return $row->gender ? StudentBasicInfo::GENDER_RADIO[$row->gender] : '';
             });
             $table->editColumn('status', function ($row) {
-                return $row->status ? 1 : 0;
+                return $row->status;
             });
 
             $table->addColumn('user_name', function ($row) {

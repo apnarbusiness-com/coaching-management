@@ -33,34 +33,34 @@
                                 <div class="font-medium text-slate-900 dark:text-white">{{ $req->user?->name }}</div>
                                 <div class="text-xs text-slate-500">{{ $req->user?->email }}</div>
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold">{{ number_format($req->amount, 2) }} TK</td>
-                            <td class="px-4 py-3">{{ strtoupper($req->payment_method) }}</td>
-                            <td class="px-4 py-3 text-xs">{{ $req->account_number ?? '—' }}</td>
-                            <td class="px-4 py-3">{{ $req->phone }}</td>
+                            <td class="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">{{ number_format($req->amount, 2) }} TK</td>
+                            <td class="px-4 py-3 text-slate-900 dark:text-white uppercase">{{ $req->payment_method }}</td>
+                            <td class="px-4 py-3 text-xs text-slate-900 dark:text-white">{{ $req->account_number ?? '—' }}</td>
+                            <td class="px-4 py-3 text-slate-900 dark:text-white">{{ $req->phone }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
-                                    {{ $req->status === 'approved' ? 'bg-green-100 text-green-700' : ($req->status === 'rejected' ? 'bg-red-100 text-red-700' : 'bg-amber-100 text-amber-700') }}">
+                                    {{ $req->status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : ($req->status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400') }}">
                                     {{ ucfirst($req->status) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-slate-500">{{ $req->created_at?->format('d M Y') }}</td>
+                            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ $req->created_at?->format('d M Y') }}</td>
                             <td class="px-4 py-3">
                                 @if($req->status === 'pending')
                                 <div class="flex gap-2">
                                     <form method="POST" action="{{ route('admin.withdraw-requests.approve', $req->id) }}">
                                         @csrf
-                                        <button type="submit" class="text-green-600 font-semibold hover:underline">Approve</button>
+                                        <button type="submit" class="text-green-600 dark:text-green-400 font-semibold hover:underline">Approve</button>
                                     </form>
-                                    <button type="button" onclick="showRejectModal({{ $req->id }})" class="text-red-600 font-semibold hover:underline">Reject</button>
+                                    <button type="button" onclick="showRejectModal({{ $req->id }})" class="text-red-600 dark:text-red-400 font-semibold hover:underline">Reject</button>
                                 </div>
                                 @else
-                                <span class="text-xs text-slate-400">{{ $req->processed_at?->format('d M Y') }}</span>
+                                <span class="text-xs text-slate-400 dark:text-slate-500">{{ $req->processed_at ? \Carbon\Carbon::parse($req->processed_at)->format('d M Y') : '' }}</span>
                                 @endif
                             </td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="8" class="px-4 py-6 text-center text-slate-500">No requests.</td>
+                            <td colspan="8" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">No requests.</td>
                         </tr>
                         @endforelse
                     </tbody>

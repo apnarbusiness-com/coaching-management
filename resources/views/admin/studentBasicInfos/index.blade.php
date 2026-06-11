@@ -332,10 +332,12 @@
                         name: 'status',
                         render: function(data, type, row) {
                             if (type === 'display') {
+                                if (data === 'pending') {
+                                    return `<span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400">Pending</span>`;
+                                }
                                 const urlTemplate = "{{ route('admin.student-basic-infos.toggleStatus', ':id') }}";
                                 const toggleUrl = urlTemplate.replace(':id', row.id);
-                                // Return the toggle HTML
-                                var isActive = !!data; // Assuming data is 1/0 or true/false
+                                var isActive = data === '1';
                                 return `
                                     <span style="display:none">${isActive ? 1 : 0}</span>
                                     <div class="status-toggle">

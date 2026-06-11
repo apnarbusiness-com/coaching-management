@@ -24,7 +24,7 @@
         <div class="thanks-card mx-auto" style="max-width: 680px;">
             <h2 class="mb-3">Thank you! Your admission form has been submitted.</h2>
             <p class="text-muted mb-4">
-                Application ID: <strong>#{{ $application->id }}</strong>
+                Application ID: <strong>#{{ $student->id }}</strong>
             </p>
             <p class="mb-0">
                 Our team will review your information. If anything is missing, we will contact you using the provided

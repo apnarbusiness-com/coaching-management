@@ -25,10 +25,10 @@ class WithdrawRequest extends Model
         'processed_at',
     ];
 
-    protected $dates = [
-        'processed_at',
-        'created_at',
-        'updated_at',
+    protected $casts = [
+        'processed_at' => 'datetime',
+        'created_at' => 'datetime',
+        'updated_at' => 'datetime',
     ];
 
     protected function serializeDate(DateTimeInterface $date)

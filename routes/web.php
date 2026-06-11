@@ -140,9 +140,9 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
 
     // Admission Applications
     Route::get('admission-applications', [AdmissionApplicationsController::class, 'index'])->name('admission-applications.index');
-    Route::get('admission-applications/{application}', [AdmissionApplicationsController::class, 'show'])->name('admission-applications.show');
-    Route::post('admission-applications/{application}/approve', [AdmissionApplicationsController::class, 'approve'])->name('admission-applications.approve');
-    Route::delete('admission-applications/{application}', [AdmissionApplicationsController::class, 'destroy'])->name('admission-applications.destroy');
+    Route::get('admission-applications/{student}', [AdmissionApplicationsController::class, 'show'])->name('admission-applications.show');
+    Route::post('admission-applications/{student}/approve', [AdmissionApplicationsController::class, 'approve'])->name('admission-applications.approve');
+    Route::delete('admission-applications/{student}', [AdmissionApplicationsController::class, 'destroy'])->name('admission-applications.destroy');
 
     // Student Details Information
     Route::delete('student-details-informations/destroy', 'StudentDetailsInformationController@massDestroy')->name('student-details-informations.massDestroy');

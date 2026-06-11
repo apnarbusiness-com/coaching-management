@@ -25,6 +25,7 @@ class StudentBasicInfo extends Model implements HasMedia
     public const STATUS_SELECT = [
         '1' => 'Active',
         '0' => 'Postpone',
+        'pending' => 'Pending',
     ];
 
     public const GENDER_RADIO = [
@@ -58,6 +59,8 @@ class StudentBasicInfo extends Model implements HasMedia
         'shift_id',
         'academic_background_id',
         'user_id',
+        'referral_code',
+        'referred_by_user_id',
         'created_at',
         'updated_at',
         'deleted_at',
@@ -144,6 +147,11 @@ class StudentBasicInfo extends Model implements HasMedia
     public function studentDetails()
     {
         return $this->hasOne(StudentDetailsInformation::class, 'student_id', 'id');
+    }
+
+    public function referredBy()
+    {
+        return $this->belongsTo(User::class, 'referred_by_user_id');
     }
 
     public function batches()

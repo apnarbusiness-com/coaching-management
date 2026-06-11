@@ -2,9 +2,11 @@
 
 namespace App\Http\Controllers;
 
-use App\Models\StudentAdmissionApplication;
+use App\Models\StudentBasicInfo;
+use App\Models\StudentDetailsInformation;
 use App\Models\User;
 use App\Services\ReferralService;
+use Carbon\Carbon;
 use Illuminate\Http\Request;
 
 class AdmissionApplicationController extends Controller
@@ -49,11 +51,6 @@ class AdmissionApplicationController extends Controller
             'referral_code' => ['nullable', 'string', 'max:20'],
         ]);
 
-        $photoPath = null;
-        if ($request->hasFile('photo')) {
-            $photoPath = $request->file('photo')->store('admission-photos', 'public');
-        }
-
         $referredByUserId = null;
         if (!empty($validated['referral_code'])) {
             $referrer = User::where('referral_code', $validated['referral_code'])->first();
@@ -62,15 +59,52 @@ class AdmissionApplicationController extends Controller
             }
         }
 
-        $application = StudentAdmissionApplication::create([
-            'admission_date' => $validated['admission_date'] ?? null,
-            'admission_id_no' => $validated['admission_id_no'] ?? null,
+        $classRoll = $validated['class_roll'] ?? null;
+        if ($classRoll && !is_numeric($classRoll)) {
+            $classRoll = null;
+        }
+
+        $joiningDate = null;
+        if (!empty($validated['admission_date'])) {
+            $joiningDate = Carbon::parse($validated['admission_date'])->format('Y-m-d 00:00:00');
+        }
+
+        $student = StudentBasicInfo::create([
+            'roll' => $classRoll ? (int) $classRoll : null,
+            'id_no' => $validated['admission_id_no'] ?? null,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'] ?? null,
             'gender' => $validated['gender'],
             'dob' => $validated['dob'],
             'contact_number' => $validated['contact_number'],
             'email' => $validated['email'] ?? null,
+            'status' => 'pending',
+            'joining_date' => $joiningDate,
+            'referral_code' => $validated['referral_code'] ?? null,
+            'referred_by_user_id' => $referredByUserId,
+        ]);
+
+        $referencePayload = [
+            'school_name' => $validated['school_name'] ?? null,
+            'class_name' => $validated['class_name'] ?? null,
+            'batch_name' => $validated['batch_name'] ?? null,
+            'subjects' => $validated['subjects'] ?? null,
+            'village' => $validated['village'] ?? null,
+            'post_office' => $validated['post_office'] ?? null,
+            'class_roll' => $validated['class_roll'] ?? null,
+            'admission_id_no' => $validated['admission_id_no'] ?? null,
+        ];
+
+        $studentAddress = $validated['address'];
+        if (empty($studentAddress)) {
+            $parts = array_filter([
+                $validated['village'] ? 'Village: ' . $validated['village'] : null,
+                $validated['post_office'] ? 'P.O: ' . $validated['post_office'] : null,
+            ]);
+            $studentAddress = !empty($parts) ? implode(', ', $parts) : null;
+        }
+
+        StudentDetailsInformation::create([
             'fathers_name' => $validated['fathers_name'] ?? null,
             'mothers_name' => $validated['mothers_name'] ?? null,
             'guardian_name' => $validated['guardian_name'] ?? null,
@@ -79,28 +113,24 @@ class AdmissionApplicationController extends Controller
             'guardian_email' => $validated['guardian_email'] ?? null,
             'student_birth_no' => $validated['student_birth_no'] ?? null,
             'student_blood_group' => $validated['student_blood_group'] ?? null,
-            'address' => $validated['address'] ?? null,
-            'village' => $validated['village'] ?? null,
-            'post_office' => $validated['post_office'] ?? null,
-            'school_name' => $validated['school_name'] ?? null,
-            'class_name' => $validated['class_name'] ?? null,
-            'class_roll' => $validated['class_roll'] ?? null,
-            'batch_name' => $validated['batch_name'] ?? null,
-            'subjects' => $validated['subjects'] ?? null,
-            'photo_path' => $photoPath,
-            'status' => 'pending',
-            'referral_code' => $validated['referral_code'] ?? null,
-            'referred_by_user_id' => $referredByUserId,
+            'address' => $studentAddress,
+            'reference' => json_encode($referencePayload),
+            'student_id' => $student->id,
         ]);
 
+        if ($request->hasFile('photo')) {
+            $student->addMedia($request->file('photo'))->toMediaCollection('image');
+        }
+
         return redirect()
-            ->route('admission.public.thankyou', $application->id)
+            ->route('admission.public.thankyou', $student->id)
             ->with('status', 'Application submitted successfully.');
     }
 
-    public function thankYou(StudentAdmissionApplication $application)
+    public function thankYou($id)
     {
-        return view('admission.thankyou', compact('application'));
+        $student = StudentBasicInfo::findOrFail($id);
+        return view('admission.thankyou', compact('student'));
     }
 
     public function checkReferral(Request $request)

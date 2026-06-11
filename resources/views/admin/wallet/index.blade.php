@@ -92,9 +92,9 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @foreach($withdrawRequests as $wr)
                         <tr>
-                            <td class="px-4 py-3 text-slate-500">{{ $wr->created_at?->format('d M Y') }}</td>
-                            <td class="px-4 py-3 font-semibold">{{ number_format($wr->amount, 2) }} TK</td>
-                            <td class="px-4 py-3">{{ strtoupper($wr->payment_method) }}</td>
+                            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ $wr->created_at?->format('d M Y') }}</td>
+                            <td class="px-4 py-3 font-semibold text-slate-900 dark:text-white">{{ number_format($wr->amount, 2) }} TK</td>
+                            <td class="px-4 py-3 text-slate-900 dark:text-white uppercase">{{ $wr->payment_method }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
                                     {{ $wr->status === 'approved' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : ($wr->status === 'rejected' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-amber-100 text-amber-700 dark:bg-amber-900/30 dark:text-amber-400') }}">
@@ -149,19 +149,19 @@
                     <tbody class="divide-y divide-slate-200 dark:divide-slate-700">
                         @forelse($transactions as $txn)
                         <tr>
-                            <td class="px-4 py-3 text-slate-500">{{ $txn->created_at?->format('d M Y') }}</td>
+                            <td class="px-4 py-3 text-slate-500 dark:text-slate-400">{{ $txn->created_at?->format('d M Y') }}</td>
                             <td class="px-4 py-3">
                                 <span class="inline-flex items-center rounded-full px-2.5 py-1 text-xs font-semibold
                                     {{ $txn->type === 'credit' ? 'bg-green-100 text-green-700 dark:bg-green-900/30 dark:text-green-400' : ($txn->type === 'debit' ? 'bg-red-100 text-red-700 dark:bg-red-900/30 dark:text-red-400' : 'bg-blue-100 text-blue-700 dark:bg-blue-900/30 dark:text-blue-400') }}">
                                     {{ ucfirst($txn->type) }}
                                 </span>
                             </td>
-                            <td class="px-4 py-3 text-right font-semibold">{{ number_format($txn->amount, 2) }} TK</td>
+                            <td class="px-4 py-3 text-right font-semibold text-slate-900 dark:text-white">{{ number_format($txn->amount, 2) }} TK</td>
                             <td class="px-4 py-3 text-slate-600 dark:text-slate-400">{{ $txn->description ?? '—' }}</td>
                         </tr>
                         @empty
                         <tr>
-                            <td colspan="4" class="px-4 py-6 text-center text-slate-500">No transactions yet.</td>
+                            <td colspan="4" class="px-4 py-6 text-center text-slate-500 dark:text-slate-400">No transactions yet.</td>
                         </tr>
                         @endforelse
                     </tbody>

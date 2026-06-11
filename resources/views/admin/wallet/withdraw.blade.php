@@ -14,7 +14,13 @@
 
                 <div class="form-group mb-4">
                     <label class="font-medium text-slate-700 dark:text-slate-300">Amount (TK)</label>
-                    <input type="number" name="amount" class="form-control mt-1" required min="1" max="{{ $wallet->balance }}" step="0.01" value="{{ old('amount') }}">
+                    <div class="flex items-center gap-2 mt-1">
+                        <input type="number" name="amount" id="withdrawAmount" class="form-control flex-1" required min="1" max="{{ $wallet->balance }}" step="0.01" value="{{ old('amount', $wallet->balance) }}">
+                        <button type="button" onclick="document.getElementById('withdrawAmount').value = '{{ $wallet->balance }}'"
+                            class="px-3 py-2 rounded-lg text-xs font-semibold bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 hover:bg-slate-200 dark:hover:bg-slate-700 shrink-0">
+                            Max
+                        </button>
+                    </div>
                     @error('amount') <small class="text-red-500">{{ $message }}</small> @enderror
                 </div>
 
