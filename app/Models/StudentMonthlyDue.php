@@ -99,7 +99,11 @@ class StudentMonthlyDue extends Model
 
     public function scopeForMonth($query, $month, $year)
     {
-        return $query->where('month', $month)->where('year', $year);
+        $query->where('year', $year);
+        if ($month !== 'all') {
+            $query->where('month', $month);
+        }
+        return $query;
     }
 
     public function getDueStatusAttribute()

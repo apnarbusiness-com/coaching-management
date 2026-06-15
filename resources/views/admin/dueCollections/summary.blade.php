@@ -130,7 +130,7 @@
     <div class="card-header">
         <div class="row">
             <div class="col-md-6">
-                <h3>Student Due Summary - {{ \Carbon\Carbon::createFromDate(null, $month, 1)->format('F') }} {{ $year }}</h3>
+                <h3>Student Due Summary - {{ $month === 'all' ? 'Full Year' : \Carbon\Carbon::createFromDate(null, $month, 1)->format('F') }} {{ $year }}</h3>
             </div>
             <div class="col-md-6 text-right">
                 <a href="{{ route('admin.due-collections.index', request()->query()) }}" class="btn btn-info">
@@ -145,6 +145,7 @@
             <div class="form-group">
                 <label>Month</label>
                 <select class="form-control filter-select" id="filter-month">
+                    <option value="all" {{ $month === 'all' ? 'selected' : '' }}>All</option>
                     @for($m = 1; $m <= 12; $m++)
                         <option value="{{ $m }}" {{ $m == $month ? 'selected' : '' }}>{{ \Carbon\Carbon::createFromDate(null, $m, 1)->format('F') }}</option>
                     @endfor

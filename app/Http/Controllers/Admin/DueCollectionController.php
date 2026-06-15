@@ -198,8 +198,8 @@ class DueCollectionController extends Controller
 
         $dues = StudentMonthlyDue::with('batch')
             ->where('student_id', $studentId)
-            ->where('month', $month)
             ->where('year', $year)
+            ->when($month !== 'all', fn($q) => $q->where('month', $month))
             ->orderBy('batch_id')
             ->get()
             ->map(function ($due) {

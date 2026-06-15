@@ -308,7 +308,7 @@ class DueCalculationService
         $due->save();
     }
 
-    public function getDashboardStats(?int $month = null, ?int $year = null): array
+    public function getDashboardStats(mixed $month = null, ?int $year = null): array
     {
         $month = $month ?? Carbon::now()->month;
         $year = $year ?? Carbon::now()->year;
@@ -316,13 +316,13 @@ class DueCalculationService
         $query = StudentMonthlyDue::forMonth($month, $year);
 
         return [
-            'total_due' => $query->sum('due_amount'),
-            'total_collected' => $query->sum('paid_amount'),
-            'total_remaining' => $query->sum('due_remaining'),
-            'paid_count' => $query->whereIn('status', ['paid', 'free'])->count(),
-            'partial_count' => $query->where('status', 'partial')->count(),
-            'unpaid_count' => $query->where('status', 'unpaid')->count(),
-            'total_students' => $query->distinct('student_id')->count('student_id'),
+            'total_due' => (clone $query)->sum('due_amount'),
+            'total_collected' => (clone $query)->sum('paid_amount'),
+            'total_remaining' => (clone $query)->sum('due_remaining'),
+            'paid_count' => (clone $query)->whereIn('status', ['paid', 'free'])->count(),
+            'partial_count' => (clone $query)->where('status', 'partial')->count(),
+            'unpaid_count' => (clone $query)->where('status', 'unpaid')->count(),
+            'total_students' => (clone $query)->distinct('student_id')->count('student_id'),
         ];
     }
 }
