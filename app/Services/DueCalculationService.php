@@ -308,7 +308,7 @@ class DueCalculationService
         $due->save();
     }
 
-    public function getDashboardStats(mixed $month = null, ?int $year = null, string $batchId = '', string $status = ''): array
+    public function getDashboardStats(mixed $month = null, ?int $year = null, string|null $batchId = '', string|null $status = ''): array
     {
         $month = $month ?? Carbon::now()->month;
         $year = $year ?? Carbon::now()->year;
