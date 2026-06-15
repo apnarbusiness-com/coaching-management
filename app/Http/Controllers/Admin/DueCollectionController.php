@@ -126,9 +126,9 @@ class DueCollectionController extends Controller
         $year = $request->input('year', Carbon::now()->year);
         $status = $request->input('status', 'unpaid');
         $batchId = $request->input('batch_id', '');
-        $classId = $request->input('class_id', '');
 
-        $stats = $this->dueService->getDashboardStats($month, $year);
+        $stats = $this->dueService->getDashboardStats($month, $year, $batchId, $status);
+        $filteredStats = $this->dueService->getFilteredStats($month, $year, $batchId, '', $status);
 
         if ($request->ajax()) {
             $query = StudentMonthlyDue::forMonth($month, $year)
@@ -151,9 +151,6 @@ class DueCollectionController extends Controller
             if ($batchId) {
                 $query->where('student_monthly_dues.batch_id', $batchId);
             }
-            if ($classId) {
-                $query->where('student_monthly_dues.academic_class_id', $classId);
-            }
             if ($status) {
                 $query->where('student_monthly_dues.status', $status);
             }
@@ -175,17 +172,15 @@ class DueCollectionController extends Controller
         }
 
         $batches = Batch::pluck('batch_name', 'id');
-        $classes = AcademicClass::pluck('class_name', 'id');
 
         return view('admin.dueCollections.summary', compact(
             'stats',
+            'filteredStats',
             'month',
             'year',
             'status',
             'batchId',
-            'classId',
-            'batches',
-            'classes'
+            'batches'
         ));
     }
 

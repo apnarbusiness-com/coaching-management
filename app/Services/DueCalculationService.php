@@ -308,21 +308,66 @@ class DueCalculationService
         $due->save();
     }
 
-    public function getDashboardStats(mixed $month = null, ?int $year = null): array
+    public function getDashboardStats(mixed $month = null, ?int $year = null, string $batchId = '', string $status = ''): array
     {
         $month = $month ?? Carbon::now()->month;
         $year = $year ?? Carbon::now()->year;
 
         $query = StudentMonthlyDue::forMonth($month, $year);
 
+        if ($batchId) {
+            $query->where('batch_id', $batchId);
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+
         return [
             'total_due' => (clone $query)->sum('due_amount'),
             'total_collected' => (clone $query)->sum('paid_amount'),
             'total_remaining' => (clone $query)->sum('due_remaining'),
+            'total_discount' => (clone $query)->sum('discount_amount'),
+            'total_records' => (clone $query)->count(),
             'paid_count' => (clone $query)->whereIn('status', ['paid', 'free'])->count(),
             'partial_count' => (clone $query)->where('status', 'partial')->count(),
             'unpaid_count' => (clone $query)->where('status', 'unpaid')->count(),
             'total_students' => (clone $query)->distinct('student_id')->count('student_id'),
         ];
+    }
+
+    public function getFilteredStats(mixed $month, ?int $year, string|null $batchId = '', string|null $classId = '', string|null $status = ''): array
+    {
+        $query = StudentMonthlyDue::forMonth($month, $year);
+
+        if ($batchId) {
+            $query->where('batch_id', $batchId);
+        }
+        if ($classId) {
+            $query->where('academic_class_id', $classId);
+        }
+        if ($status) {
+            $query->where('status', $status);
+        }
+
+        return [
+            'total_due' => (clone $query)->sum('due_amount'),
+            'total_collected' => (clone $query)->sum('paid_amount'),
+            'total_remaining' => (clone $query)->sum('due_remaining'),
+            'total_discount' => (clone $query)->sum('discount_amount'),
+            'total_records' => (clone $query)->count(),
+            'total_students' => (clone $query)->distinct('student_id')->count('student_id'),
+            'collection_rate' => $this->calcCollectionRate(
+                (clone $query)->sum('due_amount'),
+                (clone $query)->sum('paid_amount')
+            ),
+        ];
+    }
+
+    private function calcCollectionRate(float $totalDue, float $totalCollected): float
+    {
+        if ($totalDue <= 0) {
+            return 0;
+        }
+        return round(($totalCollected / $totalDue) * 100, 1);
     }
 }

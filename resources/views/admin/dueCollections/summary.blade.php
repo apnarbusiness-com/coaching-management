@@ -126,6 +126,25 @@
     </div>
 </div>
 
+<div class="due-stats-grid">
+    <div class="due-stat-card">
+        <div class="stat-label">Total Students</div>
+        <div class="stat-value">{{ $filteredStats['total_students'] }}</div>
+    </div>
+    <div class="due-stat-card">
+        <div class="stat-label">Collection Rate</div>
+        <div class="stat-value success">{{ $filteredStats['collection_rate'] }}%</div>
+    </div>
+    <div class="due-stat-card">
+        <div class="stat-label">Total Discount</div>
+        <div class="stat-value warning">{{ number_format($filteredStats['total_discount'], 2) }}</div>
+    </div>
+    <div class="due-stat-card">
+        <div class="stat-label">Total Records</div>
+        <div class="stat-value info">{{ $filteredStats['total_records'] }}</div>
+    </div>
+</div>
+
 <div class="card">
     <div class="card-header">
         <div class="row">
@@ -165,15 +184,6 @@
                     <option value="">All Batches</option>
                     @foreach($batches as $id => $name)
                         <option value="{{ $id }}" {{ $id == $batchId ? 'selected' : '' }}>{{ $name }}</option>
-                    @endforeach
-                </select>
-            </div>
-            <div class="form-group">
-                <label>Class</label>
-                <select class="form-control filter-select" id="filter-class">
-                    <option value="">All Classes</option>
-                    @foreach($classes as $id => $name)
-                        <option value="{{ $id }}" {{ $id == $classId ? 'selected' : '' }}>{{ $name }}</option>
                     @endforeach
                 </select>
             </div>
@@ -233,10 +243,9 @@ $(function() {
         let month = $('#filter-month').val();
         let year = $('#filter-year').val();
         let batch = $('#filter-batch').val();
-        let classId = $('#filter-class').val();
         let status = $('#filter-status').val();
 
-        window.location.href = `{{ route('admin.due-collections.summary') }}?month=${month}&year=${year}&batch_id=${batch}&class_id=${classId}&status=${status}`;
+        window.location.href = `{{ route('admin.due-collections.summary') }}?month=${month}&year=${year}&batch_id=${batch}&status=${status}`;
     };
 
     let table = $('#due-summary-table').DataTable({
@@ -248,7 +257,6 @@ $(function() {
                 d.month = $('#filter-month').val();
                 d.year = $('#filter-year').val();
                 d.batch_id = $('#filter-batch').val();
-                d.class_id = $('#filter-class').val();
                 d.status = $('#filter-status').val();
             }
         },
