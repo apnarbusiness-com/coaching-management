@@ -250,6 +250,8 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     // Wallet (user's own wallet)
     Route::get('wallet', [WalletController::class, 'index'])->name('wallet.index');
     Route::get('wallet/generate-code', [WalletController::class, 'generateCode'])->name('wallet.generate.code');
+    Route::post('wallet/set-custom-code', [WalletController::class, 'setCustomCode'])->name('wallet.set-custom-code');
+    Route::post('wallet/check-code', [WalletController::class, 'checkCode'])->name('wallet.check-code');
     Route::get('wallet/withdraw', [WalletController::class, 'withdrawForm'])->name('wallet.withdraw.form');
     Route::post('wallet/withdraw', [WalletController::class, 'withdrawSubmit'])->name('wallet.withdraw.submit');
 

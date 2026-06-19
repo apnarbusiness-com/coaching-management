@@ -23,6 +23,20 @@
                             </svg>
                             <span id="copyText">Copy</span>
                         </button>
+                        <a href="{{ route('admin.wallet.generate.code') }}"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M4 4v5h.582m15.356 2A8.001 8.001 0 004.582 9m0 0H9m11 11v-5h-.581m0 0a8.003 8.003 0 01-15.357-2m15.357 2H15" />
+                            </svg>
+                            Regenerate
+                        </a>
+                        <button onclick="openCustomCodeModal()"
+                            class="inline-flex items-center gap-1.5 px-3 py-1.5 bg-white/20 hover:bg-white/30 rounded-lg text-sm font-semibold transition-all">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-4 w-4" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M11 5H6a2 2 0 00-2 2v11a2 2 0 002 2h11a2 2 0 002-2v-5m-1.414-9.414a2 2 0 112.828 2.828L11.828 15H9v-2.828l8.586-8.586z" />
+                            </svg>
+                            Set Custom Code
+                        </button>
                     </div>
                     @else
                     <div class="mt-2">
@@ -197,6 +211,41 @@
     </div>
 </div>
 
+<div id="customCodeModal" class="fixed inset-0 z-50 hidden items-center justify-center bg-black/50 backdrop-blur-sm">
+    <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-2xl border border-slate-200 dark:border-slate-700 w-full max-w-md mx-4 overflow-hidden">
+        <div class="flex items-center justify-between p-5 border-b border-slate-200 dark:border-slate-700">
+            <h3 class="text-lg font-bold text-slate-900 dark:text-white">Set Custom Referral Code</h3>
+            <button onclick="closeCustomCodeModal()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200">
+                <svg class="w-5 h-5" fill="none" stroke="currentColor" viewBox="0 0 24 24">
+                    <path stroke-linecap="round" stroke-linejoin="round" stroke-width="2" d="M6 18L18 6M6 6l12 12" />
+                </svg>
+            </button>
+        </div>
+        <form id="customCodeForm" method="POST" action="{{ route('admin.wallet.set-custom-code') }}" class="p-5 space-y-4">
+            @csrf
+            <div>
+                <label class="block text-sm font-medium text-slate-700 dark:text-slate-300 mb-1">Referral Code</label>
+                <input type="text" name="referral_code" id="customCodeInput"
+                    class="form-control w-full text-lg font-mono font-bold tracking-wider"
+                    value="{{ auth()->user()->referral_code ?? '' }}"
+                    maxlength="50"
+                    placeholder="Enter your custom code">
+                <div id="codeStatus" class="mt-2 text-sm font-medium"></div>
+            </div>
+            <div class="flex items-center gap-3 pt-2">
+                <button type="submit" id="submitCustomCode"
+                    class="px-5 py-2.5 bg-teal-600 text-white rounded-lg hover:bg-teal-700 font-semibold transition-all disabled:opacity-50 disabled:cursor-not-allowed">
+                    Save Code
+                </button>
+                <button type="button" onclick="closeCustomCodeModal()"
+                    class="px-5 py-2.5 bg-slate-200 dark:bg-slate-700 text-slate-700 dark:text-slate-300 rounded-lg hover:bg-slate-300 dark:hover:bg-slate-600 font-semibold transition-all">
+                    Cancel
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <style>
 .toast-copy {
     position: fixed;
@@ -263,5 +312,84 @@ function copyReferralCode() {
         icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />';
     }, 2500);
 }
+
+let checkTimeout;
+
+function openCustomCodeModal() {
+    const modal = document.getElementById('customCodeModal');
+    modal.classList.remove('hidden');
+    modal.classList.add('flex');
+    document.body.style.overflow = 'hidden';
+    const input = document.getElementById('customCodeInput');
+    const status = document.getElementById('codeStatus');
+    const submitBtn = document.getElementById('submitCustomCode');
+    status.innerHTML = '';
+    submitBtn.disabled = false;
+    checkCodeUniqueness(input.value);
+}
+
+function closeCustomCodeModal() {
+    const modal = document.getElementById('customCodeModal');
+    modal.classList.add('hidden');
+    modal.classList.remove('flex');
+    document.body.style.overflow = '';
+}
+
+document.getElementById('customCodeInput')?.addEventListener('input', function() {
+    const status = document.getElementById('codeStatus');
+    const submitBtn = document.getElementById('submitCustomCode');
+    const value = this.value.trim();
+
+    if (!value) {
+        status.innerHTML = '<span class="text-amber-500">Code cannot be empty.</span>';
+        submitBtn.disabled = true;
+        return;
+    }
+    if (!/^[a-zA-Z0-9_]+$/.test(value)) {
+        status.innerHTML = '<span class="text-red-500">Only letters, numbers, and underscores allowed.</span>';
+        submitBtn.disabled = true;
+        return;
+    }
+
+    clearTimeout(checkTimeout);
+    checkTimeout = setTimeout(() => checkCodeUniqueness(value), 400);
+});
+
+function checkCodeUniqueness(code) {
+    const status = document.getElementById('codeStatus');
+    const submitBtn = document.getElementById('submitCustomCode');
+
+    if (!code) {
+        submitBtn.disabled = true;
+        return;
+    }
+
+    fetch('{{ route("admin.wallet.check-code") }}', {
+        method: 'POST',
+        headers: {
+            'Content-Type': 'application/json',
+            'X-CSRF-TOKEN': '{{ csrf_token() }}'
+        },
+        body: JSON.stringify({ code: code })
+    })
+    .then(res => res.json())
+    .then(data => {
+        if (data.unique) {
+            status.innerHTML = '<span class="text-green-500">✓ Code is available!</span>';
+            submitBtn.disabled = false;
+        } else {
+            status.innerHTML = '<span class="text-red-500">✕ This code is already taken by another user.</span>';
+            submitBtn.disabled = true;
+        }
+    })
+    .catch(() => {
+        status.innerHTML = '<span class="text-amber-500">Could not verify uniqueness. Try again.</span>';
+        submitBtn.disabled = false;
+    });
+}
+
+document.getElementById('customCodeModal')?.addEventListener('click', function(e) {
+    if (e.target === this) closeCustomCodeModal();
+});
 </script>
 @endsection

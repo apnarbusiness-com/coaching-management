@@ -2,6 +2,7 @@
 
 namespace App\Http\Controllers;
 
+use App\Models\User;
 use App\Models\WithdrawRequest;
 use App\Services\WalletService;
 use Illuminate\Http\Request;
@@ -47,6 +48,54 @@ class WalletController extends Controller
         $user->save();
 
         return redirect()->route('admin.wallet.index')->with('status', 'Referral code generated successfully!');
+    }
+
+    public function setCustomCode(Request $request)
+    {
+        $request->validate([
+            'referral_code' => [
+                'required',
+                'string',
+                'max:50',
+                'regex:/^[a-zA-Z0-9_]+$/',
+                function ($attribute, $value, $fail) {
+                    $exists = User::where(function ($q) use ($value) {
+                            $q->where('referral_code', $value)
+                              ->orWhere('user_name', $value)
+                              ->orWhere('admission_id', $value);
+                        })
+                        ->where('id', '!=', Auth::id())
+                        ->exists();
+                    if ($exists) {
+                        $fail('This code is already taken by another user.');
+                    }
+                },
+            ],
+        ]);
+
+        $user = Auth::user();
+        $user->referral_code = $request->referral_code;
+        $user->save();
+
+        return redirect()->route('admin.wallet.index')->with('status', 'Referral code updated successfully!');
+    }
+
+    public function checkCode(Request $request)
+    {
+        $request->validate(['code' => 'required|string|max:50']);
+
+        $exists = User::where(function ($q) use ($request) {
+                $q->where('referral_code', $request->code)
+                  ->orWhere('user_name', $request->code)
+                  ->orWhere('admission_id', $request->code);
+            })
+            ->where('id', '!=', Auth::id())
+            ->exists();
+
+        return response()->json([
+            'unique' => !$exists,
+            'message' => $exists ? 'This code is already taken.' : 'Code is available!',
+        ]);
     }
 
     public function withdrawForm()

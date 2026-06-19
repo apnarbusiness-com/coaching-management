@@ -29,7 +29,11 @@ trait HasReferralCode
         if ($code) {
             $baseCode = $code;
             $i = 1;
-            while (static::where('referral_code', $code)->exists()) {
+            while (static::where(function ($q) use ($code) {
+                    $q->where('referral_code', $code)
+                      ->orWhere('user_name', $code)
+                      ->orWhere('admission_id', $code);
+                })->exists()) {
                 $code = $baseCode . '_' . $i;
                 $i++;
             }
@@ -49,7 +53,11 @@ trait HasReferralCode
         $random = strtoupper(Str::random(4));
         $code = $prefix . $namePart . $random;
 
-        while (static::where('referral_code', $code)->exists()) {
+        while (static::where(function ($q) use ($code) {
+                $q->where('referral_code', $code)
+                  ->orWhere('user_name', $code)
+                  ->orWhere('admission_id', $code);
+            })->exists()) {
             $random = strtoupper(Str::random(4));
             $code = $prefix . $namePart . $random;
         }
