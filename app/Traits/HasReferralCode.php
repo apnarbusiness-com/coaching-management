@@ -18,6 +18,24 @@ trait HasReferralCode
 
     public static function generateReferralCode($user)
     {
+        $code = null;
+
+        if (!empty($user->user_name)) {
+            $code = $user->user_name;
+        } elseif (!empty($user->admission_id)) {
+            $code = $user->admission_id;
+        }
+
+        if ($code) {
+            $baseCode = $code;
+            $i = 1;
+            while (static::where('referral_code', $code)->exists()) {
+                $code = $baseCode . '_' . $i;
+                $i++;
+            }
+            return $code;
+        }
+
         $prefix = 'REF';
         $namePart = '';
         if ($user->name) {

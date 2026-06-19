@@ -548,5 +548,9 @@ return [
         'title' => 'Teacher Batch',
         'title_singular' => 'Teacher Batch',
     ],
+    'referral' => [
+        'title' => 'Referral',
+        'title_singular' => 'Referral',
+    ],
 
 ];
