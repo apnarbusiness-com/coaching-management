@@ -594,6 +594,10 @@
                 Displaying records for {{ $monthLabel }}
             </div>
         </div>
+
+        <div class="px-4 py-3 border-t border-slate-100 dark:border-slate-700">
+            {{ $studentsPaginator->links('pagination::bootstrap-4') }}
+        </div>
     </div>
 </div>
 @endsection

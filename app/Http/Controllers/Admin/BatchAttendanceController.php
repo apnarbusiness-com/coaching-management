@@ -547,6 +547,19 @@ class BatchAttendanceController extends Controller
                 'subject' => $b->subject?->name ?? 'N/A',
             ]);
 
+        // Paginate by unique student
+        $perPage = 50;
+        $studentQuery = StudentBasicInfo::whereHas('batches', function ($q) use ($selectedMonth, $selectedYear, $selectedBatchId) {
+            $q->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear);
+            if ($selectedBatchId) {
+                $q->where('batch_student_basic_info.batch_id', $selectedBatchId);
+            }
+        })->orderBy('first_name')->orderBy('last_name');
+
+        $studentsPaginator = $studentQuery->paginate($perPage);
+        $studentIdsForPage = $studentsPaginator->pluck('id')->toArray();
+
         $rows = collect();
 
         if ($selectedBatchId) {
@@ -555,6 +568,7 @@ class BatchAttendanceController extends Controller
                 ->with('studentDetails')
                 ->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
                 ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
+                ->whereIn('student_basic_infos.id', $studentIdsForPage)
                 ->orderBy('first_name')
                 ->orderBy('last_name')
                 ->get();
@@ -570,14 +584,16 @@ class BatchAttendanceController extends Controller
             }
         } else {
             $batchesWithStudents = Batch::with('subject')
-                ->whereHas('students', function ($q) use ($selectedMonth, $selectedYear) {
+                ->whereHas('students', function ($q) use ($selectedMonth, $selectedYear, $studentIdsForPage) {
                     $q->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
-                        ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear);
+                        ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
+                        ->whereIn('student_basic_infos.id', $studentIdsForPage);
                 })
-                ->with(['students' => function ($q) use ($selectedMonth, $selectedYear) {
+                ->with(['students' => function ($q) use ($selectedMonth, $selectedYear, $studentIdsForPage) {
                     $q->with('studentDetails')
                         ->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
                         ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
+                        ->whereIn('student_basic_infos.id', $studentIdsForPage)
                         ->orderBy('first_name')
                         ->orderBy('last_name');
                 }])
@@ -598,7 +614,7 @@ class BatchAttendanceController extends Controller
         }
 
         $groupedRows = $rows->groupBy('student_id');
-        $totalStudents = $groupedRows->count();
+        $totalStudents = $studentsPaginator->total();
         $totalPresent = $rows->sum('present');
         $totalAbsent = $rows->sum('absent');
         $totalLate = $rows->sum('late');
@@ -611,7 +627,7 @@ class BatchAttendanceController extends Controller
 
         return view('admin.batchAttendances.view-compact', compact(
             'groupedRows', 'batches', 'selectedMonth', 'selectedYear', 'selectedBatchId',
-            'monthLabel', 'totalStudents', 'totalPresent', 'totalAbsent', 'totalLate',
+            'monthLabel', 'studentsPaginator', 'totalStudents', 'totalPresent', 'totalAbsent', 'totalLate',
             'avgRate', 'criticalDrop', 'topBatch'
         ));
     }
