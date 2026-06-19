@@ -224,6 +224,14 @@
     .att-table tr:hover td.sticky-left-3 {
         background: #f8fafc;
     }
+    .att-table tr.bg-student-alt td {
+        background-color: #f8fafc !important;
+    }
+    .att-table tr.bg-student-alt td.sticky-left,
+    .att-table tr.bg-student-alt td.sticky-left-2,
+    .att-table tr.bg-student-alt td.sticky-left-3 {
+        background-color: #f8fafc !important;
+    }
     .att-table tr.batch-sep td {
         border-bottom: 2px solid #e2e8f0;
     }
@@ -505,11 +513,15 @@
                             $first = $studentRows->first();
                             $rowCount = $studentRows->count();
                             $searchData = strtolower($first['student_name'].' '.$first['roll'].' '.$first['id_no'].' '.$studentRows->pluck('batch_name')->implode(' '));
+                            $studentParity = !($studentParity ?? false);
                         @endphp
                         @foreach ($studentRows as $i => $row)
-                            <tr data-search="{{ $searchData }}">
+                            <tr data-search="{{ $searchData }}" class="{{ $studentParity ? '' : 'bg-student-alt' }}">
                                 @if ($i === 0)
-                                    <td class="sticky-left" rowspan="{{ $rowCount }}" style="font-size:12px; color:#64748b;">{{ $first['id_no'] ?: $first['roll'] }}</td>
+                                    <td class="sticky-left" rowspan="{{ $rowCount }}" style="font-size:12px; color:#64748b;">
+                                        {{ $first['id_no'] ?: $first['roll'] }}
+                                        <span onclick="showParentInfo('{{ $studentId }}')" class="ml-1 cursor-pointer text-blue-500 hover:text-blue-700 material-symbols-outlined text-sm align-middle" style="font-size:14px;">info</span>
+                                    </td>
                                     <td class="sticky-left-2" rowspan="{{ $rowCount }}">
                                         <div class="student-name">{{ $first['student_name'] }}</div>
                                         <div class="student-meta">Roll: {{ $first['roll'] ?: 'N/A' }}</div>
@@ -549,6 +561,17 @@
                     @endforelse
                 </tbody>
             </table>
+        </div>
+
+        <!-- Parent Info Modal -->
+        <div id="parentInfoModal" class="fixed inset-0 z-50 hidden bg-black/40 flex items-center justify-center" onclick="closeParentInfo(event)">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Parent / Guardian Info</h3>
+                    <button onclick="closeParentInfo()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 material-symbols-outlined text-lg">close</button>
+                </div>
+                <div class="px-5 py-4 space-y-3 text-sm" id="parentInfoBody"></div>
+            </div>
         </div>
 
         <div class="legend-bar">
@@ -601,6 +624,64 @@ function toggleCalendar() {
     btn.innerHTML = showing
         ? '<i class="fa fa-calendar"></i> Hide Calendar Days'
         : '<i class="fa fa-calendar"></i> Show Calendar Days';
+}
+
+@php
+    $parentData = [];
+    foreach ($groupedRows as $sid => $sRows) {
+        $f = $sRows->first();
+        $parentData[$sid] = [
+            'father' => $f['fathers_name'],
+            'mother' => $f['mothers_name'],
+            'guardian' => $f['guardian_name'],
+            'relation' => $f['guardian_relation'],
+            'guardian_contact' => $f['guardian_contact_number'],
+            'student_contact' => $f['student_contact'],
+        ];
+    }
+@endphp
+var parentData = {!! json_encode($parentData) !!};
+
+function showParentInfo(studentId) {
+    const d = parentData[studentId];
+    if (!d) return;
+    const body = document.getElementById('parentInfoBody');
+    if (!body) return;
+    const f = d.father || '—';
+    const m = d.mother || '—';
+    const g = d.guardian || '—';
+    const r = d.relation || '—';
+    const sc = d.student_contact || '—';
+    const gc = d.guardian_contact || '—';
+    body.innerHTML =
+        '<div class="flex items-center gap-3 py-2">' +
+            '<span class="material-symbols-outlined text-slate-400">man</span>' +
+            '<div><p class="font-semibold text-slate-900 dark:text-white">Father</p><p class="text-slate-500 dark:text-slate-400">' + f + '</p></div>' +
+        '</div>' +
+        '<div class="flex items-center gap-3 py-2">' +
+            '<span class="material-symbols-outlined text-slate-400">woman</span>' +
+            '<div><p class="font-semibold text-slate-900 dark:text-white">Mother</p><p class="text-slate-500 dark:text-slate-400">' + m + '</p></div>' +
+        '</div>' +
+        '<div class="flex items-center gap-3 py-2">' +
+            '<span class="material-symbols-outlined text-slate-400">contact_emergency</span>' +
+            '<div><p class="font-semibold text-slate-900 dark:text-white">Guardian <span class="text-slate-400 font-normal">(' + r + ')</span></p><p class="text-slate-500 dark:text-slate-400">' + g + '</p></div>' +
+        '</div>' +
+        '<div class="border-t border-slate-100 dark:border-slate-700 pt-3 mt-1 space-y-2">' +
+            '<div class="flex items-center gap-3">' +
+                '<span class="material-symbols-outlined text-slate-400">call</span>' +
+                '<div><p class="font-semibold text-slate-900 dark:text-white text-xs uppercase tracking-wide">Student Contact</p><p class="text-slate-500 dark:text-slate-400">' + sc + '</p></div>' +
+            '</div>' +
+            '<div class="flex items-center gap-3">' +
+                '<span class="material-symbols-outlined text-slate-400">contact_phone</span>' +
+                '<div><p class="font-semibold text-slate-900 dark:text-white text-xs uppercase tracking-wide">Guardian Contact</p><p class="text-slate-500 dark:text-slate-400">' + gc + '</p></div>' +
+            '</div>' +
+        '</div>';
+    document.getElementById('parentInfoModal').classList.remove('hidden');
+}
+
+function closeParentInfo(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('parentInfoModal').classList.add('hidden');
 }
 </script>
 @endsection

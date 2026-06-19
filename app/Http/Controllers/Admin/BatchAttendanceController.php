@@ -552,6 +552,7 @@ class BatchAttendanceController extends Controller
         if ($selectedBatchId) {
             $batch = Batch::with('subject')->findOrFail($selectedBatchId);
             $students = $batch->students()
+                ->with('studentDetails')
                 ->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
                 ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
                 ->orderBy('first_name')
@@ -574,7 +575,8 @@ class BatchAttendanceController extends Controller
                         ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear);
                 })
                 ->with(['students' => function ($q) use ($selectedMonth, $selectedYear) {
-                    $q->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
+                    $q->with('studentDetails')
+                        ->whereMonth('batch_student_basic_info.enrolled_at', $selectedMonth)
                         ->whereYear('batch_student_basic_info.enrolled_at', $selectedYear)
                         ->orderBy('first_name')
                         ->orderBy('last_name');
@@ -648,6 +650,8 @@ class BatchAttendanceController extends Controller
 
         $attRate = $totalClassDays > 0 ? round(($present + $late) / $totalClassDays * 100, 1) : 0;
 
+        $details = $student->studentDetails;
+
         return [
             'student_id' => $student->id,
             'student_name' => trim(($student->first_name ?? '').' '.($student->last_name ?? '')),
@@ -662,6 +666,12 @@ class BatchAttendanceController extends Controller
             'late' => $late,
             'att_rate' => $attRate,
             'daily' => $daily,
+            'fathers_name' => $details->fathers_name ?? '',
+            'mothers_name' => $details->mothers_name ?? '',
+            'guardian_name' => $details->guardian_name ?? '',
+            'guardian_relation' => $details->guardian_relation ?? '',
+            'guardian_contact_number' => $details->guardian_contact_number ?? '',
+            'student_contact' => $student->contact_number ?? '',
         ];
     }
 }
