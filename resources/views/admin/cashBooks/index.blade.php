@@ -229,7 +229,8 @@
             border-left-color: #ef4444;
         }
 
-        .transaction-item.earning_added {
+        .transaction-item.earning_added,
+        .transaction-item.student_payment_added {
             border-left-color: #22c55e;
         }
 
@@ -288,6 +289,28 @@
             font-size: 0.75rem;
             color: #94a3b8;
             margin-top: 0.5rem;
+        }
+
+        @keyframes slideInUp {
+            from { opacity: 0; transform: translateY(20px); }
+            to   { opacity: 1; transform: translateY(0); }
+        }
+        .transaction-item.new {
+            animation: slideInUp 0.4s ease-out;
+        }
+
+        .transaction-loader {
+            text-align: center;
+            padding: 20px;
+            color: #64748b;
+        }
+        .transaction-loader i {
+            font-size: 24px;
+            animation: spin 1s linear infinite;
+        }
+        @keyframes spin {
+            from { transform: rotate(0deg); }
+            to   { transform: rotate(360deg); }
         }
 
         .btn-details {
@@ -659,14 +682,30 @@
     @push('scripts')
         <script>
             let currentCashBookId = null;
+            let transactionPage = 1;
+            let hasMoreTransactions = false;
+            let isLoadingTransactions = false;
+            const txTypeLabels = {
+                'create': 'Created',
+                'update': 'Updated',
+                'delete': 'Deleted',
+                'earning_added': 'Earning Added',
+                'student_payment_added': 'Student Payment Added',
+                'expense_subtracted': 'Expense Subtracted',
+                'transfer_out': 'Transfer Out',
+                'transfer_in': 'Transfer In'
+            };
 
             function openTransactionDrawer(id, title) {
                 currentCashBookId = id;
+                transactionPage = 1;
+                hasMoreTransactions = false;
+                isLoadingTransactions = false;
                 document.getElementById('drawerTitle').textContent = title + ' - History';
                 document.getElementById('transactionOverlay').classList.add('open');
                 document.getElementById('transactionDrawer').classList.add('open');
 
-                loadTransactions(id);
+                loadTransactions(id, false);
             }
 
             function closeTransactionDrawer() {
@@ -674,102 +713,102 @@
                 document.getElementById('transactionDrawer').classList.remove('open');
             }
 
-            function loadTransactions(id) {
-                const listEl = document.getElementById('transactionList');
-                listEl.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>';
+            function buildTransactionHtml(tx, isNew) {
+                const type = tx.action_type;
+                const typeLabel = txTypeLabels[type] || type;
 
-                fetch('/admin/cash-books/' + id + '/transactions')
+                const date = new Date(tx.created_at);
+                const formattedDate = date.toLocaleDateString('en-US', {
+                    year: 'numeric', month: 'short', day: 'numeric'
+                }) + ' ' + date.toLocaleTimeString('en-US', {
+                    hour: '2-digit', minute: '2-digit'
+                });
+
+                let html = '<div class="transaction-item ' + type + (isNew ? ' new' : '') + '">';
+                html += '<div class="transaction-header">';
+                html += '<span class="transaction-type">' + typeLabel + '</span>';
+                html += '<span class="transaction-date">' + formattedDate + '</span>';
+                html += '</div>';
+
+                const showAmount = ['update', 'earning_added', 'student_payment_added', 'expense_subtracted', 'transfer_out', 'transfer_in'];
+                if (type === 'create') {
+                    html += '<div class="transaction-amounts"><span>New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span></div>';
+                } else if (type === 'delete') {
+                    html += '<div class="transaction-amounts"><span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span></div>';
+                } else if (showAmount.includes(type)) {
+                    html += '<div class="transaction-amounts"><span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span><span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span></div>';
+                }
+
+                if (tx.note) {
+                    html += '<p class="transaction-note">' + tx.note + '</p>';
+                }
+                if (tx.created_by) {
+                    html += '<div class="transaction-user">By: ' + tx.created_by.name + '</div>';
+                }
+                html += '</div>';
+                return html;
+            }
+
+            function loadTransactions(id, append) {
+                const listEl = document.getElementById('transactionList');
+
+                if (!append) {
+                    listEl.innerHTML = '<div class="text-center text-muted py-5"><i class="fas fa-spinner fa-spin fa-2x"></i><p class="mt-2">Loading...</p></div>';
+                } else {
+                    listEl.insertAdjacentHTML('beforeend', '<div class="transaction-loader" id="txLoader"><i class="fas fa-spinner"></i><p>Loading more...</p></div>');
+                }
+
+                isLoadingTransactions = true;
+
+                fetch('/admin/cash-books/' + id + '/transactions?page=' + transactionPage)
                     .then(response => response.json())
                     .then(data => {
+                        const loaderEl = document.getElementById('txLoader');
+                        if (loaderEl) loaderEl.remove();
+
                         if (data.transactions.length === 0) {
-                            listEl.innerHTML = '<div class="text-center text-muted py-5"><p>No transactions found.</p></div>';
+                            if (!append) {
+                                listEl.innerHTML = '<div class="text-center text-muted py-5"><p>No transactions found.</p></div>';
+                            }
+                            isLoadingTransactions = false;
                             return;
                         }
 
                         let html = '';
-
                         data.transactions.forEach(function(tx) {
-                            const typeLabels = {
-                                'create': 'Created',
-                                'update': 'Updated',
-                                'delete': 'Deleted',
-                                'earning_added': 'Earning Added',
-                                'expense_subtracted': 'Expense Subtracted',
-                                'transfer_out': 'Transfer Out',
-                                'transfer_in': 'Transfer In'
-                            };
-                            const type = tx.action_type;
-                            const typeLabel = typeLabels[type] || type;
-
-                            const date = new Date(tx.created_at);
-                            const formattedDate = date.toLocaleDateString('en-US', {
-                                year: 'numeric',
-                                month: 'short',
-                                day: 'numeric'
-                            }) + ' ' + date.toLocaleTimeString('en-US', {
-                                hour: '2-digit',
-                                minute: '2-digit'
-                            });
-
-                            html += '<div class="transaction-item ' + type + '">';
-                            html += '<div class="transaction-header">';
-                            html += '<span class="transaction-type">' + typeLabel + '</span>';
-                            html += '<span class="transaction-date">' + formattedDate + '</span>';
-                            html += '</div>';
-
-                            if (type === 'create') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            } else if (type === 'update') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            } else if (type === 'delete') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            } else if (type === 'earning_added') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            } else if (type === 'expense_subtracted') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            } else if (type === 'transfer_out') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            } else if (type === 'transfer_in') {
-                                html += '<div class="transaction-amounts">';
-                                html += '<span>Old: <span class="transaction-old">Tk ' + parseFloat(tx.old_amount).toFixed(2) + '</span></span>';
-                                html += '<span>→ New: <span class="transaction-new">Tk ' + parseFloat(tx.new_amount).toFixed(2) + '</span></span>';
-                                html += '</div>';
-                            }
-
-                            if (tx.note) {
-                                html += '<p class="transaction-note">' + tx.note + '</p>';
-                            }
-
-                            if (tx.created_by) {
-                                html += '<div class="transaction-user">By: ' + tx.created_by.name + '</div>';
-                            }
-
-                            html += '</div>';
+                            html += buildTransactionHtml(tx, append);
                         });
 
-                        listEl.innerHTML = html;
+                        if (!append) {
+                            listEl.innerHTML = html;
+                        } else {
+                            listEl.insertAdjacentHTML('beforeend', html);
+                        }
+
+                        hasMoreTransactions = data.has_more;
+                        if (hasMoreTransactions) {
+                            transactionPage = data.next_page;
+                        }
+                        isLoadingTransactions = false;
                     })
                     .catch(error => {
                         console.error('Error:', error);
-                        listEl.innerHTML = '<div class="text-center text-danger py-5"><p>Error loading transactions.</p></div>';
+                        const loaderEl = document.getElementById('txLoader');
+                        if (loaderEl) loaderEl.remove();
+                        if (!append) {
+                            listEl.innerHTML = '<div class="text-center text-danger py-5"><p>Error loading transactions.</p></div>';
+                        }
+                        isLoadingTransactions = false;
                     });
             }
+
+            // Infinite scroll
+            document.getElementById('transactionList').addEventListener('scroll', function() {
+                if (isLoadingTransactions || !hasMoreTransactions) return;
+                if (this.scrollHeight - this.scrollTop - this.clientHeight < 100) {
+                    loadTransactions(currentCashBookId, true);
+                }
+            });
         </script>
     @endpush
 @endcan

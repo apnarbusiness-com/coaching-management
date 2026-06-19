@@ -358,6 +358,9 @@ class DueCollectionController extends Controller
 
         $cashBook = CashBook::findOrFail($request->input('cash_book_id'));
 
+        $studentName = $due->student->first_name . ' ' . $due->student->last_name . ' (' . ($due->student->id_no ?? 'N/A') . ')';
+        $paymentStatus = $due->due_remaining > 0 ? 'Partial' : 'Full';
+
         $earning = Earning::create([
             'earning_category_id' => $earningCategory?->id,
             'student_id' => $due->student_id,
@@ -385,8 +388,8 @@ class DueCollectionController extends Controller
             'cash_book_id' => $cashBook->id,
             'old_amount' => $oldAmount,
             'new_amount' => $newAmount,
-            'action_type' => 'earning_added',
-            'note' => "Due payment '{$title}' of Tk " . number_format($amount, 2) . " added.",
+            'action_type' => 'student_payment_added',
+            'note' => "Student {$studentName} paid Tk " . number_format($amount, 2) . " for {$due->batch->batch_name} - {$monthName} ({$paymentStatus})",
             'created_by_id' => auth()->id(),
         ]);
 
@@ -485,6 +488,9 @@ class DueCollectionController extends Controller
 
         $cashBook = CashBook::findOrFail($request->input('cash_book_id'));
 
+        $student = StudentBasicInfo::find($studentId);
+        $studentName = $student ? trim($student->first_name . ' ' . $student->last_name) . ' (' . ($student->id_no ?? 'N/A') . ')' : 'Unknown';
+
         $remainingAmount = $totalAmount;
         $paidDues = [];
         $createdEarnings = [];
@@ -560,6 +566,11 @@ class DueCollectionController extends Controller
 
         $totalPaid = $totalAmount - $remainingAmount;
         if ($totalPaid > 0) {
+            $dueDetails = [];
+            foreach ($paidDues as $pd) {
+                $dueDetails[] = $pd['batch_name'] . ' - ' . $pd['month_name'] . ' (' . $pd['status'] . ')';
+            }
+
             $oldAmount = $cashBook->amount;
             $newAmount = $oldAmount + $totalPaid;
             $cashBook->update(['amount' => $newAmount]);
@@ -568,8 +579,8 @@ class DueCollectionController extends Controller
                 'cash_book_id' => $cashBook->id,
                 'old_amount' => $oldAmount,
                 'new_amount' => $newAmount,
-                'action_type' => 'earning_added',
-                'note' => "Bulk due payment of Tk " . number_format($totalPaid, 2) . " added.",
+                'action_type' => 'student_payment_added',
+                'note' => "Student {$studentName} paid Tk " . number_format($totalPaid, 2) . ": " . implode(', ', $dueDetails),
                 'created_by_id' => auth()->id(),
             ]);
         }
