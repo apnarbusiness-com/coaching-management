@@ -125,7 +125,7 @@ class BatchAttendanceController extends Controller
                 'roll' => $student->roll ?? '',
                 'id_no' => $student->id_no ?? '',
                 'image' => $student->image?->thumbnail ?? null,
-                'status' => $existingAttendances[$student->id] ?? null,
+                'status' => $existingAttendances[$student->id] ?? 'absent',
                 'has_due' => $hasDue,
                 'due_amount' => $totalDueRemaining,
                 'attendance_history' => $attendanceHistory,
