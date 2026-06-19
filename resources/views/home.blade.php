@@ -31,6 +31,14 @@
             <div class="mx-auto max-w-none flex flex-col gap-8">
                 @php $visibleWidgets = $visibleWidgets ?? []; @endphp
 
+                <!-- Welcome Header -->
+                <div class="flex items-center justify-between">
+                    <div>
+                        <h1 class="text-2xl font-bold text-slate-900 dark:text-white">Welcome back, {{ auth()->user()->name }}! 👋</h1>
+                        <p class="text-slate-500 dark:text-slate-400 text-sm mt-1">{{ \Carbon\Carbon::now()->format('l, F j, Y') }}</p>
+                    </div>
+                </div>
+
                 <!-- Level 1: Hero Cards -->
                 @if (in_array('total_profit', $visibleWidgets))
                     <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
