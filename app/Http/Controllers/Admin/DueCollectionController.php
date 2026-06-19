@@ -103,6 +103,7 @@ class DueCollectionController extends Controller
         $batches = Batch::pluck('batch_name', 'id');
         $classes = AcademicClass::pluck('class_name', 'id');
         $sections = Section::pluck('section_name', 'id');
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('order')->orderBy('title')->get();
 
         return view('admin.dueCollections.index', compact(
             'stats',
@@ -114,7 +115,8 @@ class DueCollectionController extends Controller
             'sectionId',
             'batches',
             'classes',
-            'sections'
+            'sections',
+            'cashBooks'
         ));
     }
 
@@ -274,6 +276,7 @@ class DueCollectionController extends Controller
             'due_id' => 'required|exists:student_monthly_dues,id',
             'amount' => 'required|numeric|min:0',
             'one_time_discount' => 'nullable|numeric|min:0',
+            'cash_book_id' => 'required|integer|exists:cash_books,id',
         ]);
 
         $due = StudentMonthlyDue::with('batch')->findOrFail($request->input('due_id'));
@@ -353,22 +356,38 @@ class DueCollectionController extends Controller
 
         $details = "Batch: $batchName | Due Amount: " . number_format($due->due_amount, 2) . " | Month: $monthName | Paid: " . number_format($amount, 2) . " | Remaining: " . number_format($due->due_remaining, 2);
 
-        // return response()->json(['success' => true, 'due' => $due]);
-        Earning::create([
+        $cashBook = CashBook::findOrFail($request->input('cash_book_id'));
+
+        $earning = Earning::create([
             'earning_category_id' => $earningCategory?->id,
             'student_id' => $due->student_id,
             'batch_id' => $due->batch_id,
+            'cash_book_id' => $cashBook->id,
             'title' => $title,
             'amount' => $amount,
             'details' => $details,
             'earning_date' => now(),
             'earning_month' => $due->month,
             'earning_year' => $due->year,
+            'payment_method' => $cashBook->title,
             'paid_by' => $due->student->first_name . ' ' . $due->student->last_name,
             'recieved_by' => auth()->user()->name,
             'created_by_id' => auth()->id(),
             'student_monthly_due_id' => $due->id,
             'earning_reference' => $receiptNumber,
+        ]);
+
+        $oldAmount = $cashBook->amount;
+        $newAmount = $oldAmount + $amount;
+        $cashBook->update(['amount' => $newAmount]);
+
+        CashBookTransaction::create([
+            'cash_book_id' => $cashBook->id,
+            'old_amount' => $oldAmount,
+            'new_amount' => $newAmount,
+            'action_type' => 'earning_added',
+            'note' => "Due payment '{$title}' of Tk " . number_format($amount, 2) . " added.",
+            'created_by_id' => auth()->id(),
         ]);
 
         $this->salaryService->recalculatePercentageSalaries($due->batch_id, $due->month, $due->year);
@@ -389,6 +408,7 @@ class DueCollectionController extends Controller
             'one_time_discount_batch_id' => 'nullable|exists:batches,id',
             'one_time_discount_month' => 'nullable|integer|min:1|max:12',
             'one_time_discount_year' => 'nullable|integer|min:2000',
+            'cash_book_id' => 'required|integer|exists:cash_books,id',
         ]);
 
         $studentId = $request->input('student_id');
@@ -463,6 +483,8 @@ class DueCollectionController extends Controller
             return response()->json(['success' => false, 'message' => 'No unpaid dues found for this student'], 400);
         }
 
+        $cashBook = CashBook::findOrFail($request->input('cash_book_id'));
+
         $remainingAmount = $totalAmount;
         $paidDues = [];
         $createdEarnings = [];
@@ -502,12 +524,14 @@ class DueCollectionController extends Controller
                 'earning_category_id' => $earningCategory?->id,
                 'student_id' => $due->student_id,
                 'batch_id' => $due->batch_id,
+                'cash_book_id' => $cashBook->id,
                 'title' => $title,
                 'amount' => $payAmount,
                 'details' => $details,
                 'earning_date' => now(),
                 'earning_month' => $due->month,
                 'earning_year' => $due->year,
+                'payment_method' => $cashBook->title,
                 'paid_by' => $due->student->first_name . ' ' . $due->student->last_name,
                 'recieved_by' => auth()->user()->name,
                 'created_by_id' => auth()->id(),
@@ -534,10 +558,26 @@ class DueCollectionController extends Controller
             }
         }
 
+        $totalPaid = $totalAmount - $remainingAmount;
+        if ($totalPaid > 0) {
+            $oldAmount = $cashBook->amount;
+            $newAmount = $oldAmount + $totalPaid;
+            $cashBook->update(['amount' => $newAmount]);
+
+            CashBookTransaction::create([
+                'cash_book_id' => $cashBook->id,
+                'old_amount' => $oldAmount,
+                'new_amount' => $newAmount,
+                'action_type' => 'earning_added',
+                'note' => "Bulk due payment of Tk " . number_format($totalPaid, 2) . " added.",
+                'created_by_id' => auth()->id(),
+            ]);
+        }
+
         return response()->json([
             'success' => true,
             'message' => 'Payment processed successfully',
-            'total_paid' => $totalAmount - $remainingAmount,
+            'total_paid' => $totalPaid,
             'remaining_to_pay' => $remainingAmount,
             'paid_dues' => $paidDues,
         ]);
@@ -666,8 +706,10 @@ class DueCollectionController extends Controller
 
         $currentYear = Carbon::now()->year;
         $years = range($currentYear - 2, $currentYear + 1);
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('order')->orderBy('title')->get();
+        $defaultCashBook = CashBook::where('is_financial_account', true)->where('is_default', true)->first();
 
-        return view('admin.dueCollections.checker', compact('years', 'currentYear'));
+        return view('admin.dueCollections.checker', compact('years', 'currentYear', 'cashBooks', 'defaultCashBook'));
     }
 
     public function searchStudentsForChecker(Request $request)

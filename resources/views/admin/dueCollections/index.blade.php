@@ -40,6 +40,11 @@
     }
     .filter-bar .form-group { margin-bottom: 0; min-width: 150px; }
     .pay-modal-body { max-height: 400px; overflow-y: auto; }
+    .payment-card-input:checked + .payment-card {
+        border-color: #2563EB !important;
+        background-color: rgba(239, 246, 255, 0.5) !important;
+        color: #2563EB !important;
+    }
     .due-item {
         display: flex;
         justify-content: space-between;
@@ -217,6 +222,44 @@
                         <label>Pay Amount</label>
                         <input type="number" class="form-control" id="pay-amount" step="0.01" min="1" required>
                     </div>
+                    @if ($cashBooks->isNotEmpty())
+                    <div class="form-group">
+                        <label>Payment Method <span class="text-danger">*</span></label>
+                        @if (setting('cashbook_display_type') == 'card')
+                            @php $icons = ['wallet'=>'💰','money'=>'💵','bank'=>'🏦','mobile'=>'📱','card'=>'💳','gift'=>'🎁','gold'=>'🪙','dollar'=>'💲']; @endphp
+                            <div class="grid grid-cols-2 gap-2">
+                                @foreach ($cashBooks as $cb)
+                                    <label class="relative cursor-pointer">
+                                        <input class="payment-card-input sr-only" type="radio" name="pay_cash_book_id"
+                                            value="{{ $cb->id }}"
+                                            {{ $loop->first ? 'checked' : '' }}>
+                                        <div class="payment-card flex flex-col items-center justify-center p-2 rounded-lg border border-slate-200 bg-white transition-all hover:bg-slate-50 text-slate-500 text-center" style="border:2px solid #e2e8f0;">
+                                            @if ($cb->image)
+                                                <img src="{{ Storage::url($cb->image) }}" class="w-6 h-6 mb-1 object-contain">
+                                            @elseif ($cb->icon && isset($icons[$cb->icon]))
+                                                <span class="text-xl mb-1">{{ $icons[$cb->icon] }}</span>
+                                            @else
+                                                <span class="material-symbols-outlined mb-1 text-lg">account_balance</span>
+                                            @endif
+                                            <span class="text-xs font-medium">{{ $cb->title }}</span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @else
+                            <select name="pay_cash_book_id" id="pay-cash-book-id" class="form-control select2-cashbook-pay" required style="width: 100%;">
+                                <option value="">— Select Account —</option>
+                                @foreach ($cashBooks as $cb)
+                                    <option value="{{ $cb->id }}"
+                                        data-image="{{ $cb->image ? Storage::url($cb->image) : '' }}"
+                                        data-icon="{{ $cb->icon ?? '' }}"
+                                        {{ $loop->first ? 'selected' : '' }}>{{ $cb->title }}
+                                    </option>
+                                @endforeach
+                            </select>
+                        @endif
+                    </div>
+                    @endif
                 </div>
                 <div class="modal-footer">
                     <button type="submit" class="btn btn-primary">Submit Payment</button>
@@ -327,15 +370,50 @@ $(function() {
         $('#payDueModal').modal('show');
     });
 
+    // Cash Book Select2 initialization
+    function formatCashBookOption(option) {
+        if (!option.id) return option.text;
+        const img = $(option.element).data('image');
+        const icon = $(option.element).data('icon');
+        const iconMap = {wallet:'💰',money:'💵',bank:'🏦',mobile:'📱',card:'💳',gift:'🎁',gold:'🪙',dollar:'💲'};
+        let thumbHtml = '';
+        if (img) {
+            thumbHtml = '<img src="' + img + '" style="width:22px;height:22px;border-radius:50%;object-fit:cover;">';
+        } else if (icon && iconMap[icon]) {
+            thumbHtml = iconMap[icon];
+        } else {
+            thumbHtml = '🏦';
+        }
+        return $('<span><span style="display:inline-flex;align-items:center;gap:8px;padding:2px 0;">' +
+            '<span style="width:28px;height:28px;border-radius:50%;display:flex;align-items:center;justify-content:center;font-size:18px;overflow:hidden;">' + thumbHtml + '</span>' +
+            '<span style="font-weight:600;font-size:14px;">' + option.text + '</span></span></span>');
+    }
+    $('.select2-cashbook-pay').select2({
+        width: '100%',
+        placeholder: '— Select Account —',
+        templateResult: formatCashBookOption,
+        templateSelection: function(option) {
+            if (!option.id) return option.text;
+            return formatCashBookOption(option);
+        }
+    });
+
     $('#pay-due-form').on('submit', function(e) {
         e.preventDefault();
         let dueId = $('#pay-due-id').val();
         let amount = $('#pay-amount').val();
+        let cashBookId = $('input[name="pay_cash_book_id"]:checked').val() || $('#pay-cash-book-id').val();
+
+        if (!cashBookId) {
+            alert('Please select a payment method.');
+            return;
+        }
 
         $.post("{{ route('admin.due-collections.pay') }}", {
             _token: '{{ csrf_token() }}',
             due_id: dueId,
-            amount: amount
+            amount: amount,
+            cash_book_id: cashBookId
         }, function(response) {
             $('#payDueModal').modal('hide');
             table.ajax.reload();
