@@ -482,7 +482,7 @@
                         <th class="text-center" style="width:70px;">Rate</th>
                         @php
                             $daysInMonth = Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1)->daysInMonth;
-                            $dayLabels = ['Sat', 'Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri'];
+                            $dayLabels = ['Sun', 'Mon', 'Tue', 'Wed', 'Thu', 'Fri', 'Sat'];
                         @endphp
                         <th class="cal-header" colspan="{{ $daysInMonth }}" style="border-left:1px solid #e2e8f0;">
                             Class Date &amp; Day (Calendar Wise)

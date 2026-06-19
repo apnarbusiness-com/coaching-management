@@ -406,13 +406,13 @@
 
             <div class="calendar-container" style="overflow-y: auto;">
                 <div class="calendar-grid">
-                    <div class="calendar-header">Sat</div>
                     <div class="calendar-header">Sun</div>
                     <div class="calendar-header">Mon</div>
                     <div class="calendar-header">Tue</div>
                     <div class="calendar-header">Wed</div>
                     <div class="calendar-header">Thu</div>
                     <div class="calendar-header">Fri</div>
+                    <div class="calendar-header">Sat</div>
 
                     @php
                         $firstDay = \Carbon\Carbon::createFromDate($selectedYear, $selectedMonth, 1);
