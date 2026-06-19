@@ -11,9 +11,9 @@ use Illuminate\Http\Request;
 
 class AdmissionApplicationController extends Controller
 {
-    public function create()
+    public function create($referralCode = null)
     {
-        return view('admission.public');
+        return view('admission.public', compact('referralCode'));
     }
 
     public function store(Request $request)

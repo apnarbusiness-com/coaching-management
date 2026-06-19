@@ -348,7 +348,7 @@
                         <div class="form-group col-md-6">
                             <label>Referral Code</label>
                             <input type="text" name="referral_code" class="form-control"
-                                value="{{ old('referral_code') }}" placeholder="e.g. REFJR4ABC" maxlength="20">
+                                value="{{ old('referral_code', $referralCode ?? '') }}" placeholder="e.g. REFJR4ABC" maxlength="20">
                             <small class="text-muted" id="referral-status"></small>
                         </div>
                     </div>

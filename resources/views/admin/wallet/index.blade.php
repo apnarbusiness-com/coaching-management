@@ -60,6 +60,55 @@
             </div>
         </div>
 
+        @if(auth()->user()->referral_code)
+        <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-5">
+            <div class="flex flex-col sm:flex-row sm:items-center gap-4">
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Admission Link (Share with students)</p>
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <code class="text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg break-all">{{ url('/admission') }}</code>
+                        <button onclick="copyText('{{ url('/admission') }}', 'copyAdmissionBtn', 'copyAdmissionIcon', 'copyAdmissionText')"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-lg text-xs font-semibold hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-all shrink-0"
+                            id="copyAdmissionBtn">
+                            <svg id="copyAdmissionIcon" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />
+                            </svg>
+                            <span id="copyAdmissionText">Copy</span>
+                        </button>
+                        <a href="{{ url('/admission') }}" target="_blank"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Open
+                        </a>
+                    </div>
+                </div>
+                <div class="flex-1">
+                    <p class="text-sm font-semibold text-slate-700 dark:text-slate-300">Your Referral Link</p>
+                    <div class="flex flex-wrap items-center gap-2 mt-2">
+                        <code class="text-xs sm:text-sm bg-slate-100 dark:bg-slate-800 px-3 py-1.5 rounded-lg break-all">{{ url('/admission/' . auth()->user()->referral_code) }}</code>
+                        <button onclick="copyText('{{ url('/admission/' . auth()->user()->referral_code) }}', 'copyReferralLinkBtn', 'copyReferralLinkIcon', 'copyReferralLinkText')"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-teal-100 dark:bg-teal-900/30 text-teal-700 dark:text-teal-400 rounded-lg text-xs font-semibold hover:bg-teal-200 dark:hover:bg-teal-900/50 transition-all shrink-0"
+                            id="copyReferralLinkBtn">
+                            <svg id="copyReferralLinkIcon" xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M13.828 10.172a4 4 0 00-5.656 0l-4 4a4 4 0 105.656 5.656l1.102-1.101m-.758-4.899a4 4 0 005.656 0l4-4a4 4 0 00-5.656-5.656l-1.1 1.1" />
+                            </svg>
+                            <span id="copyReferralLinkText">Copy</span>
+                        </button>
+                        <a href="{{ url('/admission/' . auth()->user()->referral_code) }}" target="_blank"
+                            class="inline-flex items-center gap-1.5 px-2.5 py-1.5 bg-slate-100 dark:bg-slate-800 text-slate-600 dark:text-slate-300 rounded-lg text-xs font-semibold hover:bg-slate-200 dark:hover:bg-slate-700 transition-all shrink-0">
+                            <svg xmlns="http://www.w3.org/2000/svg" class="h-3.5 w-3.5" fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                <path stroke-linecap="round" stroke-linejoin="round" d="M10 6H6a2 2 0 00-2 2v10a2 2 0 002 2h10a2 2 0 002-2v-4M14 4h6m0 0v6m0-6L10 14" />
+                            </svg>
+                            Open
+                        </a>
+                    </div>
+                </div>
+            </div>
+        </div>
+        @endif
+
         <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
             <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-sm border border-slate-200 dark:border-slate-700 p-6">
                 <p class="text-sm text-slate-500">Current Balance</p>
@@ -310,6 +359,31 @@ function copyReferralCode() {
         toast.classList.remove('show');
         btn.textContent = 'Copy';
         icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />';
+    }, 2500);
+}
+
+function copyText(text, btnId, iconId, textId) {
+    const textarea = document.createElement('textarea');
+    textarea.value = text;
+    textarea.style.position = 'fixed';
+    textarea.style.opacity = '0';
+    document.body.appendChild(textarea);
+    textarea.select();
+    textarea.setSelectionRange(0, 99999);
+    document.execCommand('copy');
+    document.body.removeChild(textarea);
+
+    const btn = document.getElementById(textId);
+    const icon = document.getElementById(iconId);
+    if (btn) btn.textContent = 'Copied!';
+    if (icon) icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M5 13l4 4L19 7" />';
+
+    const toast = document.getElementById('toastCopied');
+    toast.classList.add('show');
+    setTimeout(() => {
+        toast.classList.remove('show');
+        if (btn) btn.textContent = 'Copy';
+        if (icon) icon.innerHTML = '<path stroke-linecap="round" stroke-linejoin="round" d="M8 16H6a2 2 0 01-2-2V6a2 2 0 012-2h8a2 2 0 012 2v2m-6 12h8a2 2 0 002-2v-8a2 2 0 00-2-2h-8a2 2 0 00-2 2v8a2 2 0 002 2z" />';
     }, 2500);
 }
 

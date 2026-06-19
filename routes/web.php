@@ -24,6 +24,7 @@ Route::get('/admission', [AdmissionApplicationController::class, 'create'])->nam
 Route::post('/admission', [AdmissionApplicationController::class, 'store'])->name('admission.public.store');
 Route::get('/admission/thank-you/{application}', [AdmissionApplicationController::class, 'thankYou'])->name('admission.public.thankyou');
 Route::get('/admission/check-referral', [AdmissionApplicationController::class, 'checkReferral'])->name('admission.public.check-referral');
+Route::get('/admission/{referral_code}', [AdmissionApplicationController::class, 'create'])->name('admission.public.referral')->where('referral_code', '[a-zA-Z0-9_]+');
 Route::get('/home', function () {
     if (session('status')) {
         return redirect()->route('admin.home')->with('status', session('status'));

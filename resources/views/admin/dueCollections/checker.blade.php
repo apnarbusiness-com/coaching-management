@@ -187,7 +187,7 @@
         .info-card.sticky-info {
             position: sticky;
             top: 2px;
-            z-index: 1030;
+            z-index: 100;
             overflow: visible;
             transition: padding 0.2s, box-shadow 0.2s;
         }
