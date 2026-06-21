@@ -31,6 +31,7 @@ class TeacherPaymentTransaction extends Model
         'amount',
         'payment_date',
         'payment_method',
+        'cash_book_id',
         'reference',
         'notes',
         'received_by',
@@ -63,5 +64,10 @@ class TeacherPaymentTransaction extends Model
     public function receivedBy()
     {
         return $this->belongsTo(User::class, 'received_by');
+    }
+
+    public function cashBook()
+    {
+        return $this->belongsTo(CashBook::class, 'cash_book_id');
     }
 }

@@ -117,11 +117,16 @@
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-500 mb-1">Method</label>
-                            <select name="payment_method" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg" required>
-                                <option value="cash">Cash</option>
-                                <option value="bank_transfer">Bank Transfer</option>
-                                <option value="mobile_banking">Mobile Banking</option>
-                            </select>
+                            @if (isset($cashBooks) && $cashBooks->isNotEmpty())
+                                <select name="cash_book_id" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg" required>
+                                    <option value="">— Select —</option>
+                                    @foreach ($cashBooks as $cb)
+                                        <option value="{{ $cb->id }}" {{ $defaultCashBook && $defaultCashBook->id == $cb->id ? 'selected' : '' }}>{{ $cb->title }}</option>
+                                    @endforeach
+                                </select>
+                            @else
+                                <p class="text-sm text-red-400">No accounts available</p>
+                            @endif
                         </div>
                         <div>
                             <label class="block text-sm font-medium text-slate-500 mb-1">Reference (Optional)</label>
@@ -164,13 +169,7 @@
                                 <tr>
                                     <td class="px-4 py-3">{{ \Carbon\Carbon::parse($transaction->payment_date)->format('M d, Y') }}</td>
                                     <td class="px-4 py-3">
-                                        @if($transaction->payment_method === 'cash')
-                                            <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700">Cash</span>
-                                        @elseif($transaction->payment_method === 'bank_transfer')
-                                            <span class="px-2 py-1 rounded text-xs bg-purple-100 text-purple-700">Bank</span>
-                                        @else
-                                            <span class="px-2 py-1 rounded text-xs bg-green-100 text-green-700">Mobile</span>
-                                        @endif
+                                        <span class="px-2 py-1 rounded text-xs bg-blue-100 text-blue-700">{{ $transaction->payment_method ?? 'N/A' }}</span>
                                     </td>
                                     <td class="px-4 py-3 text-slate-500">{{ $transaction->reference ?? '-' }}</td>
                                     <td class="px-4 py-3 font-medium text-green-600">৳{{ number_format($transaction->amount, 2) }}</td>

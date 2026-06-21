@@ -10,6 +10,8 @@ use App\Models\Batch;
 use App\Models\Teacher;
 use App\Models\TeacherPaymentTransaction;
 use App\Models\TeachersPayment;
+use App\Models\CashBook;
+use App\Models\CashBookTransaction;
 use App\Models\Expense;
 use App\Services\TeacherSalaryCalculationService;
 use Illuminate\Http\Request;
@@ -55,7 +57,10 @@ class TeachersPaymentController extends Controller
         $teachers = Teacher::where('status', 1)->pluck('name', 'id');
         $batches = \App\Models\Batch::pluck('batch_name', 'id');
 
-        return view('admin.teachersPayments.index', compact('teachersPayments', 'teachers', 'batches'));
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('order')->orderBy('title')->get();
+        $defaultCashBook = CashBook::where('is_financial_account', true)->where('is_default', true)->first();
+
+        return view('admin.teachersPayments.index', compact('teachersPayments', 'teachers', 'batches', 'cashBooks', 'defaultCashBook'));
     }
 
     public function create()
@@ -107,7 +112,10 @@ class TeachersPaymentController extends Controller
             );
         }
 
-        return view('admin.teachersPayments.show', compact('teachersPayment', 'breakdown'));
+        $cashBooks = CashBook::where('is_financial_account', true)->orderBy('order')->orderBy('title')->get();
+        $defaultCashBook = CashBook::where('is_financial_account', true)->where('is_default', true)->first();
+
+        return view('admin.teachersPayments.show', compact('teachersPayment', 'breakdown', 'cashBooks', 'defaultCashBook'));
     }
 
     public function destroy(TeachersPayment $teachersPayment)
@@ -311,16 +319,20 @@ class TeachersPaymentController extends Controller
         $request->validate([
             'amount' => ['required', 'numeric', 'min:0.01'],
             'payment_date' => ['required', 'date'],
-            'payment_method' => ['required', 'string', 'in:cash,bank_transfer,mobile_banking'],
+            'cash_book_id' => ['required', 'exists:cash_books,id'],
             'reference' => ['nullable', 'string', 'max:255'],
             'notes' => ['nullable', 'string'],
         ]);
+
+        $cashBook = CashBook::findOrFail($request->cash_book_id);
+        $paymentMethod = $cashBook->title;
 
         $transaction = TeacherPaymentTransaction::create([
             'teachers_payment_id' => $teachersPayment->id,
             'amount' => $request->amount,
             'payment_date' => $request->payment_date,
-            'payment_method' => $request->payment_method,
+            'payment_method' => $paymentMethod,
+            'cash_book_id' => $cashBook->id,
             'reference' => $request->reference,
             'notes' => $request->notes,
             'created_by_id' => auth()->id(),
@@ -333,7 +345,7 @@ class TeachersPaymentController extends Controller
         $expenseCategoryId = \App\Models\ExpenseCategory::where('name', 'Like', '%salary%')->first()?->id 
             ?? \App\Models\ExpenseCategory::first()?->id;
 
-        Expense::create([
+        $expense = Expense::create([
             'expense_category_id' => $expenseCategoryId,
             'title' => 'Teacher Salary - ' . ($teacher->name ?? 'Teacher') . ' - ' . ($batch->batch_name ?? ''),
             'details' => 'Payment for ' . date('F', mktime(0, 0, 0, $teachersPayment->month, 1)) . ' ' . $teachersPayment->year,
@@ -341,12 +353,26 @@ class TeachersPaymentController extends Controller
             'expense_date' => $request->payment_date,
             'expense_month' => $teachersPayment->month,
             'expense_year' => $teachersPayment->year,
-            'payment_method' => $request->payment_method,
+            'payment_method' => $paymentMethod,
+            'cash_book_id' => $cashBook->id,
             'paid_by' => $request->received_by ?? auth()->user()->name,
             'teacher_id' => $teachersPayment->teacher_id,
             'batch_id' => $teachersPayment->batch_id,
             'teachers_payment_id' => $teachersPayment->id,
             'teacher_payment_transaction_id' => $transaction->id,
+            'created_by_id' => auth()->id(),
+        ]);
+
+        $oldAmount = $cashBook->amount;
+        $newAmount = $oldAmount - (float) $request->amount;
+        $cashBook->update(['amount' => $newAmount]);
+
+        CashBookTransaction::create([
+            'cash_book_id' => $cashBook->id,
+            'old_amount' => $oldAmount,
+            'new_amount' => $newAmount,
+            'action_type' => 'expense_subtracted',
+            'note' => 'Teacher salary disbursement — ' . ($teacher->name ?? 'Teacher') . ' — ' . ($batch->batch_name ?? 'N/A') . ' — ' . date('F', mktime(0, 0, 0, $teachersPayment->month, 1)) . ' ' . $teachersPayment->year . ' — BDT ' . number_format((float) $request->amount, 2),
             'created_by_id' => auth()->id(),
         ]);
 
@@ -359,6 +385,24 @@ class TeachersPaymentController extends Controller
 
         if ($transaction->teachers_payment_id !== $teachersPayment->id) {
             abort(403, 'Transaction does not belong to this payment.');
+        }
+
+        if ($transaction->cash_book_id) {
+            $cashBook = CashBook::find($transaction->cash_book_id);
+            if ($cashBook) {
+                $oldAmount = $cashBook->amount;
+                $newAmount = $oldAmount + (float) $transaction->amount;
+                $cashBook->update(['amount' => $newAmount]);
+
+                CashBookTransaction::create([
+                    'cash_book_id' => $cashBook->id,
+                    'old_amount' => $oldAmount,
+                    'new_amount' => $newAmount,
+                    'action_type' => 'expense_restored',
+                    'note' => 'Teacher payment transaction deleted — BDT ' . number_format((float) $transaction->amount, 2) . ' restored.',
+                    'created_by_id' => auth()->id(),
+                ]);
+            }
         }
 
         $transaction->delete();

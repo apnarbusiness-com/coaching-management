@@ -29,7 +29,7 @@
                     <p class="text-xs text-slate-500 mt-1">Remaining: <span id="payModalRemaining" class="font-medium"></span></p>
                 </div>
                 
-                <div>
+                <div class="col-span-2">
                     <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Payment Date</label>
                     <input type="date" name="payment_date" 
                         value="{{ date('Y-m-d') }}"
@@ -37,15 +37,41 @@
                         required>
                 </div>
                 
-                <div>
-                    <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Payment Method</label>
-                    <select name="payment_method" 
-                        class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary"
-                        required>
-                        <option value="cash">Cash</option>
-                        <option value="bank_transfer">Bank Transfer</option>
-                        <option value="mobile_banking">Mobile Banking</option>
-                    </select>
+                <div class="col-span-2">
+                    <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Payment Method <span class="text-red-500">*</span></label>
+                    @if (isset($cashBooks) && $cashBooks->isNotEmpty())
+                        @if (setting('cashbook_display_type') == 'card')
+                            @php
+                                $icons = ['wallet'=>'💰','money'=>'💵','bank'=>'🏦','mobile'=>'📱','card'=>'💳','gift'=>'🎁','gold'=>'🪙','dollar'=>'💲'];
+                            @endphp
+                            <div class="grid grid-cols-3 gap-2">
+                                @foreach ($cashBooks as $cb)
+                                    <label class="cursor-pointer">
+                                        <input class="payment-card-input sr-only" type="radio" name="cash_book_id" value="{{ $cb->id }}" {{ $defaultCashBook && $defaultCashBook->id == $cb->id ? 'checked' : ($loop->first ? 'checked' : '') }} required>
+                                        <div class="payment-card flex flex-col items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-center">
+                                            @if ($cb->image)
+                                                <img src="{{ Storage::url($cb->image) }}" class="w-6 h-6 mb-1 object-contain">
+                                            @elseif ($cb->icon && isset($icons[$cb->icon]))
+                                                <span class="text-lg mb-1">{{ $icons[$cb->icon] }}</span>
+                                            @else
+                                                <span class="material-symbols-outlined mb-1 text-lg">account_balance</span>
+                                            @endif
+                                            <span class="text-xs font-medium leading-tight">{{ $cb->title }}</span>
+                                        </div>
+                                    </label>
+                                @endforeach
+                            </div>
+                        @else
+                            <select name="cash_book_id" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary" required>
+                                <option value="">— Select Account —</option>
+                                @foreach ($cashBooks as $cb)
+                                    <option value="{{ $cb->id }}" {{ $defaultCashBook && $defaultCashBook->id == $cb->id ? 'selected' : '' }}>{{ $cb->title }}</option>
+                                @endforeach
+                            </select>
+                        @endif
+                    @else
+                        <p class="text-sm text-red-400">No cash book accounts available. Please create one first.</p>
+                    @endif
                 </div>
                 
                 <div class="col-span-2">
@@ -74,6 +100,17 @@
         </form>
     </div>
 </div>
+
+<style>
+.payment-card-input:checked + .payment-card {
+    border-color: #10b981;
+    background-color: #f0fdf4;
+}
+.dark .payment-card-input:checked + .payment-card {
+    border-color: #34d399;
+    background-color: rgba(16, 185, 129, 0.1);
+}
+</style>
 
 <script>
 function openPayModal(paymentId, teacherName, totalAmount, paidAmount, remainingAmount) {
