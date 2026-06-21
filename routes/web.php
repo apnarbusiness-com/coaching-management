@@ -234,6 +234,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections/checker', [DueCollectionController::class, 'checker'])->name('due-collections.checker');
     Route::get('due-collections/checker/search', 'DueCollectionController@searchStudentsForChecker')->name('due-collections.checker.search');
     Route::get('due-collections/checker/student/{studentId}', 'DueCollectionController@getStudentFullHistory')->name('due-collections.checker.student');
+    Route::get('due-collections/receipt/{earningTransaction}/{output?}', 'DueCollectionController@receipt')->name('due-collections.receipt');
 
     // Student Flags CRUD
     Route::get('student-flags', 'StudentFlagController@index')->name('student-flags.index');

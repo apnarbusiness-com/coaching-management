@@ -749,6 +749,7 @@
                                             <th>Amount</th>
                                             <th>Ref No.</th>
                                             <th>Received By</th>
+                                            <th>Receipt</th>
                                         </tr>
                                     </thead>
                                     <tbody></tbody>
@@ -967,6 +968,29 @@
                             <button type="submit" class="btn btn-success">Submit Payment</button>
                         </div>
                     </form>
+                </div>
+            </div>
+        </div>
+    </div>
+
+    <!-- Receipt Modal -->
+    <div class="modal fade" id="receiptModal" tabindex="-1" role="dialog">
+        <div class="modal-dialog modal-lg" role="document">
+            <div class="modal-content">
+                <div class="modal-header">
+                    <h5 class="modal-title">Payment Receipt</h5>
+                    <button type="button" class="close" data-dismiss="modal"><span>&times;</span></button>
+                </div>
+                <div class="modal-body" id="receiptModalBody">
+                    <div class="text-center py-4">
+                        <i class="fa fa-spinner fa-spin fa-2x"></i>
+                        <p class="mt-2">Loading receipt...</p>
+                    </div>
+                </div>
+                <div class="modal-footer">
+                    <button type="button" class="btn btn-info" id="receiptPrintBtn"><i class="fa fa-print"></i> Print</button>
+                    <button type="button" class="btn btn-success" id="receiptDownloadBtn"><i class="fa fa-download"></i> Download PDF</button>
+                    <button type="button" class="btn btn-secondary" data-dismiss="modal">Close</button>
                 </div>
             </div>
         </div>
@@ -1377,7 +1401,7 @@ $(document).on('click', '.search-result-item', function() {
                 paymentHistoryBody.empty();
                 if (response.payment_history.length === 0) {
                     paymentHistoryBody.html(
-                        '<tr><td colspan="5" class="text-center text-muted">No payment records found</td></tr>');
+                        '<tr><td colspan="6" class="text-center text-muted">No payment records found</td></tr>');
                 } else {
                     response.payment_history.forEach(function(payment) {
                         paymentHistoryBody.append(`
@@ -1387,6 +1411,7 @@ $(document).on('click', '.search-result-item', function() {
                         <td>${parseFloat(payment.amount).toFixed(2)}</td>
                         <td>${payment.reference || 'N/A'}</td>
                         <td>${payment.received_by || 'N/A'}</td>
+                        <td>${payment.earning_transaction_id ? `<a href="/admin/due-collections/receipt/${payment.earning_transaction_id}" target="_blank" class="btn btn-xs btn-info"><i class="fa fa-receipt"></i> Receipt</a>` : '-'}</td>
                     </tr>
                 `);
                     });
@@ -1581,6 +1606,9 @@ $(document).on('click', '.search-result-item', function() {
                     cash_book_id: cashBookId
                 }, function(response) {
                     $('#payDueModal').modal('hide');
+                    if (response.receipt) {
+                        showReceiptModal(response.receipt);
+                    }
                     loadStudentData();
                     Swal.fire('Success!', response.message || 'Payment recorded successfully!', 'success');
                 }).fail(function(xhr) {
@@ -1678,6 +1706,9 @@ $(document).on('click', '.search-result-item', function() {
                         setTimeout(function() {
                             $('#payAllDueModal').modal('hide');
                             submitBtn.prop('disabled', false).text(originalText);
+                            if (response.receipt) {
+                                showReceiptModal(response.receipt);
+                            }
                             loadStudentData();
                         }, 500);
                         return;
@@ -1766,6 +1797,65 @@ $(document).on('click', '.search-result-item', function() {
             currentDues = dues.filter(function(due) {
                 return due.due_remaining > 0;
             });
+        }
+
+        function showReceiptModal(receipt) {
+            // Build receipt content
+            let itemsHtml = '';
+            if (receipt.items && receipt.items.length > 0) {
+                receipt.items.forEach(function(item, idx) {
+                    let monthDisplay = item.month;
+                    if (item.year) monthDisplay += ' ' + item.year;
+                    itemsHtml += `<tr>
+                        <td>${idx + 1}</td>
+                        <td>${monthDisplay}</td>
+                        <td>${item.batch}</td>
+                        <td class="text-right">${parseFloat(item.amount).toFixed(2)}</td>
+                    </tr>`;
+                });
+            }
+
+            let downloadUrl = receipt.transaction_id
+                ? `{{ url('admin/due-collections/receipt') }}/${receipt.transaction_id}`
+                : '#';
+
+            $('#receiptModalBody').html(`
+                <div style="padding: 10px;">
+                    <div style="text-align:center;border-bottom:2px solid #059669;padding-bottom:12px;margin-bottom:18px;">
+                        <h4 style="color:#059669;margin:0;">MONEY RECEIPT</h4>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:12px;">
+                        <div><strong>Receipt No:</strong> ${receipt.receipt_no || 'N/A'}</div>
+                        <div><strong>Date:</strong> ${receipt.payment_date || ''}</div>
+                    </div>
+                    <div style="display:flex;justify-content:space-between;margin-bottom:15px;">
+                        <div><strong>Student:</strong> ${receipt.student_name || ''} (${receipt.student_id_no || ''})</div>
+                        <div><strong>Method:</strong> ${receipt.payment_method || ''}</div>
+                    </div>
+                    <table class="table table-sm table-bordered">
+                        <thead><tr><th>#</th><th>Month</th><th>Batch</th><th class="text-right">Amount</th></tr></thead>
+                        <tbody>${itemsHtml}</tbody>
+                        <tfoot><tr style="font-weight:700;border-top:2px solid #059669;">
+                            <td colspan="3" class="text-right">Total</td>
+                            <td class="text-right">${parseFloat(receipt.total).toFixed(2)}</td>
+                        </tr></tfoot>
+                    </table>
+                </div>
+            `);
+
+            $('#receiptDownloadBtn').off('click').on('click', function() {
+                if (downloadUrl !== '#') {
+                    window.open(downloadUrl, '_blank');
+                }
+            });
+
+            $('#receiptPrintBtn').off('click').on('click', function() {
+                if (downloadUrl !== '#') {
+                    window.open(downloadUrl + '/html', '_blank');
+                }
+            });
+
+            $('#receiptModal').modal('show');
         }
 
         let availableFlags = [];

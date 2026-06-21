@@ -19,9 +19,11 @@ use App\Models\StudentMonthlyDue;
 use App\Models\StudentOtherDue;
 use App\Models\CashBook;
 use App\Models\CashBookTransaction;
+use App\Models\EarningTransaction;
 use App\Services\DueCalculationService;
 use App\Services\TeacherSalaryCalculationService;
 use Carbon\Carbon;
+use Barryvdh\DomPDF\Facade\Pdf;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\DB;
 use Illuminate\Support\Facades\Gate;
@@ -352,7 +354,18 @@ class DueCollectionController extends Controller
             ]);
         }
 
-        $receiptNumber = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
+        $receiptNumber = $this->generateReceiptNo();
+
+        $tx = EarningTransaction::create([
+            'receipt_no' => $receiptNumber,
+            'student_id' => $due->student_id,
+            'total_amount' => $amount,
+            'payment_method' => $cashBook->title,
+            'cash_book_id' => $cashBook->id,
+            'payment_date' => now(),
+            'total_items' => 1,
+            'created_by_id' => auth()->id(),
+        ]);
 
         $batchName = $due->batch->batch_name ?? 'N/A';
         $isPartial = $due->due_remaining > 0;
@@ -367,6 +380,7 @@ class DueCollectionController extends Controller
         $paymentStatus = $due->due_remaining > 0 ? 'Partial' : 'Full';
 
         $earning = Earning::create([
+            'earning_transaction_id' => $tx->id,
             'earning_category_id' => $earningCategory?->id,
             'student_id' => $due->student_id,
             'batch_id' => $due->batch_id,
@@ -400,7 +414,25 @@ class DueCollectionController extends Controller
 
         $this->salaryService->recalculatePercentageSalaries($due->batch_id, $due->month, $due->year);
 
-        return response()->json(['success' => true, 'message' => 'Payment recorded successfully']);
+        return response()->json([
+            'success' => true,
+            'message' => 'Payment recorded successfully',
+            'receipt' => [
+                'transaction_id' => $tx->id,
+                'receipt_no' => $tx->receipt_no,
+                'student_name' => trim(($due->student->first_name ?? '') . ' ' . ($due->student->last_name ?? '')),
+                'student_id_no' => $due->student->id_no ?? '',
+                'payment_date' => now()->format('d M, Y'),
+                'total' => (float) $amount,
+                'payment_method' => $cashBook->title,
+                'items' => [[
+                    'month' => $this->getMonthName($due->month),
+                    'year' => $due->year,
+                    'batch' => $batchName,
+                    'amount' => (float) $amount,
+                ]],
+            ],
+        ]);
     }
 
     public function payAllDues(Request $request)
@@ -501,6 +533,19 @@ class DueCollectionController extends Controller
         $createdEarnings = [];
         $recalculatedBatches = [];
 
+        // Create a single transaction header for the entire bulk payment
+        $receiptNo = $this->generateReceiptNo();
+        $tx = EarningTransaction::create([
+            'receipt_no' => $receiptNo,
+            'student_id' => $studentId,
+            'total_amount' => 0, // will update after loop
+            'payment_method' => $cashBook->title,
+            'cash_book_id' => $cashBook->id,
+            'payment_date' => now(),
+            'total_items' => 0, // will update after loop
+            'created_by_id' => auth()->id(),
+        ]);
+
         foreach ($dues as $due) {
             if ($remainingAmount <= 0) {
                 break;
@@ -522,8 +567,6 @@ class DueCollectionController extends Controller
                 ]);
             }
 
-            $receiptNumber = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
-
             $batchName = $due->batch->batch_name ?? 'N/A';
             $isPartial = $due->due_remaining > 0;
             $monthName = $this->getMonthName($due->month) . ' ' . $due->year;
@@ -532,6 +575,7 @@ class DueCollectionController extends Controller
             $details = "Batch: $batchName | Due Amount: " . number_format($due->due_amount, 2) . " | Month: $monthName | Paid: " . number_format($payAmount, 2) . " | Remaining: " . number_format($due->due_remaining, 2);
 
             $earning = Earning::create([
+                'earning_transaction_id' => $tx->id,
                 'earning_category_id' => $earningCategory?->id,
                 'student_id' => $due->student_id,
                 'batch_id' => $due->batch_id,
@@ -547,7 +591,7 @@ class DueCollectionController extends Controller
                 'recieved_by' => auth()->user()->name,
                 'created_by_id' => auth()->id(),
                 'student_monthly_due_id' => $due->id,
-                'earning_reference' => $receiptNumber,
+                'earning_reference' => $receiptNo,
             ]);
 
             $paidDues[] = [
@@ -570,6 +614,13 @@ class DueCollectionController extends Controller
         }
 
         $totalPaid = $totalAmount - $remainingAmount;
+
+        // Update transaction totals
+        $tx->update([
+            'total_amount' => $totalPaid,
+            'total_items' => count($paidDues),
+        ]);
+
         if ($totalPaid > 0) {
             $dueDetails = [];
             foreach ($paidDues as $pd) {
@@ -596,6 +647,23 @@ class DueCollectionController extends Controller
             'total_paid' => $totalPaid,
             'remaining_to_pay' => $remainingAmount,
             'paid_dues' => $paidDues,
+            'receipt' => [
+                'transaction_id' => $tx->id,
+                'receipt_no' => $tx->receipt_no,
+                'student_name' => trim(($student->first_name ?? '') . ' ' . ($student->last_name ?? '')),
+                'student_id_no' => $student->id_no ?? '',
+                'payment_date' => now()->format('d M, Y'),
+                'total' => (float) $totalPaid,
+                'payment_method' => $cashBook->title,
+                'items' => array_map(function ($pd) {
+                    return [
+                        'month' => $pd['month_name'],
+                        'year' => '',
+                        'batch' => $pd['batch_name'],
+                        'amount' => (float) $pd['paid_amount'],
+                    ];
+                }, $paidDues),
+            ],
         ]);
     }
 
@@ -640,6 +708,13 @@ class DueCollectionController extends Controller
         };
     }
 
+    protected function generateReceiptNo()
+    {
+        $year = date('Y');
+        $count = EarningTransaction::whereYear('payment_date', $year)->count();
+        return 'REC-' . $year . '-' . str_pad($count + 1, 3, '0', STR_PAD_LEFT);
+    }
+
     public function collectOtherDue(Request $request)
     {
         abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
@@ -658,9 +733,21 @@ class DueCollectionController extends Controller
             return response()->json(['error' => 'No pending amount to collect.'], 400);
         }
 
-        $receiptNo = 'REC-' . date('Y') . '-' . str_pad(Earning::whereYear('earning_date', date('Y'))->count() + 1, 3, '0', STR_PAD_LEFT);
+        $receiptNo = $this->generateReceiptNo();
+
+        $tx = EarningTransaction::create([
+            'receipt_no' => $receiptNo,
+            'student_id' => $otherDue->student_id,
+            'total_amount' => $payAmount,
+            'payment_method' => $otherDue->payment_method ?? 'cash',
+            'cash_book_id' => $cashBook->id,
+            'payment_date' => now(),
+            'total_items' => 1,
+            'created_by_id' => auth()->id(),
+        ]);
 
         $earning = Earning::create([
+            'earning_transaction_id' => $tx->id,
             'earning_category_id' => $otherDue->earning_category_id,
             'student_id' => $otherDue->student_id,
             'batch_id' => $otherDue->batch_id,
@@ -707,6 +794,21 @@ class DueCollectionController extends Controller
             'success' => true,
             'message' => 'Payment collected successfully. Receipt: ' . $receiptNo,
             'earning_id' => $earning->id,
+            'receipt' => [
+                'transaction_id' => $tx->id,
+                'receipt_no' => $tx->receipt_no,
+                'student_name' => $otherDue->student->first_name ?? '',
+                'student_id_no' => $otherDue->student->id_no ?? '',
+                'payment_date' => now()->format('d M, Y'),
+                'total' => (float) $payAmount,
+                'payment_method' => $otherDue->payment_method ?? 'cash',
+                'items' => [[
+                    'month' => now()->format('F'),
+                    'year' => now()->year,
+                    'batch' => $otherDue->batch->batch_name ?? 'N/A',
+                    'amount' => (float) $payAmount,
+                ]],
+            ],
             'other_due' => [
                 'id' => $otherDue->id,
                 'paid_amount' => (float) $newPaid,
@@ -849,6 +951,8 @@ class DueCollectionController extends Controller
                 'received_by' => $earning->recieved_by,
                 'reference' => $earning->earning_reference,
                 'title' => $earning->title,
+                'earning_transaction_id' => $earning->earning_transaction_id,
+                'receipt_no' => $earning->earningTransaction?->receipt_no,
             ];
         })->values();
 
@@ -962,5 +1066,19 @@ class DueCollectionController extends Controller
             'flags' => $flagData,
             'other_dues' => $otherDues,
         ]);
+    }
+
+    public function receipt(EarningTransaction $earningTransaction, $output = 'pdf')
+    {
+        abort_if(Gate::denies('due_collection_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
+
+        $earningTransaction->load(['student', 'earnings.batch', 'createdBy']);
+
+        if ($output === 'html') {
+            return view('admin.dueCollections.receipt-pdf', compact('earningTransaction'));
+        }
+
+        $pdf = Pdf::loadView('admin.dueCollections.receipt-pdf', compact('earningTransaction'));
+        return $pdf->download('receipt-' . $earningTransaction->receipt_no . '.pdf');
     }
 }

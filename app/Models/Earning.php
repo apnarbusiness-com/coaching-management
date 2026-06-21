@@ -29,6 +29,7 @@ class Earning extends Model implements HasMedia
     ];
 
     protected $fillable = [
+        'earning_transaction_id',
         'earning_category_id',
         'student_id',
         'batch_id',
@@ -74,6 +75,11 @@ class Earning extends Model implements HasMedia
     public function student()
     {
         return $this->belongsTo(StudentBasicInfo::class, 'student_id');
+    }
+
+    public function earningTransaction()
+    {
+        return $this->belongsTo(EarningTransaction::class, 'earning_transaction_id');
     }
 
     public function batch()
