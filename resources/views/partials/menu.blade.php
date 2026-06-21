@@ -366,8 +366,8 @@
                     @endcan
                     @can('batch_attendance_view')
                         <li class="c-sidebar-nav-item">
-                            <a href="{{ route('admin.batch-attendances.view') }}"
-                                class="c-sidebar-nav-link {{ request()->is('admin/batch-attendances/view') ? 'c-active' : '' }}">
+                            <a href="{{ route('admin.batch-attendances.view-compact') }}"
+                                class="c-sidebar-nav-link {{ request()->is('admin/batch-attendances/view-compact') ? 'c-active' : '' }}">
                                 <i class="fa-fw fas fa-eye c-sidebar-nav-icon">
 
                                 </i>

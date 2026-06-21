@@ -285,6 +285,8 @@
     .cal-cell.late { background: #f59e0b; color: #fff; }
     .cal-cell.not-marked { background: #fff; border: 1px solid #e2e8f0; color: #94a3b8; }
     .cal-cell.no-class { background: #f1f5f9; border: 1px solid #f1f5f9; color: #cbd5e1; }
+    .cal-cell.cursor-pointer { cursor: pointer; }
+    .cal-cell.cursor-pointer:hover { opacity: 0.8; }
     .legend-bar {
         padding: 12px 16px;
         background: #f8fafc;
@@ -548,9 +550,11 @@
                                     @php
                                         $status = $row['daily'][$day] ?? 'no_class';
                                         $cellClass = $status === 'present' ? 'present' : ($status === 'absent' ? 'absent' : ($status === 'late' ? 'late' : ($status === 'not_marked' ? 'not-marked' : 'no-class')));
+                                        $onclick = $cellClass === 'absent' ? "openDayRemark({$row['student_id']}, {$row['batch_id']}, {$day})" : '';
+                                        $cursorClass = $cellClass === 'absent' ? 'cursor-pointer' : '';
                                     @endphp
                                     <td class="td-center cal-day-cell" style="padding:2px;">
-                                        <div class="cal-cell {{ $cellClass }}">{{ $day }}</div>
+                                        <div class="cal-cell {{ $cellClass }} {{ $cursorClass }}" onclick="{{ $onclick }}">{{ $day }}</div>
                                     </td>
                                 @endfor
                             </tr>
@@ -591,6 +595,24 @@
 
                 <!-- Absence Notes Panel -->
                 <div id="notesPanel" class="px-5 py-4 text-sm hidden"></div>
+            </div>
+        </div>
+
+        <!-- Day Remark Modal -->
+        <div id="dayRemarkModal" class="fixed inset-0 z-50 hidden bg-black/40 flex items-center justify-center" onclick="closeDayRemark(event)">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onclick="event.stopPropagation()">
+                <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white" id="dayRemarkTitle">Absence Note</h3>
+                    <button onclick="closeDayRemark()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 material-symbols-outlined text-lg">close</button>
+                </div>
+                <div class="px-5 py-4">
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-3" id="dayRemarkDate"></p>
+                    <textarea id="dayRemarkTextarea" rows="3" class="w-full px-3 py-2 text-sm border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-400 resize-none" placeholder="Enter reason for absence..." maxlength="500"></textarea>
+                </div>
+                <div class="flex justify-end gap-2 px-5 py-3 border-t border-slate-100 dark:border-slate-700">
+                    <button onclick="closeDayRemark()" class="px-4 py-2 text-sm font-medium text-slate-600 dark:text-slate-400 hover:text-slate-800 dark:hover:text-slate-200">Cancel</button>
+                    <button onclick="saveDayRemark()" class="px-4 py-2 text-sm font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>
+                </div>
             </div>
         </div>
 
@@ -790,6 +812,13 @@ function saveRemark(studentId, batchId, day) {
     .then(r => r.json())
     .then(function(data) {
         if (data.success) {
+            var notes = studentNotesData[studentId] || [];
+            for (var i = 0; i < notes.length; i++) {
+                if (notes[i].batch_id == batchId && notes[i].day == day) {
+                    notes[i].remarks = remarks;
+                    break;
+                }
+            }
             btn.textContent = '✓';
             setTimeout(function() { btn.textContent = 'Save'; btn.disabled = false; }, 1500);
         } else {
@@ -806,6 +835,83 @@ function saveRemark(studentId, batchId, day) {
 function closeParentInfo(e) {
     if (e && e.target !== e.currentTarget) return;
     document.getElementById('parentInfoModal').classList.add('hidden');
+}
+
+var selMonth = {{ $selectedMonth }};
+var selYear = {{ $selectedYear }};
+var dayRemarkState = null;
+
+function openDayRemark(studentId, batchId, day) {
+    dayRemarkState = { studentId: studentId, batchId: batchId, day: day };
+
+    var existingRemark = '';
+    var notes = studentNotesData[studentId] || [];
+    for (var i = 0; i < notes.length; i++) {
+        if (notes[i].batch_id == batchId && notes[i].day == day) {
+            existingRemark = notes[i].remarks || '';
+            break;
+        }
+    }
+
+    var d = parentData[studentId];
+    var name = d ? d.name : 'Student';
+
+    var monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    var month = monthNames[selMonth - 1];
+    var year = selYear;
+
+    document.getElementById('dayRemarkTitle').textContent = 'Note \u2014 ' + name;
+    document.getElementById('dayRemarkDate').textContent = month + ' ' + day + ', ' + year;
+    document.getElementById('dayRemarkTextarea').value = existingRemark;
+    document.getElementById('dayRemarkModal').classList.remove('hidden');
+}
+
+function saveDayRemark() {
+    if (!dayRemarkState) return;
+    var remarks = document.getElementById('dayRemarkTextarea').value.trim();
+    var dateStr = selYear + '-' + String(selMonth).padStart(2, '0') + '-' + String(dayRemarkState.day).padStart(2, '0');
+
+    var btn = document.querySelector('#dayRemarkModal .bg-blue-600');
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    fetch('{{ route('admin.batch-attendances.update-remark') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({
+            batch_id: dayRemarkState.batchId,
+            student_id: dayRemarkState.studentId,
+            date: dateStr,
+            remarks: remarks
+        })
+    })
+    .then(function(r) { return r.json(); })
+    .then(function(data) {
+        if (data.success) {
+            var notes = studentNotesData[dayRemarkState.studentId] || [];
+            for (var i = 0; i < notes.length; i++) {
+                if (notes[i].batch_id == dayRemarkState.batchId && notes[i].day == dayRemarkState.day) {
+                    notes[i].remarks = remarks;
+                    break;
+                }
+            }
+            btn.textContent = '\u2713';
+            setTimeout(function() { closeDayRemark(); }, 800);
+        } else {
+            btn.textContent = '\u2717';
+            btn.disabled = false;
+        }
+    })
+    .catch(function() {
+        btn.textContent = '\u2717';
+        btn.disabled = false;
+    });
+}
+
+function closeDayRemark(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('dayRemarkModal').classList.add('hidden');
+    dayRemarkState = null;
 }
 </script>
 @endsection
