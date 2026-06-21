@@ -207,6 +207,8 @@
                     <th width="10"><input type="checkbox" class="mt-1"></th>
                     <th>Student Name</th>
                     <th>ID No</th>
+                    <th>Contact</th>
+                    <th>Guardian Contact</th>
                     <th>Total Due</th>
                     <th>Total Paid</th>
                     <th>Total Remaining</th>
@@ -264,6 +266,8 @@ $(function() {
             { data: 'placeholder', name: 'placeholder' },
             { data: 'student_name', name: 'student_name' },
             { data: 'student_id_no', name: 'student_id_no' },
+            { data: 'student_contact', name: 'student_contact', searchable: false },
+            { data: 'guardian_contact', name: 'guardian_contact', searchable: false },
             { data: 'total_due', name: 'total_due' },
             { data: 'total_paid', name: 'total_paid' },
             { data: 'total_remaining', name: 'total_remaining' },
@@ -287,11 +291,31 @@ $(function() {
         $.get("{{ route('admin.due-collections.student-summary', ':id') }}".replace(':id', studentId), {
             month: '{{ $month }}',
             year: '{{ $year }}'
-        }, function(response) {
-            $('#drawerStudentName').text(response.student_name + ' (' + response.student_id_no + ')');
-            let html = '';
+          }, function(response) {
+              $('#drawerStudentName').text(response.student_name + ' (' + response.student_id_no + ')');
+              let html = '';
 
-            if (response.dues.length === 0) {
+              // Contact info card
+              let hasStudentContact = response.student_contact && response.student_contact.trim();
+              let hasGuardianContact = response.guardian_contact && response.guardian_contact.trim();
+              if (hasStudentContact || hasGuardianContact) {
+                  html += '<div style="background:#f0fdf4;border:1px solid #bbf7d0;border-radius:10px;padding:12px 16px;margin-bottom:14px;">';
+                  if (hasStudentContact) {
+                      html += '<div style="display:flex;align-items:center;gap:10px;' + (hasGuardianContact ? 'margin-bottom:8px;' : '') + '">' +
+                          '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#dcfce7;border-radius:50%;color:#16a34a;font-size:14px;"><i class="fa fa-phone"></i></span>' +
+                          '<div><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:#16a34a;">Student</p>' +
+                          '<a href="tel:' + response.student_contact + '" style="font-size:14px;font-weight:500;color:#1e293b;text-decoration:none;">' + response.student_contact + '</a></div></div>';
+                  }
+                  if (hasGuardianContact) {
+                      html += '<div style="display:flex;align-items:center;gap:10px;">' +
+                          '<span style="width:32px;height:32px;display:flex;align-items:center;justify-content:center;background:#dcfce7;border-radius:50%;color:#16a34a;font-size:14px;"><i class="fa fa-phone"></i></span>' +
+                          '<div><p style="margin:0;font-size:11px;font-weight:600;text-transform:uppercase;letter-spacing:0.04em;color:#16a34a;">Guardian</p>' +
+                          '<a href="tel:' + response.guardian_contact + '" style="font-size:14px;font-weight:500;color:#1e293b;text-decoration:none;">' + response.guardian_contact + '</a></div></div>';
+                  }
+                  html += '</div>';
+              }
+
+              if (response.dues.length === 0) {
                 html = '<p class="text-muted">No due records found for this period.</p>';
             } else {
                 html += '<table class="table table-bordered table-sm"><thead><tr><th>Batch</th><th>Month</th><th>Due</th><th>Paid</th><th>Remaining</th><th>Status</th></tr></thead><tbody>';

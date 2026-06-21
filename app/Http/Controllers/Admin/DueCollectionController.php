@@ -135,10 +135,13 @@ class DueCollectionController extends Controller
         if ($request->ajax()) {
             $query = StudentMonthlyDue::forMonth($month, $year)
                 ->join('student_basic_infos', 'student_monthly_dues.student_id', '=', 'student_basic_infos.id')
+                ->leftJoin('student_details_informations', 'student_basic_infos.id', '=', 'student_details_informations.student_id')
                 ->selectRaw("
                     student_monthly_dues.student_id,
                     CONCAT_WS(' ', student_basic_infos.first_name, student_basic_infos.last_name) as student_name,
                     student_basic_infos.id_no as student_id_no,
+                    student_basic_infos.contact_number as student_contact,
+                    student_details_informations.guardian_contact_number as guardian_contact,
                     SUM(student_monthly_dues.due_amount) as total_due,
                     SUM(student_monthly_dues.paid_amount) as total_paid,
                     SUM(student_monthly_dues.due_remaining) as total_remaining,
@@ -148,7 +151,7 @@ class DueCollectionController extends Controller
                     SUM(CASE WHEN student_monthly_dues.status = 'partial' THEN 1 ELSE 0 END) as partial_count,
                     SUM(CASE WHEN student_monthly_dues.status = 'unpaid' THEN 1 ELSE 0 END) as unpaid_count
                 ")
-                ->groupBy('student_monthly_dues.student_id', 'student_basic_infos.first_name', 'student_basic_infos.last_name', 'student_basic_infos.id_no');
+                ->groupBy('student_monthly_dues.student_id', 'student_basic_infos.first_name', 'student_basic_infos.last_name', 'student_basic_infos.id_no', 'student_basic_infos.contact_number', 'student_details_informations.guardian_contact_number');
 
             if ($batchId) {
                 $query->where('student_monthly_dues.batch_id', $batchId);
@@ -218,13 +221,15 @@ class DueCollectionController extends Controller
                 ];
             });
 
-        $student = StudentBasicInfo::find($studentId);
+        $student = StudentBasicInfo::with('studentDetails')->find($studentId);
         $studentName = $student ? $student->first_name . ' ' . $student->last_name : 'Unknown';
         $studentIdNo = $student->id_no ?? '';
 
         return response()->json([
             'student_name' => $studentName,
             'student_id_no' => $studentIdNo,
+            'student_contact' => $student->contact_number ?? '',
+            'guardian_contact' => $student->studentDetails->guardian_contact_number ?? '',
             'dues' => $dues,
         ]);
     }
