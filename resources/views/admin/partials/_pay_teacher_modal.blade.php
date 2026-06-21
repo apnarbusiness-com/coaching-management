@@ -48,7 +48,7 @@
                                 @foreach ($cashBooks as $cb)
                                     <label class="cursor-pointer">
                                         <input class="payment-card-input sr-only" type="radio" name="cash_book_id" value="{{ $cb->id }}" {{ $defaultCashBook && $defaultCashBook->id == $cb->id ? 'checked' : ($loop->first ? 'checked' : '') }} required>
-                                        <div class="payment-card flex flex-col items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-center">
+                                        <div class="payment-card flex flex-col items-center justify-center rounded-lg border border-slate-200 dark:border-slate-700 p-2 hover:bg-slate-50 dark:hover:bg-slate-800 text-center text-slate-700 dark:text-slate-200">
                                             @if ($cb->image)
                                                 <img src="{{ Storage::url($cb->image) }}" class="w-6 h-6 mb-1 object-contain">
                                             @elseif ($cb->icon && isset($icons[$cb->icon]))
