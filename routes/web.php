@@ -290,6 +290,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('batch-attendances/calendar', [BatchAttendanceController::class, 'calendar'])->name('batch-attendances.calendar');
     Route::get('batch-attendances/view', [BatchAttendanceController::class, 'view'])->name('batch-attendances.view');
     Route::get('batch-attendances/view-compact', [BatchAttendanceController::class, 'viewCompact'])->name('batch-attendances.view-compact');
+    Route::post('batch-attendances/update-remark', [BatchAttendanceController::class, 'updateRemark'])->name('batch-attendances.update-remark');
     Route::get('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'showAttendanceForm'])->name('batch-attendances.take');
     Route::post('batch-attendances/{batchId}/take', [BatchAttendanceController::class, 'store'])->name('batch-attendances.store');
     Route::get('batch-attendances/{batchId}/report', [BatchAttendanceController::class, 'getReport'])->name('batch-attendances.report');

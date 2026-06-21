@@ -91,6 +91,12 @@ class BatchAttendanceController extends Controller
             ->pluck('status', 'student_id')
             ->toArray();
 
+        $existingRemarks = BatchAttendance::where('batch_id', $batchId)
+            ->where('attendance_date', $date)
+            ->whereNotNull('remarks')
+            ->pluck('remarks', 'student_id')
+            ->toArray();
+
         $currentMonth = Carbon::parse($date)->month;
         $currentYear = Carbon::parse($date)->year;
 
@@ -109,7 +115,7 @@ class BatchAttendanceController extends Controller
             ->groupBy('student_id')
             ->map(fn ($records) => $records->take(10));
 
-        $formattedStudents = $students->map(function ($student) use ($existingAttendances, $studentTotalDues, $studentAttendanceHistory) {
+        $formattedStudents = $students->map(function ($student) use ($existingAttendances, $existingRemarks, $studentTotalDues, $studentAttendanceHistory) {
             $totalDueRemaining = (float) ($studentTotalDues[$student->id] ?? 0);
             $hasDue = $totalDueRemaining > 0;
 
@@ -129,6 +135,7 @@ class BatchAttendanceController extends Controller
                 'has_due' => $hasDue,
                 'due_amount' => $totalDueRemaining,
                 'attendance_history' => $attendanceHistory,
+                'remarks' => $existingRemarks[$student->id] ?? '',
             ];
         });
 
@@ -625,11 +632,55 @@ class BatchAttendanceController extends Controller
 
         $monthLabel = Carbon::createFromDate($selectedYear, $selectedMonth, 1)->format('F Y');
 
+        // Build absence notes per student
+        $studentNotes = [];
+        foreach ($groupedRows as $sid => $sRows) {
+            $notes = [];
+            foreach ($sRows as $row) {
+                foreach ($row['daily'] as $day => $status) {
+                    if (in_array($status, ['absent', 'late'])) {
+                        $notes[] = [
+                            'day' => $day,
+                            'batch_name' => $row['batch_name'],
+                            'batch_id' => $row['batch_id'],
+                            'status' => $status,
+                            'remarks' => $row['daily_remarks'][$day] ?? null,
+                        ];
+                    }
+                }
+            }
+            usort($notes, fn ($a, $b) => $a['day'] - $b['day']);
+            $studentNotes[$sid] = $notes;
+        }
+
         return view('admin.batchAttendances.view-compact', compact(
             'groupedRows', 'batches', 'selectedMonth', 'selectedYear', 'selectedBatchId',
             'monthLabel', 'studentsPaginator', 'totalStudents', 'totalPresent', 'totalAbsent', 'totalLate',
-            'avgRate', 'criticalDrop', 'topBatch'
+            'avgRate', 'criticalDrop', 'topBatch', 'studentNotes'
         ));
+    }
+
+    public function updateRemark(Request $request)
+    {
+        $request->validate([
+            'batch_id' => 'required|exists:batches,id',
+            'student_id' => 'required|exists:student_basic_infos,id',
+            'date' => 'required|date',
+            'remarks' => 'nullable|string|max:500',
+        ]);
+
+        $attendance = BatchAttendance::where('batch_id', $request->batch_id)
+            ->where('student_id', $request->student_id)
+            ->where('attendance_date', $request->date)
+            ->first();
+
+        if (!$attendance) {
+            return response()->json(['success' => false, 'message' => 'Attendance record not found.'], 404);
+        }
+
+        $attendance->update(['remarks' => $request->remarks]);
+
+        return response()->json(['success' => true, 'message' => 'Remark saved.']);
     }
 
     private function buildViewRow($student, $batch, $attendances, $month, $year)
@@ -645,6 +696,7 @@ class BatchAttendanceController extends Controller
         $late = 0;
         $totalClassDays = 0;
         $daily = [];
+        $dailyRemarks = [];
 
         for ($day = 1; $day <= $daysInMonth; $day++) {
             $date = Carbon::createFromDate($year, $month, $day);
@@ -654,12 +706,14 @@ class BatchAttendanceController extends Controller
             if (isset($attendancesByDay[$day])) {
                 $status = $attendancesByDay[$day]->status;
                 $daily[$day] = $status;
+                $dailyRemarks[$day] = $attendancesByDay[$day]->remarks;
                 if ($status === 'present') $present++;
                 elseif ($status === 'absent') $absent++;
                 elseif ($status === 'late') $late++;
                 $totalClassDays++;
             } else {
                 $daily[$day] = $hasClass ? 'not_marked' : 'no_class';
+                $dailyRemarks[$day] = null;
                 if ($hasClass) $totalClassDays++;
             }
         }
@@ -682,6 +736,7 @@ class BatchAttendanceController extends Controller
             'late' => $late,
             'att_rate' => $attRate,
             'daily' => $daily,
+            'daily_remarks' => $dailyRemarks,
             'fathers_name' => $details->fathers_name ?? '',
             'mothers_name' => $details->mothers_name ?? '',
             'guardian_name' => $details->guardian_name ?? '',

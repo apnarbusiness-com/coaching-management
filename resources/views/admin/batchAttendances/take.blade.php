@@ -108,6 +108,56 @@
         display: grid;
         gap: 10px;
     }
+    .hidden {
+        display: none !important;
+    }
+    .btn-note {
+        background: none;
+        border: 1px dashed #cbd5e1;
+        border-radius: 8px;
+        padding: 6px 8px;
+        cursor: pointer;
+        color: #94a3b8;
+        font-size: 13px;
+        transition: all 0.2s;
+        line-height: 1;
+    }
+    .btn-note:hover {
+        border-color: #6366f1;
+        color: #6366f1;
+        background: #eef2ff;
+    }
+    .btn-note.has-note {
+        border-color: #6366f1;
+        color: #6366f1;
+        background: #eef2ff;
+        border-style: solid;
+    }
+    .remark-modal-overlay {
+        position: fixed;
+        inset: 0;
+        z-index: 9999;
+        background: rgba(0,0,0,0.4);
+        display: flex;
+        align-items: center;
+        justify-content: center;
+        opacity: 0;
+        visibility: hidden;
+        transition: all 0.2s;
+    }
+    .remark-modal-overlay.show {
+        opacity: 1;
+        visibility: visible;
+    }
+    .remark-modal {
+        background: #fff;
+        border-radius: 16px;
+        width: 100%;
+        max-width: 400px;
+        margin: 16px;
+        box-shadow: 0 20px 48px rgba(0,0,0,0.2);
+        overflow: hidden;
+    }
     .student-card {
         display: grid;
         grid-template-columns: auto 1fr auto;
@@ -439,9 +489,17 @@
                         <i class="fa fa-clock"></i>
                         L
                     </button>
+                    <button type="button" class="btn-note {{ $student['status'] === 'absent' ? '' : 'hidden' }} {{ $student['remarks'] ? 'has-note' : '' }}"
+                            onclick="openNoteModal({{ $student['id'] }})"
+                            id="note-btn-{{ $student['id'] }}"
+                            title="Add reason for absence">
+                        <i class="fa fa-sticky-note"></i>
+                    </button>
                 </div>
                 <input type="hidden" name="attendance[{{ $student['id'] }}]" id="status-{{ $student['id'] }}"
                        value="{{ $student['status'] ?? '' }}">
+                <input type="hidden" name="remarks[{{ $student['id'] }}]" id="remarks-{{ $student['id'] }}"
+                       value="{{ $student['remarks'] ?? '' }}">
             </div>
             @empty
             <div class="text-center py-5">
@@ -505,6 +563,24 @@
         </div>
     </div>
 </div>
+<div class="remark-modal-overlay" id="remark-modal-overlay" onclick="closeNoteModal(event)">
+    <div class="remark-modal" onclick="event.stopPropagation()">
+        <div style="padding:20px 24px;border-bottom:1px solid #e2e8f0;">
+            <div style="display:flex;justify-content:space-between;align-items:center;">
+                <h4 style="margin:0;font-size:15px;font-weight:600;" id="remark-modal-title">Add Note</h4>
+                <button type="button" onclick="closeNoteModal()" style="background:none;border:none;font-size:20px;cursor:pointer;color:#94a3b8;padding:0;">&times;</button>
+            </div>
+        </div>
+        <div style="padding:20px 24px;">
+            <label style="display:block;margin-bottom:8px;font-size:13px;font-weight:500;color:#475569;">Absence reason</label>
+            <textarea id="remark-textarea" rows="3" style="width:100%;border:1px solid #cbd5e1;border-radius:8px;padding:10px 12px;font-size:14px;resize:vertical;font-family:inherit;box-sizing:border-box;" placeholder="Enter reason for absence..."></textarea>
+        </div>
+        <div style="padding:12px 24px;border-top:1px solid #e2e8f0;display:flex;justify-content:flex-end;gap:8px;">
+            <button type="button" onclick="closeNoteModal()" style="padding:8px 16px;border-radius:8px;border:1px solid #cbd5e1;background:#fff;color:#475569;font-size:13px;cursor:pointer;">Cancel</button>
+            <button type="button" onclick="saveNote()" style="padding:8px 16px;border-radius:8px;border:none;background:#6366f1;color:#fff;font-size:13px;cursor:pointer;">Save</button>
+        </div>
+    </div>
+</div>
 @endsection
 
 @section('scripts')
@@ -521,28 +597,49 @@ function setStatus(studentId, status) {
     input.value = status;
     const activeBtn = card.querySelector(`.btn-attend.${status}`);
     if (activeBtn) activeBtn.classList.add('active');
+
+    const noteBtn = document.getElementById(`note-btn-${studentId}`);
+    if (noteBtn) {
+        if (status === 'absent') {
+            noteBtn.classList.remove('hidden');
+        } else {
+            noteBtn.classList.add('hidden');
+        }
+    }
     
     updateStats();
 }
 
 function markAll(status) {
     document.querySelectorAll('input[name^="attendance"]').forEach(input => {
+        const studentId = input.name.match(/\d+/)?.[0];
         input.value = status;
         const card = input.closest('.student-card');
         if (!card) return;
         card.querySelectorAll('.btn-attend').forEach(btn => btn.classList.remove('active'));
         const activeBtn = card.querySelector(`.btn-attend.${status}`);
         if (activeBtn) activeBtn.classList.add('active');
+        const noteBtn = document.getElementById(`note-btn-${studentId}`);
+        if (noteBtn) {
+            if (status === 'absent') {
+                noteBtn.classList.remove('hidden');
+            } else {
+                noteBtn.classList.add('hidden');
+            }
+        }
     });
     updateStats();
 }
 
 function clearAll() {
     document.querySelectorAll('input[name^="attendance"]').forEach(input => {
+        const studentId = input.name.match(/\d+/)?.[0];
         input.value = '';
         const card = input.closest('.student-card');
         if (!card) return;
         card.querySelectorAll('.btn-attend').forEach(btn => btn.classList.remove('active'));
+        const noteBtn = document.getElementById(`note-btn-${studentId}`);
+        if (noteBtn) noteBtn.classList.add('hidden');
     });
     updateStats();
 }
@@ -567,6 +664,37 @@ function updateStats() {
 function changeDate(date) {
     const batchId = {{ $batch->id }};
     window.location.href = `/admin/batch-attendances/${batchId}/take?date=${date}`;
+}
+
+let currentNoteStudentId = null;
+
+function openNoteModal(studentId) {
+    currentNoteStudentId = studentId;
+    const card = document.querySelector(`[data-student-id="${studentId}"]`);
+    const name = card ? card.querySelector('.student-name')?.textContent?.trim() || 'Student' : 'Student';
+    document.getElementById('remark-modal-title').textContent = `Note — ${name}`;
+    const existing = document.getElementById(`remarks-${studentId}`)?.value || '';
+    document.getElementById('remark-textarea').value = existing;
+    document.getElementById('remark-modal-overlay').classList.add('show');
+}
+
+function saveNote() {
+    if (!currentNoteStudentId) return;
+    const value = document.getElementById('remark-textarea').value.trim();
+    document.getElementById(`remarks-${currentNoteStudentId}`).value = value;
+    const btn = document.getElementById(`note-btn-${currentNoteStudentId}`);
+    if (value) {
+        btn.classList.add('has-note');
+    } else {
+        btn.classList.remove('has-note');
+    }
+    closeNoteModal();
+}
+
+function closeNoteModal(e) {
+    if (e && e.target !== e.currentTarget) return;
+    document.getElementById('remark-modal-overlay').classList.remove('show');
+    currentNoteStudentId = null;
 }
 
 document.getElementById('attendance-form').addEventListener('submit', function(e) {

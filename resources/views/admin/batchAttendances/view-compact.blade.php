@@ -139,11 +139,11 @@
         background: #ffffff;
         border: 1px solid #e2e8f0;
         border-radius: 16px;
-        overflow: hidden;
         box-shadow: 0 8px 20px rgba(15,23,42,0.06);
     }
     .table-scroll {
-        overflow-x: auto;
+        overflow: auto;
+        max-height: calc(100vh - 280px);
         -webkit-overflow-scrolling: touch;
     }
     .table-scroll::-webkit-scrollbar { height: 6px; }
@@ -156,6 +156,9 @@
         font-size: 13px;
     }
     .att-table th {
+        position: sticky;
+        top: 0;
+        z-index: 2;
         background: #f8fafc;
         padding: 10px 12px;
         font-size: 11px;
@@ -170,20 +173,23 @@
     .att-table th.sticky-left {
         position: sticky;
         left: 0;
+        top: 0;
         background: #f8fafc;
-        z-index: 2;
+        z-index: 4;
     }
     .att-table th.sticky-left-2 {
         position: sticky;
         left: 60px;
+        top: 0;
         background: #f8fafc;
-        z-index: 2;
+        z-index: 4;
     }
     .att-table th.sticky-left-3 {
         position: sticky;
         left: 200px;
+        top: 0;
         background: #f8fafc;
-        z-index: 2;
+        z-index: 4;
     }
     .att-table th.text-center { text-align: center; }
     .att-table th.cal-header {
@@ -565,12 +571,26 @@
 
         <!-- Parent Info Modal -->
         <div id="parentInfoModal" class="fixed inset-0 z-50 hidden bg-black/40 flex items-center justify-center" onclick="closeParentInfo(event)">
-            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-sm mx-4 overflow-hidden" onclick="event.stopPropagation()">
+            <div class="bg-white dark:bg-slate-800 rounded-2xl shadow-2xl w-full max-w-md mx-4 overflow-hidden" onclick="event.stopPropagation()">
                 <div class="flex items-center justify-between px-5 py-4 border-b border-slate-100 dark:border-slate-700">
-                    <h3 class="text-base font-bold text-slate-900 dark:text-white">Parent / Guardian Info</h3>
+                    <h3 class="text-base font-bold text-slate-900 dark:text-white">
+                        <span class="material-symbols-outlined align-middle text-lg mr-1">info</span>
+                        Student Info
+                    </h3>
                     <button onclick="closeParentInfo()" class="text-slate-400 hover:text-slate-600 dark:hover:text-slate-200 material-symbols-outlined text-lg">close</button>
                 </div>
-                <div class="px-5 py-4 space-y-3 text-sm" id="parentInfoBody"></div>
+
+                <!-- Tab Buttons -->
+                <div class="flex border-b border-slate-100 dark:border-slate-700">
+                    <button id="tabParent" class="tab-btn active flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider text-center border-b-2 border-blue-500 text-blue-600 dark:text-blue-400 bg-blue-50/50 dark:bg-blue-900/10" onclick="switchTab('parent')">Parents</button>
+                    <button id="tabNotes" class="tab-btn flex-1 py-2.5 text-xs font-semibold uppercase tracking-wider text-center text-slate-400 hover:text-slate-600 dark:hover:text-slate-300" onclick="switchTab('notes')">Absence Notes</button>
+                </div>
+
+                <!-- Parent Info Panel -->
+                <div id="parentPanel" class="px-5 py-4 space-y-3 text-sm"></div>
+
+                <!-- Absence Notes Panel -->
+                <div id="notesPanel" class="px-5 py-4 text-sm hidden"></div>
             </div>
         </div>
 
@@ -635,6 +655,7 @@ function toggleCalendar() {
     foreach ($groupedRows as $sid => $sRows) {
         $f = $sRows->first();
         $parentData[$sid] = [
+            'name' => $f['student_name'],
             'father' => $f['fathers_name'],
             'mother' => $f['mothers_name'],
             'guardian' => $f['guardian_name'],
@@ -645,19 +666,46 @@ function toggleCalendar() {
     }
 @endphp
 var parentData = {!! json_encode($parentData) !!};
+var studentNotesData = {!! json_encode($studentNotes) !!};
+
+function switchTab(tab) {
+    document.querySelectorAll('.tab-btn').forEach(b => {
+        b.classList.remove('active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'bg-blue-50/50', 'dark:bg-blue-900/10');
+        b.classList.add('text-slate-400');
+    });
+    document.getElementById('parentPanel').classList.add('hidden');
+    document.getElementById('notesPanel').classList.add('hidden');
+
+    if (tab === 'parent') {
+        const btn = document.getElementById('tabParent');
+        btn.classList.add('active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'bg-blue-50/50', 'dark:bg-blue-900/10');
+        btn.classList.remove('text-slate-400');
+        document.getElementById('parentPanel').classList.remove('hidden');
+    } else {
+        const btn = document.getElementById('tabNotes');
+        btn.classList.add('active', 'border-blue-500', 'text-blue-600', 'dark:text-blue-400', 'bg-blue-50/50', 'dark:bg-blue-900/10');
+        btn.classList.remove('text-slate-400');
+        document.getElementById('notesPanel').classList.remove('hidden');
+    }
+}
 
 function showParentInfo(studentId) {
     const d = parentData[studentId];
     if (!d) return;
-    const body = document.getElementById('parentInfoBody');
-    if (!body) return;
+
+    // Title
+    document.querySelector('#parentInfoModal h3').innerHTML =
+        '<span class="material-symbols-outlined align-middle text-lg mr-1">info</span> ' + d.name;
+
+    // Parent panel
+    const parentPanel = document.getElementById('parentPanel');
     const f = d.father || '—';
     const m = d.mother || '—';
     const g = d.guardian || '—';
     const r = d.relation || '—';
     const sc = d.student_contact || '—';
     const gc = d.guardian_contact || '—';
-    body.innerHTML =
+    parentPanel.innerHTML =
         '<div class="flex items-center gap-3 py-2">' +
             '<span class="material-symbols-outlined text-slate-400">man</span>' +
             '<div><p class="font-semibold text-slate-900 dark:text-white">Father</p><p class="text-slate-500 dark:text-slate-400">' + f + '</p></div>' +
@@ -680,7 +728,79 @@ function showParentInfo(studentId) {
                 '<div><p class="font-semibold text-slate-900 dark:text-white text-xs uppercase tracking-wide">Guardian Contact</p><p class="text-slate-500 dark:text-slate-400">' + gc + '</p></div>' +
             '</div>' +
         '</div>';
+
+    // Notes panel
+    loadNotes(studentId);
+
+    // Show modal, default to parent tab
+    switchTab('parent');
     document.getElementById('parentInfoModal').classList.remove('hidden');
+}
+
+function loadNotes(studentId) {
+    const panel = document.getElementById('notesPanel');
+    const notes = studentNotesData[studentId] || [];
+    if (notes.length === 0) {
+        panel.innerHTML = '<p class="text-slate-400 text-center py-6">No absences to note for this month.</p>';
+        return;
+    }
+    const monthNames = ['Jan', 'Feb', 'Mar', 'Apr', 'May', 'Jun', 'Jul', 'Aug', 'Sep', 'Oct', 'Nov', 'Dec'];
+    const month = monthNames[{{ $selectedMonth - 1 }}];
+    const year = {{ $selectedYear }};
+    let html = '<div class="space-y-2">';
+    notes.forEach(function(n) {
+        const statusLabel = n.status.charAt(0).toUpperCase() + n.status.slice(1);
+        const statusBadge = n.status === 'absent'
+            ? '<span class="inline-block w-2 h-2 rounded-full bg-red-500 mr-1"></span>'
+            : '<span class="inline-block w-2 h-2 rounded-full bg-amber-500 mr-1"></span>';
+        html +=
+            '<div class="rounded-lg border border-slate-200 dark:border-slate-700 p-3">' +
+                '<div class="flex items-center justify-between mb-2">' +
+                    '<div>' +
+                        '<span class="font-semibold text-slate-900 dark:text-white text-xs">' + month + ' ' + n.day + ', ' + year + '</span>' +
+                        '<span class="text-slate-400 text-xs ml-2">' + n.batch_name + '</span>' +
+                    '</div>' +
+                    '<span class="text-xs font-medium">' + statusBadge + statusLabel + '</span>' +
+                '</div>' +
+                '<div class="flex gap-2">' +
+                    '<input type="text" id="remark-' + n.batch_id + '-' + n.day + '" value="' + (n.remarks || '') + '" placeholder="Reason for absence..." class="flex-1 px-2 py-1.5 text-xs border border-slate-200 dark:border-slate-600 rounded-lg bg-white dark:bg-slate-700 text-slate-900 dark:text-white focus:outline-none focus:border-blue-400" maxlength="500" />' +
+                    '<button onclick="saveRemark(' + studentId + ', ' + n.batch_id + ', ' + n.day + ')" class="px-3 py-1.5 text-xs font-semibold text-white bg-blue-600 hover:bg-blue-700 rounded-lg transition-colors">Save</button>' +
+                '</div>' +
+            '</div>';
+    });
+    html += '</div>';
+    panel.innerHTML = html;
+}
+
+function saveRemark(studentId, batchId, day) {
+    const input = document.getElementById('remark-' + batchId + '-' + day);
+    if (!input) return;
+    const remarks = input.value.trim();
+    const btn = input.nextElementSibling;
+    btn.disabled = true;
+    btn.textContent = '...';
+
+    const dateStr = '{{ $selectedYear }}-' + String({{ $selectedMonth }}).padStart(2, '0') + '-' + String(day).padStart(2, '0');
+
+    fetch('{{ route('admin.batch-attendances.update-remark') }}', {
+        method: 'POST',
+        headers: { 'Content-Type': 'application/json', 'X-CSRF-TOKEN': '{{ csrf_token() }}' },
+        body: JSON.stringify({ batch_id: batchId, student_id: studentId, date: dateStr, remarks: remarks })
+    })
+    .then(r => r.json())
+    .then(function(data) {
+        if (data.success) {
+            btn.textContent = '✓';
+            setTimeout(function() { btn.textContent = 'Save'; btn.disabled = false; }, 1500);
+        } else {
+            btn.textContent = '✗';
+            btn.disabled = false;
+        }
+    })
+    .catch(function() {
+        btn.textContent = '✗';
+        btn.disabled = false;
+    });
 }
 
 function closeParentInfo(e) {
