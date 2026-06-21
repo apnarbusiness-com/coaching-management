@@ -1598,6 +1598,10 @@ $(document).on('click', '.search-result-item', function() {
         let currentDues = [];
 
         function openPayAllModal() {
+            currentDues.sort(function(a, b) {
+                if (a.year !== b.year) return a.year - b.year;
+                return a.month - b.month;
+            });
             const totalRemaining = parseFloat($('#totalRemaining').text().replace(/,/g, '')) || 0;
 
             $('#payAllTotalDue').text(totalRemaining.toFixed(2));

@@ -796,7 +796,11 @@ class DueCollectionController extends Controller
         if ($year !== 'all') {
             $query->where('year', $year);
         }
-        $dues = $query->with('batch')->orderBy('year', 'desc')->orderBy('month', 'desc')->get();
+        $dues = $query->with('batch')
+            ->orderByRaw("CASE WHEN status IN ('unpaid', 'partial') AND NOT (due_amount = 0 AND paid_amount = 0) THEN 0 ELSE 1 END")
+            ->orderBy('year', 'desc')
+            ->orderBy('month', 'desc')
+            ->get();
 
         $dueSummary = [
             'total_due' => (float) $dues->sum('due_amount'),
