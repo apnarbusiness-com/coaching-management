@@ -55,6 +55,11 @@ class TeacherPaymentTransaction extends Model
         return $this->belongsTo(User::class, 'created_by_id');
     }
 
+    public function expense()
+    {
+        return $this->hasOne(Expense::class, 'teacher_payment_transaction_id');
+    }
+
     public function receivedBy()
     {
         return $this->belongsTo(User::class, 'received_by');

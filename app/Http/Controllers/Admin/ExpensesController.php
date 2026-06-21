@@ -44,7 +44,7 @@ class ExpensesController extends Controller
         abort_if(Gate::denies('expense_access'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         if ($request->ajax()) {
-            $query = Expense::with(['expense_category', 'created_by', 'updated_by', 'teacher'])
+            $query = Expense::with(['expense_category', 'created_by', 'updated_by', 'teacher', 'teachersPayment.batch'])
                 ->select(sprintf('%s.*', (new Expense)->table));
 
             $categoryId = $request->input('category_id');
@@ -86,6 +86,12 @@ class ExpensesController extends Controller
             $table->editColumn('expense_date', fn($row) => $row->expense_date ?? '');
             $table->editColumn('paid_by', fn($row) => $row->paid_by ?? '');
             $table->addColumn('teacher_name', fn($row) => $row->teacher->name ?? '');
+            $table->addColumn('payment_source', function ($row) {
+                if (!$row->teachersPayment) return '—';
+                $batch = $row->teachersPayment->batch->batch_name ?? 'N/A';
+                $month = \Carbon\Carbon::createFromDate(null, $row->teachersPayment->month, 1)->format('F');
+                return $batch . ' (' . $month . ' ' . $row->teachersPayment->year . ')';
+            });
 
             $table->rawColumns(['actions', 'placeholder']);
             $table->setRowAttr([
@@ -232,6 +238,11 @@ class ExpensesController extends Controller
     {
         abort_if(Gate::denies('expense_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
+        if ($expense->teachers_payment_id) {
+            return redirect()->route('admin.expenses.index')
+                ->with('error', 'This expense was created from a teacher payment and cannot be edited directly.');
+        }
+
         $expense_categories = ExpenseCategory::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
         $expense_category_flags = ExpenseCategory::pluck('is_teacher_connected', 'id');
 
@@ -251,6 +262,8 @@ class ExpensesController extends Controller
 
     public function update(UpdateExpenseRequest $request, Expense $expense)
     {
+        abort_if($expense->teachers_payment_id, Response::HTTP_FORBIDDEN, 'This expense is linked to a teacher payment and cannot be edited.');
+
         $data = $request->all();
         $data['updated_by_id'] = auth()->id();
 
@@ -340,7 +353,19 @@ class ExpensesController extends Controller
     {
         abort_if(Gate::denies('expense_delete'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $expense->delete();
+        if ($expense->teachers_payment_id) {
+            $payment = $expense->teachersPayment;
+            $expense->update([
+                'teachers_payment_id' => null,
+                'teacher_payment_transaction_id' => null,
+            ]);
+            $expense->delete();
+            if ($payment) {
+                $payment->updatePaymentStatus();
+            }
+        } else {
+            $expense->delete();
+        }
 
         return back();
     }
@@ -350,7 +375,19 @@ class ExpensesController extends Controller
         $expenses = Expense::find(request('ids'));
 
         foreach ($expenses as $expense) {
-            $expense->delete();
+            if ($expense->teachers_payment_id) {
+                $payment = $expense->teachersPayment;
+                $expense->update([
+                    'teachers_payment_id' => null,
+                    'teacher_payment_transaction_id' => null,
+                ]);
+                $expense->delete();
+                if ($payment) {
+                    $payment->updatePaymentStatus();
+                }
+            } else {
+                $expense->delete();
+            }
         }
 
         return response(null, Response::HTTP_NO_CONTENT);

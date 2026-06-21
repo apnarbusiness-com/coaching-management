@@ -60,6 +60,11 @@ class TeachersPayment extends Model
         return $this->hasMany(TeacherPaymentTransaction::class, 'teachers_payment_id');
     }
 
+    public function expenses()
+    {
+        return $this->hasMany(Expense::class, 'teachers_payment_id');
+    }
+
     public function getCalculatedAmountAttribute()
     {
         if ($this->amount !== null) {

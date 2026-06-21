@@ -345,6 +345,8 @@ class TeachersPaymentController extends Controller
             'paid_by' => $request->received_by ?? auth()->user()->name,
             'teacher_id' => $teachersPayment->teacher_id,
             'batch_id' => $teachersPayment->batch_id,
+            'teachers_payment_id' => $teachersPayment->id,
+            'teacher_payment_transaction_id' => $transaction->id,
             'created_by_id' => auth()->id(),
         ]);
 
@@ -359,20 +361,9 @@ class TeachersPaymentController extends Controller
             abort(403, 'Transaction does not belong to this payment.');
         }
 
-        $amountDeleted = $transaction->amount;
-        $transactionDate = $transaction->payment_date;
-        $month = $teachersPayment->month;
-        $year = $teachersPayment->year;
-        $teacherId = $teachersPayment->teacher_id;
-
         $transaction->delete();
 
-        Expense::where('teacher_id', $teacherId)
-            ->where('batch_id', $teachersPayment->batch_id)
-            ->where('expense_month', $month)
-            ->where('expense_year', $year)
-            ->where('amount', $amountDeleted)
-            ->delete();
+        Expense::where('teacher_payment_transaction_id', $transaction->id)->delete();
 
         $teachersPayment->updatePaymentStatus();
 

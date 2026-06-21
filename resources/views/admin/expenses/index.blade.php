@@ -169,6 +169,9 @@
                             {{ trans('cruds.expense.fields.teacher') }}
                         </th>
                         <th>
+                            Source
+                        </th>
+                        <th>
                             &nbsp;
                         </th>
                     </tr>
@@ -280,6 +283,7 @@
       { data: 'expense_date', name: 'expense_date', render: function(data) { return data ? moment(data).format('DD-MMM-YYYY h:mm A') : ''; } },
       { data: 'paid_by', name: 'paid_by' },
       { data: 'teacher_name', name: 'teacher.name' },
+      { data: 'payment_source', name: 'teachersPayment.batch.batch_name', searchable: false },
       { data: 'actions', name: 'actions', searchable: false, sortable: false }
     ]
   })

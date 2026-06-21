@@ -44,6 +44,8 @@ class Expense extends Model implements HasMedia
         'updated_by_id',
         'teacher_id',
         'batch_id',
+        'teachers_payment_id',
+        'teacher_payment_transaction_id',
         'cash_book_id',
         'created_at',
         'updated_at',
@@ -115,6 +117,16 @@ class Expense extends Model implements HasMedia
     public function teacher()
     {
         return $this->belongsTo(Teacher::class, 'teacher_id');
+    }
+
+    public function teachersPayment()
+    {
+        return $this->belongsTo(TeachersPayment::class, 'teachers_payment_id');
+    }
+
+    public function teacherPaymentTransaction()
+    {
+        return $this->belongsTo(TeacherPaymentTransaction::class, 'teacher_payment_transaction_id');
     }
 
     public function cashBook()
