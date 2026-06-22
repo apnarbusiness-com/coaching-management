@@ -354,6 +354,8 @@ class DueCollectionController extends Controller
             ]);
         }
 
+        $cashBook = CashBook::findOrFail($request->input('cash_book_id'));
+
         $receiptNumber = $this->generateReceiptNo();
 
         $tx = EarningTransaction::create([
@@ -373,8 +375,6 @@ class DueCollectionController extends Controller
         $title = $isPartial ? "Due Payment (partial) - $batchName - $monthName" : "Due Payment - $batchName - $monthName";
 
         $details = "Batch: $batchName | Due Amount: " . number_format($due->due_amount, 2) . " | Month: $monthName | Paid: " . number_format($amount, 2) . " | Remaining: " . number_format($due->due_remaining, 2);
-
-        $cashBook = CashBook::findOrFail($request->input('cash_book_id'));
 
         $studentName = $due->student->first_name . ' ' . $due->student->last_name . ' (' . ($due->student->id_no ?? 'N/A') . ')';
         $paymentStatus = $due->due_remaining > 0 ? 'Partial' : 'Full';

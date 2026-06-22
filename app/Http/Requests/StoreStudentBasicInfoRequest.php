@@ -42,6 +42,7 @@ class StoreStudentBasicInfoRequest extends FormRequest
             'contact_number' => [
                 'string',
                 'required',
+                'unique:student_basic_infos,contact_number',
             ],
             'email' => [
                 'string',
@@ -81,11 +82,19 @@ class StoreStudentBasicInfoRequest extends FormRequest
                 'email',
                 'nullable',
             ],
-            'address' => [
+            'fathers_name' => [
+                'string',
+                'nullable',
+            ],
+            'mothers_name' => [
                 'string',
                 'nullable',
             ],
             'student_blood_group' => [
+                'string',
+                'nullable',
+            ],
+            'address' => [
                 'string',
                 'nullable',
             ],

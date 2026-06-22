@@ -15,10 +15,17 @@
     </div>
 @endif
 
-{{-- @if (session('error'))
+@if (session('error'))
     <div class="row mb-2">
         <div class="col-lg-12">
             <div class="alert alert-danger" role="alert">{{ session('error') }}</div>
+        </div>
+    </div>
+@endif
+@if (session('success'))
+    <div class="row mb-2">
+        <div class="col-lg-12">
+            <div class="alert alert-success" role="alert">{{ session('success') }}</div>
         </div>
     </div>
 @endif
@@ -36,4 +43,4 @@
             <div class="alert alert-info" role="alert">{{ session('info') }}</div>
         </div>
     </div>
-@endif --}}
+@endif

@@ -215,93 +215,74 @@ class StudentBasicInfoController extends Controller
 
     public function store(StoreStudentBasicInfoRequest $request)
     {
-        // if ($request->need_login) {
-        //     return "need login";
-        // }
-        // return $request->all();
-        // $studentBasicInfo = StudentBasicInfo::create($request->all());
+        try {
+            $studentBasicInfo = new StudentBasicInfo();
+            $studentBasicInfo->roll = $request->roll ? $request->roll : (generateAdmissionID() ?? 000);
+            $studentBasicInfo->id_no = generateAdmissionID() ?? 000;
+            $studentBasicInfo->first_name = $request->first_name;
+            $studentBasicInfo->last_name = $request->filled('last_name') ? $request->last_name : null;
+            $studentBasicInfo->gender = $request->gender;
+            $studentBasicInfo->dob = $request->dob;
+            $studentBasicInfo->contact_number = $request->contact_number;
+            $studentBasicInfo->email = $request->email;
 
-        $student = StudentBasicInfo::where('contact_number', $request->contact_number)->first();
-        if (isset($student)) {
-            return redirect()->back()->with('error', 'Contact Number already exists.');
-        }
+            $studentBasicInfo->class_id = $request->class_id;
+            $studentBasicInfo->section_id = $request->section_id;
+            $studentBasicInfo->shift_id = $request->shift_id;
+            $studentBasicInfo->academic_background_id = $request->academic_background_id;
 
+            $studentBasicInfo->joining_date = $request->joining_date;
+            $studentBasicInfo->status = $request->status ? $request->status : 1;
 
-        $studentBasicInfo = new StudentBasicInfo();
-        $studentBasicInfo->roll = $request->roll ? $request->roll : (generateAdmissionID() ?? 000);
-        $studentBasicInfo->id_no = generateAdmissionID() ?? 000;
-        $studentBasicInfo->first_name = $request->first_name;
-        $studentBasicInfo->last_name = $request->filled('last_name') ? $request->last_name : null;
-        $studentBasicInfo->gender = $request->gender;
-        $studentBasicInfo->dob = $request->dob;
-        $studentBasicInfo->contact_number = $request->contact_number;
-        $studentBasicInfo->email = $request->email;
-
-        $studentBasicInfo->class_id = $request->class_id;
-        $studentBasicInfo->section_id = $request->section_id;
-        $studentBasicInfo->shift_id = $request->shift_id;
-        $studentBasicInfo->academic_background_id = $request->academic_background_id;
-
-        $studentBasicInfo->joining_date = $request->joining_date;
-        $studentBasicInfo->status = $request->status ? $request->status : 1;
-
-        $studentBasicInfo->save();
-
-
-
-        if (!isset($studentBasicInfo)) {
-            return redirect()->back()->with('error', 'Student Basic Info not created. Please try again.');
-        }
-
-        if ($request->need_login) {
-
-            // $user = $studentBasicInfo->user ?? null;
-            // $user = null;
-            // if (!isset($user)) {
-            $user = User::create([
-                'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
-                'email' => $request->email,
-                'user_name' => $request->user_name ?? null,
-                'admission_id' => $studentBasicInfo->id_no ?? null,
-                'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($studentBasicInfo->id_no),
-            ]);
-
-            $user->roles()->sync(\App\Models\Role::whereIn('title', ['Student', 'student'])->first()->id ?? []);
-
-
-            // }
-            $studentBasicInfo->user_id = $user->id;
             $studentBasicInfo->save();
+
+            if ($request->need_login) {
+                $user = User::create([
+                    'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
+                    'email' => $request->email,
+                    'user_name' => $request->user_name ?? null,
+                    'admission_id' => $studentBasicInfo->id_no ?? null,
+                    'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($studentBasicInfo->id_no),
+                ]);
+
+                $user->roles()->sync(\App\Models\Role::whereIn('title', ['Student', 'student'])->first()->id ?? []);
+
+                $studentBasicInfo->user_id = $user->id;
+                $studentBasicInfo->save();
+            }
+
+            $studentDetails = new StudentDetailsInformation();
+            $studentDetails->student_id = $studentBasicInfo->id;
+
+            $studentDetails->fathers_name = $request->fathers_name;
+            $studentDetails->mothers_name = $request->mothers_name;
+
+            $studentDetails->guardian_name = $request->guardian_name;
+            $studentDetails->guardian_relation = $request->guardian_relation_type == 'Other' ? $request->guardian_relation_other : $request->guardian_relation_type;
+            $studentDetails->guardian_contact_number = $request->guardian_contact_number;
+            $studentDetails->guardian_email = $request->guardian_email;
+            $studentDetails->address = $request->address;
+            $studentDetails->student_blood_group = $request->student_blood_group;
+            $studentDetails->save();
+
+            $studentBasicInfo->subjects()->sync($request->input('subjects', []));
+            $studentBasicInfo->batches()->sync($request->input('batches', []));
+            if ($request->input('file-upload', false)) {
+                $studentBasicInfo
+                    ->addMedia(storage_path('tmp/uploads/' . basename($request->input('file-upload'))))
+                    ->toMediaCollection('image');
+            }
+
+            if ($media = $request->input('ck-media', false)) {
+                Media::whereIn('id', $media)->update(['model_id' => $studentBasicInfo->id]);
+            }
+
+            return redirect()->route('admin.student-basic-infos.index');
+        } catch (\Exception $e) {
+            return redirect()->back()
+                ->with('error', 'An error occurred: ' . $e->getMessage())
+                ->withInput();
         }
-
-        $studentDetails = new StudentDetailsInformation();
-        $studentDetails->student_id = $studentBasicInfo->id;
-
-        $studentDetails->fathers_name = $request->fathers_name;
-        $studentDetails->mothers_name = $request->mothers_name;
-
-        $studentDetails->guardian_name = $request->guardian_name;
-        $studentDetails->guardian_relation = $request->guardian_relation_type == 'Other' ? $request->guardian_relation_other : $request->guardian_relation_type;
-        $studentDetails->guardian_contact_number = $request->guardian_contact_number;
-        $studentDetails->guardian_email = $request->guardian_email;
-        $studentDetails->address = $request->address;
-        $studentDetails->student_blood_group = $request->student_blood_group;
-        $studentDetails->save();
-
-        $studentBasicInfo->subjects()->sync($request->input('subjects', []));
-        $studentBasicInfo->batches()->sync($request->input('batches', []));
-        if ($request->input('file-upload', false)) {
-            $studentBasicInfo
-                ->addMedia(storage_path('tmp/uploads/' . basename($request->input('file-upload'))))
-                // ->toMediaCollection('file-upload');
-                ->toMediaCollection('image');
-        }
-
-        if ($media = $request->input('ck-media', false)) {
-            Media::whereIn('id', $media)->update(['model_id' => $studentBasicInfo->id]);
-        }
-
-        return redirect()->route('admin.student-basic-infos.index');
     }
 
     public function edit(StudentBasicInfo $studentBasicInfo)
