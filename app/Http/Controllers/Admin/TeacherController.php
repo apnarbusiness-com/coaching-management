@@ -78,7 +78,10 @@ class TeacherController extends Controller
         }
 
         if ($request->input('profile_img', false)) {
-            $teacher->addMedia(storage_path('tmp/uploads/' . basename($request->input('profile_img'))))->toMediaCollection('profile_img');
+            $tempPath = storage_path('tmp/uploads/' . basename($request->input('profile_img')));
+            $user->clearMediaCollection('profile_img');
+            $user->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
+            $teacher->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
         }
 
         if ($media = $request->input('ck-media', false)) {
@@ -125,12 +128,20 @@ class TeacherController extends Controller
             if ($teacher->profile_img) {
                 $teacher->profile_img->delete();
             }
+            if ($teacher->user) {
+                $teacher->user->clearMediaCollection('profile_img');
+            }
         } elseif ($request->input('profile_img', false)) {
             if (!$teacher->profile_img || $request->input('profile_img') !== $teacher->profile_img->file_name) {
                 if ($teacher->profile_img) {
                     $teacher->profile_img->delete();
                 }
-                $teacher->addMedia(storage_path('tmp/uploads/' . basename($request->input('profile_img'))))->toMediaCollection('profile_img');
+                $tempPath = storage_path('tmp/uploads/' . basename($request->input('profile_img')));
+                if ($teacher->user) {
+                    $teacher->user->clearMediaCollection('profile_img');
+                    $teacher->user->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
+                }
+                $teacher->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
             }
         } elseif ($teacher->profile_img) {
             $teacher->profile_img->delete();
