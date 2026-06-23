@@ -417,7 +417,10 @@
                 if (document.querySelectorAll('.qualification-row').length > 1) {
                     row.remove();
                 } else {
-                    row.querySelectorAll('input').forEach(input => input.value = '');
+                    row.querySelectorAll('input, select').forEach(el => {
+                        if (el.tagName === 'INPUT') el.value = '';
+                        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                    });
                     const label = row.querySelector('.session-year-label');
                     if (label) label.textContent = '';
                 }

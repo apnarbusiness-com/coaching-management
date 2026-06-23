@@ -72,6 +72,10 @@ class StoreTeacherRequest extends FormRequest
                 'string',
                 'required',
             ],
+            'gender' => [
+                'string',
+                'required',
+            ],
             'qualifications.*.level' => [
                 'string',
                 'required',

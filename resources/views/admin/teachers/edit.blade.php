@@ -64,6 +64,12 @@
                                 <input class="sr-only" id="file-upload" name="file-upload" type="file" accept="image/*" />
                             </div>
                             <span class="text-sm font-medium text-text-secondary dark:text-gray-400">Profile Photo</span>
+                            @if($teacher->profile_img)
+                                <label class="flex items-center gap-1.5 text-xs text-red-500 cursor-pointer hover:text-red-600 select-none">
+                                    <input type="checkbox" name="remove_photo" value="1">
+                                    Remove photo
+                                </label>
+                            @endif
                             @if ($errors->has('profile_img'))
                                 <p class="text-xs text-red-500 mt-1">{{ $errors->first('profile_img') }}</p>
                             @endif
@@ -201,6 +207,7 @@
                                     class="text-red-500">*</span></label>
                             <div class="flex items-center h-[46px]">
                                 <label class="relative inline-flex items-center cursor-pointer">
+                                    <input type="hidden" name="status" value="0">
                                     <input type="checkbox" name="status" value="1" class="sr-only peer" {{ old('status', $teacher->status) ? 'checked' : '' }}>
                                     <div
                                         class="w-11 h-6 bg-gray-200 peer-focus:outline-none peer-focus:ring-4 peer-focus:ring-primary/20 dark:peer-focus:ring-primary/30 rounded-full peer dark:bg-gray-700 peer-checked:after:translate-x-full peer-checked:after:border-white after:content-[''] after:absolute after:top-[2px] after:left-[2px] after:bg-white after:border-gray-300 after:border after:rounded-full after:h-5 after:w-5 after:transition-all dark:border-gray-600 peer-checked:bg-primary">
@@ -335,6 +342,9 @@
                                 </div>
                             </div>
                         @endforelse
+                        <button type="button" class="add-qualification-row px-4 py-2.5 rounded-lg text-sm font-medium text-white bg-primary hover:bg-primary-hover shadow-sm flex items-center gap-1 mt-4">
+                            <span class="material-symbols-outlined !text-[18px]">add</span> Add Qualification
+                        </button>
                     </div>
                     @if($errors->has('qualifications'))
                         <p class="mt-1 text-xs text-red-500">{{ $errors->first('qualifications') }}</p>
@@ -494,7 +504,10 @@
                 if (document.querySelectorAll('.qualification-row').length > 1) {
                     row.remove();
                 } else {
-                    row.querySelectorAll('input').forEach(input => input.value = '');
+                    row.querySelectorAll('input, select').forEach(el => {
+                        if (el.tagName === 'INPUT') el.value = '';
+                        else if (el.tagName === 'SELECT') el.selectedIndex = 0;
+                    });
                     const label = row.querySelector('.session-year-label');
                     if (label) label.textContent = '';
                 }

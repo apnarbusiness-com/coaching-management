@@ -78,6 +78,10 @@ class UpdateTeacherRequest extends FormRequest
                 'string',
                 'required',
             ],
+            'gender' => [
+                'string',
+                'required',
+            ],
             'status' => [
                 'required',
             ],

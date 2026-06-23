@@ -103,7 +103,11 @@ class TeacherController extends Controller
 
     public function update(UpdateTeacherRequest $request, Teacher $teacher)
     {
-        $teacher->update($request->all());
+        $teacher->update($request->safe()->only([
+            'emloyee_code', 'name', 'father_name', 'mother_name', 'dob',
+            'phone', 'email', 'address', 'gender', 'joining_date',
+            'status', 'salary_type', 'salary_amount',
+        ]));
 
         if ($teacher->user && !$teacher->user->user_name) {
             $teacher->user->update(['user_name' => $teacher->emloyee_code]);
@@ -117,7 +121,11 @@ class TeacherController extends Controller
                 $teacher->qualifications()->create($qual);
             }
         }
-        if ($request->input('profile_img', false)) {
+        if ($request->boolean('remove_photo')) {
+            if ($teacher->profile_img) {
+                $teacher->profile_img->delete();
+            }
+        } elseif ($request->input('profile_img', false)) {
             if (!$teacher->profile_img || $request->input('profile_img') !== $teacher->profile_img->file_name) {
                 if ($teacher->profile_img) {
                     $teacher->profile_img->delete();
