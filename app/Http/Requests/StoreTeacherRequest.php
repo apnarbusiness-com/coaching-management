@@ -37,9 +37,16 @@ class StoreTeacherRequest extends FormRequest
                 'date',
                 'nullable',
             ],
+            'email' => [
+                'required',
+                'email',
+                'unique:teachers,email',
+            ],
             'phone' => [
                 'string',
                 'required',
+                'regex:/^01[0-9]{9}$/',
+                'unique:teachers,phone',
             ],
             'address' => [
                 'string',
@@ -62,6 +69,10 @@ class StoreTeacherRequest extends FormRequest
                 'required',
             ],
             'qualifications.*.session' => [
+                'string',
+                'required',
+            ],
+            'qualifications.*.level' => [
                 'string',
                 'required',
             ],

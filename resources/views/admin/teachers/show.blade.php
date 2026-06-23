@@ -152,7 +152,12 @@
                                 <div class="mb-4 pb-4 border-b border-border-light dark:border-border-dark/50 last:border-0 last:mb-0 last:pb-0">
                                     <div class="flex items-start justify-between">
                                         <div>
-                                            <p class="text-sm font-semibold text-text-main dark:text-white">{{ $qual->university }}</p>
+                                            <div class="flex items-center gap-2">
+                                                @if($qual->level)
+                                                    <span class="text-[10px] font-bold text-emerald-600 bg-emerald-50 dark:bg-emerald-900/20 dark:text-emerald-400 px-2 py-0.5 rounded-full uppercase tracking-wider">{{ $qual->level }}</span>
+                                                @endif
+                                                <p class="text-sm font-semibold text-text-main dark:text-white">{{ $qual->university }}</p>
+                                            </div>
                                             <p class="text-xs text-text-secondary dark:text-gray-400 mt-0.5">{{ $qual->department }}</p>
                                         </div>
                                         <span class="text-[10px] font-bold text-primary bg-primary/10 px-2 py-1 rounded-full uppercase tracking-wider">{{ $qual->session }}</span>

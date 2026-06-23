@@ -21,6 +21,7 @@ class TeacherQualification extends Model
 
     protected $fillable = [
         'teacher_id',
+        'level',
         'university',
         'department',
         'session',

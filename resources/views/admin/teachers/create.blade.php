@@ -110,7 +110,7 @@
                                     Number <span class="text-red-500">*</span></label>
                                 <input
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('phone') ? 'ring-2 ring-red-500' : '' }}"
-                                    placeholder="+1 (555) 000-0000" type="tel" name="phone" value="{{ old('phone', '') }}"
+                                    placeholder="01XXXXXXXXX" type="tel" name="phone" value="{{ old('phone', '') }}"
                                     required />
                                 @if($errors->has('phone'))
                                     <p class="mt-1 text-xs text-red-500">{{ $errors->first('phone') }}</p>
@@ -155,7 +155,7 @@
                                 <input
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-4 focus:ring-2 focus:ring-primary font-mono text-sm {{ $errors->has('emloyee_code') ? 'ring-2 ring-red-500' : '' }}"
                                     readonly="" type="text" name="emloyee_code"
-                                    value="{{ old('emloyee_code', generateUserName()) }}" />
+                                    value="{{ generateUserName() }}" />
                                 <span
                                     class="absolute right-3 top-1/2 -translate-y-1/2 text-xs text-primary font-medium cursor-pointer">Auto</span>
                             </div>
@@ -221,15 +221,35 @@
                         Educational Qualification
                     </h2>
                     <div id="qualifications-container">
-                        <div class="grid grid-cols-1 md:grid-cols-4 gap-4 qualification-row">
+                        <div class="grid grid-cols-1 md:grid-cols-5 gap-4 qualification-row">
                             <div>
-                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">University <span class="text-red-500">*</span></label>
-                                <input type="text" name="qualifications[0][university]" placeholder="University name"
+                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Level <span class="text-red-500">*</span></label>
+                                <select name="qualifications[0][level]"
+                                    class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm">
+                                    <option value="">Select</option>
+                                    <option value="SSC">SSC</option>
+                                    <option value="HSC">HSC</option>
+                                    <option value="Diploma">Diploma</option>
+                                    <option value="BSc">BSc</option>
+                                    <option value="BBA">BBA</option>
+                                    <option value="BA">BA</option>
+                                    <option value="BSS">BSS</option>
+                                    <option value="MA">MA</option>
+                                    <option value="MSS">MSS</option>
+                                    <option value="MBA">MBA</option>
+                                    <option value="MSc">MSc</option>
+                                    <option value="PhD">PhD</option>
+                                    <option value="Other">Other</option>
+                                </select>
+                            </div>
+                            <div>
+                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Institution <span class="text-red-500">*</span></label>
+                                <input type="text" name="qualifications[0][university]" placeholder="School / College / University"
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
                             </div>
                             <div>
-                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Department <span class="text-red-500">*</span></label>
-                                <input type="text" name="qualifications[0][department]" placeholder="Department name"
+                                <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">Department / Group <span class="text-red-500">*</span></label>
+                                <input type="text" name="qualifications[0][department]" placeholder="e.g. Science, Arts, CSE, EEE"
                                     class="w-full rounded-lg border-none bg-card-light dark:bg-card-dark text-text-main dark:text-white py-2.5 px-3 focus:ring-2 focus:ring-primary text-sm" />
                             </div>
                             <div>
@@ -364,14 +384,18 @@
             $(document).on('click', '.add-qualification-row', function() {
                 const container = document.getElementById('qualifications-container');
                 const template = container.querySelector('.qualification-row').cloneNode(true);
-                const inputs = template.querySelectorAll('input');
+                const inputs = template.querySelectorAll('input, select');
 
                 inputs.forEach(input => {
                     const name = input.getAttribute('name');
                     if (name) {
                         input.setAttribute('name', name.replace(/\[\d+\]/, '[' + qualIndex + ']'));
                     }
-                    input.value = '';
+                    if (input.tagName === 'INPUT') {
+                        input.value = '';
+                    } else if (input.tagName === 'SELECT') {
+                        input.selectedIndex = 0;
+                    }
                 });
 
                 const label = template.querySelector('.session-year-label');

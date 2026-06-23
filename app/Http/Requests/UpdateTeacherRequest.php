@@ -7,6 +7,7 @@ use App\Models\Teacher;
 use Illuminate\Foundation\Http\FormRequest;
 use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
+use Illuminate\Validation\Rule;
 
 class UpdateTeacherRequest extends FormRequest
 {
@@ -38,9 +39,16 @@ class UpdateTeacherRequest extends FormRequest
                 'date',
                 'nullable',
             ],
+            'email' => [
+                'required',
+                'email',
+                Rule::unique('teachers', 'email')->ignore($this->route('teacher')?->id),
+            ],
             'phone' => [
                 'string',
                 'required',
+                'regex:/^01[0-9]{9}$/',
+                Rule::unique('teachers', 'phone')->ignore($this->route('teacher')?->id),
             ],
             'address' => [
                 'string',
@@ -63,6 +71,10 @@ class UpdateTeacherRequest extends FormRequest
                 'required',
             ],
             'qualifications.*.session' => [
+                'string',
+                'required',
+            ],
+            'qualifications.*.level' => [
                 'string',
                 'required',
             ],
