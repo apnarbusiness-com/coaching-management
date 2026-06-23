@@ -268,8 +268,13 @@ class StudentBasicInfoController extends Controller
             $studentBasicInfo->subjects()->sync($request->input('subjects', []));
             $studentBasicInfo->batches()->sync($request->input('batches', []));
             if ($request->input('file-upload', false)) {
+                $tempPath = storage_path('tmp/uploads/' . basename($request->input('file-upload')));
+                if ($studentBasicInfo->user) {
+                    $studentBasicInfo->user->clearMediaCollection('profile_img');
+                    $studentBasicInfo->user->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
+                }
                 $studentBasicInfo
-                    ->addMedia(storage_path('tmp/uploads/' . basename($request->input('file-upload'))))
+                    ->addMedia($tempPath)
                     ->toMediaCollection('image');
             }
 
@@ -385,7 +390,12 @@ class StudentBasicInfoController extends Controller
                     if ($studentBasicInfo->image) {
                         $studentBasicInfo->image->delete();
                     }
-                    $studentBasicInfo->addMedia(storage_path('tmp/uploads/' . basename($request->input('image'))))->toMediaCollection('image');
+                    $tempPath = storage_path('tmp/uploads/' . basename($request->input('image')));
+                    if ($studentBasicInfo->user) {
+                        $studentBasicInfo->user->clearMediaCollection('profile_img');
+                        $studentBasicInfo->user->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
+                    }
+                    $studentBasicInfo->addMedia($tempPath)->toMediaCollection('image');
                 }
             }
         }

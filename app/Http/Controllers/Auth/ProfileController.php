@@ -39,6 +39,11 @@ class ProfileController extends Controller
                 $user->teacher->clearMediaCollection('profile_img');
                 $user->teacher->addMedia($request->file('photo'))->toMediaCollection('profile_img');
             }
+
+            if ($user->student) {
+                $user->student->clearMediaCollection('image');
+                $user->student->addMedia($request->file('photo'))->toMediaCollection('image');
+            }
         }
 
         return redirect()->route('profile.edit')->with('success', 'Profile updated successfully.');
