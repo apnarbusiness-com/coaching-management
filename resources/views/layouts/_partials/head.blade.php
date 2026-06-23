@@ -4,9 +4,9 @@
 <meta http-equiv="X-UA-Compatible" content="ie=edge">
 <meta name="csrf-token" content="{{ csrf_token() }}">
 
-<title>@yield('title', trans('panel.site_title'))</title>
+<title>@yield('title', setting('site_title') ?: trans('panel.site_title'))</title>
 
-<link rel="shortcut icon" href="{{ asset('assets/images/logo.svg') }}" type="image/x-icon">
+<link rel="shortcut icon" href="{{ setting('site_favicon') ? asset('uploads/settings/' . setting('site_favicon')) : asset('assets/images/logo.svg') }}" type="image/x-icon">
 
 {{-- Tailwind er Darkmode er sathe conflict kore tai bad dchi --}}
 {{--

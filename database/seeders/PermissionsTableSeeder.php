@@ -654,6 +654,11 @@ class PermissionsTableSeeder extends Seeder
                 'title' => 'referral_settings_access',
                 'parent_id' => null,
             ],
+            [
+                'id'    => 119,
+                'title' => 'general_setting_edit',
+                'parent_id' => null,
+            ],
         ];
 
         Permission::upsert($permissions, ['id'], ['title', 'parent_id']);

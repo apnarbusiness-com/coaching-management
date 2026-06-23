@@ -64,7 +64,7 @@
 
         <!-- Footer Copyright -->
         <div class="mt-12 border-t border-slate-200 py-6 text-center dark:border-slate-800">
-            <p class="text-sm text-slate-500 dark:text-slate-400">© {{ date('Y') }} {{ config('app.name') }}. All
+            <p class="text-sm text-slate-500 dark:text-slate-400">© {{ date('Y') }} {{ setting('site_title') ?: config('app.name') }}. All
                 rights reserved.
             </p>
         </div>

@@ -5,9 +5,9 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Login — {{ trans('panel.site_title') }}</title>
+    <title>Login — {{ setting('site_title') ?: trans('panel.site_title') }}</title>
 
-    <link rel="shortcut icon" href="{{ asset('assets/images/logo.svg') }}" type="image/x-icon">
+    <link rel="shortcut icon" href="{{ setting('site_favicon') ? asset('uploads/settings/' . setting('site_favicon')) : asset('assets/images/logo.svg') }}" type="image/x-icon">
 
 
     <!-- Fonts -->
@@ -102,10 +102,7 @@
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
                         <span class="material-symbols-outlined text-white">school</span>
                     </div>
-                    <img src="{{ asset('assets/images/logo_for_menu.svg') }}" alt="Logo" class="h-10">
-                    {{-- <span class="text-xl font-bold tracking-wide">
-                        {{ trans('panel.site_title') }}
-                    </span> --}}
+                    <img src="{{ setting('site_logo') ? asset('uploads/settings/' . setting('site_logo')) : asset('assets/images/logo_for_menu.svg') }}" alt="Logo" class="h-10">
                 </div>
                 <!-- Inspirational Text -->
                 <div class="max-w-lg">
@@ -120,14 +117,14 @@
                 </div>
                 <!-- Footer/Copyright on Image -->
                 <div class="text-sm text-blue-200">
-                    © {{ date('Y') }} {{ trans('panel.site_title') }}. All rights reserved.
+                    © {{ date('Y') }} {{ setting('site_title') ?: trans('panel.site_title') }}. All rights reserved.
                 </div>
             </div>
         </div>
         <!-- Right Panel: Login Form -->
         <div class="flex w-full items-center justify-center bg-white dark:bg-slate-850 lg:w-1/2 overflow-y-auto">
             <div class="w-full max-w-[440px] px-8 py-12 sm:px-12">
-                <img src="{{ asset('assets/images/logo.svg') }}" alt="Logo" class="h-10"
+                <img src="{{ setting('site_logo') ? asset('uploads/settings/' . setting('site_logo')) : asset('assets/images/logo.svg') }}" alt="Logo" class="h-10"
                     style="margin-left: -9px;margin-bottom: 16px;">
                 <!-- Header -->
                 <div class="mb-8">

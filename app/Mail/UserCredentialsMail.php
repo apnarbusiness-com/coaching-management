@@ -31,7 +31,7 @@ class UserCredentialsMail extends Mailable
     public function envelope(): Envelope
     {
         return new Envelope(
-            subject: 'Your Account Credentials - ' . config('app.name'),
+            subject: 'Your Account Credentials - ' . (setting('site_title') ?: config('app.name')),
         );
     }
 

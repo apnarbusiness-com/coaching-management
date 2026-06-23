@@ -4,7 +4,7 @@
     <div class="c-sidebar-brand d-md-down-none">
         <a class="c-sidebar-brand-full h4" href="#">
             {{-- {{ trans('panel.site_title') }} --}}
-            <img src="{{ asset('assets/images/logo_for_menu.svg') }}" alt="Logo" class="h-10 mx-auto">
+            <img src="{{ setting('site_logo') ? asset('uploads/settings/' . setting('site_logo')) : asset('assets/images/logo_for_menu.svg') }}" alt="Logo" class="h-10 mx-auto">
         </a>
     </div>
 
@@ -542,12 +542,20 @@
                 </ul>
             </li>
         @endcan
+        @can('general_setting_edit')
+        <li class="c-sidebar-nav-item">
+            <a class="c-sidebar-nav-link {{ request()->is('admin/general-settings') ? 'c-active' : '' }}"
+                href="{{ route('admin.general-settings.edit') }}">
+                <i class="fa-fw fas fa-cog c-sidebar-nav-icon"></i>
+                General Settings
+            </a>
+        </li>
+        @endcan
         @if(auth()->user()->wallet_access)
         <li class="c-sidebar-nav-item">
             <a class="c-sidebar-nav-link {{ request()->is('admin/wallet') || request()->is('admin/wallet/*') ? 'c-active' : '' }}"
                 href="{{ route('admin.wallet.index') }}">
-                <i class="fa-fw fas fa-wallet c-sidebar-nav-icon">
-                </i>
+                <i class="fa-fw fas fa-wallet c-sidebar-nav-icon"></i>
                 My Wallet
             </a>
         </li>

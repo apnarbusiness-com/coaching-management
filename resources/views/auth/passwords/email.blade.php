@@ -4,7 +4,7 @@
 <head>
     <meta charset="utf-8" />
     <meta content="width=device-width, initial-scale=1.0" name="viewport" />
-    <title>Reset Password | {{ trans('panel.site_title') }}</title>
+    <title>Reset Password | {{ setting('site_title') ?: trans('panel.site_title') }}</title>
     <!-- Fonts -->
     <link href="https://fonts.googleapis.com" rel="preconnect" />
     <link crossorigin="" href="https://fonts.gstatic.com" rel="preconnect" />
@@ -73,14 +73,14 @@
                     <div class="flex h-10 w-10 items-center justify-center rounded-lg bg-white/20 backdrop-blur-sm">
                         <span class="material-symbols-outlined text-white">school</span>
                     </div>
-                    <span class="text-xl font-bold tracking-wide">{{ trans('panel.site_title') }}</span>
+                    <span class="text-xl font-bold tracking-wide">{{ setting('site_title') ?: trans('panel.site_title') }}</span>
                 </div>
                 <div class="max-w-lg">
                     <h2 class="mb-4 text-4xl font-bold leading-tight tracking-tight">Security in every step.</h2>
                     <p class="text-lg text-blue-100 font-light">Don't worry, it happens to the best of us. We'll help
                         you get back into your account safely.</p>
                 </div>
-                <div class="text-sm text-blue-200">© {{ date('Y') }} {{ trans('panel.site_title') }}. All rights
+                <div class="text-sm text-blue-200">© {{ date('Y') }} {{ setting('site_title') ?: trans('panel.site_title') }}. All rights
                     reserved.</div>
             </div>
         </div>

@@ -118,7 +118,7 @@
             </tr>
         </table>
         <div class="footer">
-            &copy; {{ date('Y') }} {{ config('app.name') }}. All rights reserved.
+            &copy; {{ date('Y') }} {{ setting('site_title') ?: config('app.name') }}. All rights reserved.
         </div>
     </div>
 </body>

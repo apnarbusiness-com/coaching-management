@@ -5,6 +5,7 @@ use App\Http\Controllers\Admin\BatchAttendanceController;
 use App\Http\Controllers\Admin\BatchController;
 use App\Http\Controllers\Admin\CashBookController;
 use App\Http\Controllers\Admin\DueCollectionController;
+use App\Http\Controllers\Admin\GeneralSettingController;
 use App\Http\Controllers\Admin\HomeController;
 use App\Http\Controllers\Admin\ReferralCampaignController;
 use App\Http\Controllers\Admin\ReferralSettingsController;
@@ -235,6 +236,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('due-collections/checker/search', 'DueCollectionController@searchStudentsForChecker')->name('due-collections.checker.search');
     Route::get('due-collections/checker/student/{studentId}', 'DueCollectionController@getStudentFullHistory')->name('due-collections.checker.student');
     Route::get('due-collections/receipt/{earningTransaction}/{output?}', 'DueCollectionController@receipt')->name('due-collections.receipt');
+
+    // General Settings
+    Route::get('general-settings', [GeneralSettingController::class, 'edit'])->name('general-settings.edit');
+    Route::post('general-settings', [GeneralSettingController::class, 'update'])->name('general-settings.update');
 
     // Student Flags CRUD
     Route::get('student-flags', 'StudentFlagController@index')->name('student-flags.index');
