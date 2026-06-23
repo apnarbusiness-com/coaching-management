@@ -85,7 +85,7 @@
                     <p class="text-xs text-slate-500 dark:text-slate-400">{{ $user->email }}</p>
                     <span class="inline-block mt-1 px-2 py-0.5 text-xs font-medium rounded-full bg-blue-100 dark:bg-blue-900/30 text-blue-700 dark:text-blue-300">{{ $userRole }}</span>
                 </div>
-                <a href="{{ route('profile.password.edit') }}"
+                <a href="{{ route('profile.edit') }}"
                     class="flex items-center gap-3 px-4 py-2.5 text-sm text-slate-700 dark:text-slate-200 hover:bg-slate-50 dark:hover:bg-slate-700 transition-colors">
                     <span class="material-symbols-outlined text-slate-400 text-lg">settings</span>
                     My Profile

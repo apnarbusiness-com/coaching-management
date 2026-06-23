@@ -15,6 +15,7 @@ use App\Http\Controllers\Admin\TeacherController;
 use App\Http\Controllers\Admin\TeachersPaymentController;
 use App\Http\Controllers\Admin\WalletController as AdminWalletController;
 use App\Http\Controllers\Admin\WithdrawRequestController;
+use App\Http\Controllers\Auth\ProfileController;
 use App\Http\Controllers\AdmissionApplicationController;
 use App\Http\Controllers\WalletController;
 use Illuminate\Support\Facades\Auth;
@@ -303,6 +304,10 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('batch-attendances/{batchId}/students/{studentId}/due-summary', [BatchAttendanceController::class, 'getStudentDueSummary'])->name('batch-attendances.dueSummary');
 });
 Route::group(['prefix' => 'profile', 'as' => 'profile.', 'namespace' => 'Auth', 'middleware' => ['auth']], function () {
+    // My Profile
+    Route::get('/', [ProfileController::class, 'edit'])->name('edit');
+    Route::post('/', [ProfileController::class, 'update'])->name('update');
+
     // Change password
     if (file_exists(app_path('Http/Controllers/Auth/ChangePasswordController.php'))) {
         Route::get('password', 'ChangePasswordController@edit')->name('password.edit');

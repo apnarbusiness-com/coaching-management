@@ -14,12 +14,19 @@ use Illuminate\Database\Eloquent\SoftDeletes;
 use Illuminate\Foundation\Auth\User as Authenticatable;
 use Illuminate\Notifications\Notifiable;
 use Laravel\Sanctum\HasApiTokens;
+use Spatie\MediaLibrary\HasMedia;
+use Spatie\MediaLibrary\InteractsWithMedia;
+use Spatie\MediaLibrary\MediaCollections\Models\Media;
 
-class User extends Authenticatable
+class User extends Authenticatable implements HasMedia
 {
-    use SoftDeletes, Notifiable, HasFactory, HasRoleCheck, HasApiTokens, HasReferralCode;
+    use SoftDeletes, Notifiable, HasFactory, HasRoleCheck, HasApiTokens, HasReferralCode, InteractsWithMedia;
 
     public $table = 'users';
+
+    protected $appends = [
+        'photo',
+    ];
 
     protected $hidden = [
         'remember_token',
@@ -75,6 +82,24 @@ class User extends Authenticatable
         if ($input) {
             $this->attributes['password'] = app('hash')->needsRehash($input) ? Hash::make($input) : $input;
         }
+    }
+
+    public function registerMediaConversions(Media $media = null): void
+    {
+        $this->addMediaConversion('thumb')->fit('crop', 50, 50);
+        $this->addMediaConversion('preview')->fit('crop', 120, 120);
+    }
+
+    public function getPhotoAttribute()
+    {
+        $file = $this->getMedia('profile_img')->last();
+        if ($file) {
+            $file->url = $file->getUrl();
+            $file->thumbnail = $file->getUrl('thumb');
+            $file->preview = $file->getUrl('preview');
+        }
+
+        return $file;
     }
 
     public function sendPasswordResetNotification($token)
