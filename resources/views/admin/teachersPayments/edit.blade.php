@@ -57,35 +57,26 @@
                     </h2>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
-                        <!-- Teacher Selection -->
+                        <!-- Teacher (read-only) -->
                         <div class="col-span-1 md:col-span-2">
-                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5" for="teacher_id">
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">
                                 {{ trans('cruds.teachersPayment.fields.teacher') }} <span class="text-red-500">*</span>
                             </label>
-                            <select class="form-control select2 w-full {{ $errors->has('teacher') ? 'ring-2 ring-red-500' : '' }}" name="teacher_id" id="teacher_id" required>
-                                @foreach($teachers as $id => $entry)
-                                    <option value="{{ $id }}" {{ (old('teacher_id') ? old('teacher_id') : $teachersPayment->teacher->id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                @endforeach
-                            </select>
-                            @if($errors->has('teacher'))
-                                <p class="mt-1 text-xs text-red-500">{{ $errors->first('teacher') }}</p>
-                            @endif
-                            <p class="mt-1.5 text-xs text-text-secondary dark:text-gray-400">{{ trans('cruds.teachersPayment.fields.teacher_helper') }}</p>
+                            <div class="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light/50 dark:bg-black/20 text-text-main dark:text-white py-2.5 px-4 text-sm">
+                                {{ $teachersPayment->teacher->name ?? '—' }}
+                            </div>
+                            <input type="hidden" name="teacher_id" value="{{ $teachersPayment->teacher_id }}">
                         </div>
 
-                        <!-- Batch -->
+                        <!-- Batch (read-only) -->
                         <div class="col-span-1 md:col-span-2">
-                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5" for="batch_id">
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5">
                                 Batch
                             </label>
-                            <select class="form-control select2 w-full {{ $errors->has('batch_id') ? 'ring-2 ring-red-500' : '' }}" name="batch_id" id="batch_id">
-                                @foreach($batches as $id => $entry)
-                                    <option value="{{ $id }}" {{ (old('batch_id') ? old('batch_id') : $teachersPayment->batch_id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
-                                @endforeach
-                            </select>
-                            @if($errors->has('batch_id'))
-                                <p class="mt-1 text-xs text-red-500">{{ $errors->first('batch_id') }}</p>
-                            @endif
+                            <div class="w-full rounded-lg border border-border-light dark:border-border-dark bg-background-light/50 dark:bg-black/20 text-text-main dark:text-white py-2.5 px-4 text-sm">
+                                {{ $teachersPayment->batch->batch_name ?? '—' }}
+                            </div>
+                            <input type="hidden" name="batch_id" value="{{ $teachersPayment->batch_id }}">
                         </div>
 
                         <!-- Amount -->
@@ -203,22 +194,4 @@
         </div>
     </div>
 
-@endsection
-
-@section('scripts')
-<script>
-    $(document).ready(function () {
-        // Initialize Select2
-        $('#teacher_id').select2({
-            placeholder: 'Select a teacher',
-            allowClear: true,
-            width: '100%'
-        });
-        $('#batch_id').select2({
-            placeholder: 'Select a batch',
-            allowClear: true,
-            width: '100%'
-        });
-    });
-</script>
 @endsection
