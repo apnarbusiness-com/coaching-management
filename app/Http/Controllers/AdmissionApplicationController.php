@@ -20,7 +20,6 @@ class AdmissionApplicationController extends Controller
     {
         $validated = $request->validate([
             'admission_date' => ['nullable', 'date'],
-            'admission_id_no' => ['nullable', 'string', 'max:50'],
             'first_name' => ['required', 'string', 'max:100'],
             'last_name' => ['nullable', 'string', 'max:100'],
             'gender' => ['required', 'in:male,female,others'],
@@ -71,7 +70,6 @@ class AdmissionApplicationController extends Controller
 
         $student = StudentBasicInfo::create([
             'roll' => $classRoll ? (int) $classRoll : null,
-            'id_no' => $validated['admission_id_no'] ?? null,
             'first_name' => $validated['first_name'],
             'last_name' => $validated['last_name'] ?? null,
             'gender' => $validated['gender'],
@@ -92,7 +90,6 @@ class AdmissionApplicationController extends Controller
             'village' => $validated['village'] ?? null,
             'post_office' => $validated['post_office'] ?? null,
             'class_roll' => $validated['class_roll'] ?? null,
-            'admission_id_no' => $validated['admission_id_no'] ?? null,
         ];
 
         $studentAddress = $validated['address'];

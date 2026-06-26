@@ -56,7 +56,11 @@ class AdmissionApplicationsController extends Controller
                 ->with('status', 'Already processed.');
         }
 
-        $student->update(['status' => '1']);
+        $student->update([
+            'status' => '1',
+            'id_no' => generateAdmissionID(),
+            'roll' => $student->roll ?? generateAdmissionID(),
+        ]);
 
         if ($student->referred_by_user_id) {
             try {

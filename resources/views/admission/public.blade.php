@@ -123,6 +123,121 @@
                 padding: 22px 18px;
             }
         }
+
+        .photo-upload-box {
+            position: relative;
+            width: 100%;
+            max-width: 180px;
+            aspect-ratio: 1;
+            border-radius: 14px;
+            border: 2px dashed var(--border);
+            background: #f8fafc;
+            display: flex;
+            flex-direction: column;
+            align-items: center;
+            justify-content: center;
+            gap: 6px;
+            cursor: pointer;
+            transition: all 0.2s;
+            overflow: hidden;
+            user-select: none;
+        }
+
+        .photo-upload-box:hover {
+            border-color: var(--brand);
+            background: #f0fdfa;
+        }
+
+        .photo-upload-box.has-image {
+            border-style: solid;
+            border-color: var(--brand);
+            background: #fff;
+            cursor: default;
+        }
+
+        .photo-upload-box.has-image:hover {
+            background: #fff;
+        }
+
+        .photo-upload-box .upload-icon {
+            color: #94a3b8;
+            text-align: center;
+            transition: opacity 0.2s;
+        }
+
+        .photo-upload-box .upload-icon svg {
+            width: 36px;
+            height: 36px;
+        }
+
+        .photo-upload-box .upload-icon span {
+            display: block;
+            font-size: 12px;
+            font-weight: 500;
+            color: var(--muted);
+            margin-top: 2px;
+        }
+
+        .photo-upload-box img {
+            position: absolute;
+            inset: 0;
+            width: 100%;
+            height: 100%;
+            object-fit: cover;
+            border-radius: 12px;
+        }
+
+        .photo-upload-box .remove-overlay {
+            position: absolute;
+            inset: 0;
+            border-radius: 12px;
+            background: rgba(0, 0, 0, 0.45);
+            display: none;
+            align-items: center;
+            justify-content: center;
+            transition: opacity 0.2s;
+        }
+
+        .photo-upload-box.has-image:hover .remove-overlay {
+            display: flex;
+        }
+
+        .photo-upload-box .remove-overlay button {
+            background: rgba(255, 255, 255, 0.9);
+            border: none;
+            border-radius: 50%;
+            width: 36px;
+            height: 36px;
+            display: flex;
+            align-items: center;
+            justify-content: center;
+            cursor: pointer;
+            color: #dc2626;
+            transition: background 0.15s;
+        }
+
+        .photo-upload-box .remove-overlay button:hover {
+            background: #fff;
+        }
+
+        .photo-upload-box .remove-overlay button svg {
+            width: 20px;
+            height: 20px;
+        }
+
+        .photo-upload-box input[type="file"] {
+            display: none;
+        }
+
+        .photo-name {
+            font-size: 12px;
+            color: var(--muted);
+            margin-top: 4px;
+            white-space: nowrap;
+            overflow: hidden;
+            text-overflow: ellipsis;
+            max-width: 180px;
+        }
     </style>
 </head>
 
@@ -163,36 +278,55 @@
                         <span class="text-muted">Fill carefully</span>
                     </div>
                     <div class="form-row">
-                        <div class="form-group col-md-4">
-                            <label>Admission Date</label>
-                            <input type="date" name="admission_date" class="form-control"
-                                value="{{ old('admission_date', now()->toDateString()) }}">
-                        </div>
-                        <div class="form-group col-md-4">
-                            <label>Admission ID No (optional)</label>
-                            <input type="text" name="admission_id_no" class="form-control"
-                                value="{{ old('admission_id_no') }}">
-                        </div>
-                        <div class="form-group col-md-4">
+
+                        <div class="form-group col-md-6">
                             <label>Student Photo (optional)</label>
-                            <input type="file" name="photo" class="form-control" accept="image/*">
+                            <div class="photo-upload-box" id="photoUploadBox" role="button" tabindex="0">
+                                <div class="upload-icon" id="uploadIcon">
+                                    <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="1.5">
+                                        <path stroke-linecap="round" stroke-linejoin="round"
+                                            d="M3 16.5v2.25A2.25 2.25 0 005.25 21h13.5A2.25 2.25 0 0021 18.75V16.5m-13.5-9L12 3m0 0l4.5 4.5M12 3v13.5" />
+                                    </svg>
+                                    <span>Upload Photo</span>
+                                </div>
+                                <div class="remove-overlay" id="removeOverlay">
+                                    <button type="button" id="photoRemoveBtn" title="Remove photo">
+                                        <svg fill="none" viewBox="0 0 24 24" stroke="currentColor" stroke-width="2">
+                                            <path stroke-linecap="round" stroke-linejoin="round"
+                                                d="M6 18L18 6M6 6l12 12" />
+                                        </svg>
+                                    </button>
+                                </div>
+                                <input type="file" name="photo" accept="image/*" id="photoInput">
+                            </div>
+                            <div class="photo-name" id="photoName"></div>
+                        </div>
+
+                        <div class=" col-md-6">
+                            <div class="form-group">
+                                <label>Admission Date</label>
+                                <input type="date" name="admission_date" class="form-control"
+                                    value="{{ old('admission_date', now()->toDateString()) }}">
+                            </div>
+                            <div class="form-group">
+                                <label>First Name</label>
+                                <input type="text" name="first_name" class="form-control" required
+                                    value="{{ old('first_name') }}">
+                            </div>
+                            <div class="form-group">
+                                <label>Last Name (optional)</label>
+                                <input type="text" name="last_name" class="form-control"
+                                    value="{{ old('last_name') }}">
+                            </div>
                         </div>
                     </div>
                 </div>
 
                 <div class="admission-section">
                     <h4 class="section-title">Student Information</h4>
-                    <div class="form-row">
-                        <div class="form-group col-md-6">
-                            <label>First Name</label>
-                            <input type="text" name="first_name" class="form-control" required
-                                value="{{ old('first_name') }}">
-                        </div>
-                        <div class="form-group col-md-6">
-                            <label>Last Name (optional)</label>
-                            <input type="text" name="last_name" class="form-control" value="{{ old('last_name') }}">
-                        </div>
-                    </div>
+                    {{-- <div class="form-row">
+                        
+                    </div> --}}
                     <div class="form-row">
                         <div class="form-group col-md-4">
                             <label>Gender</label>
@@ -348,7 +482,8 @@
                         <div class="form-group col-md-6">
                             <label>Referral Code</label>
                             <input type="text" name="referral_code" class="form-control"
-                                value="{{ old('referral_code', $referralCode ?? '') }}" placeholder="e.g. REFJR4ABC" maxlength="20">
+                                value="{{ old('referral_code', $referralCode ?? '') }}" placeholder="e.g. REFJR4ABC"
+                                maxlength="20">
                             <small class="text-muted" id="referral-status"></small>
                         </div>
                     </div>
@@ -378,14 +513,62 @@
         document.querySelector('input[name="referral_code"]')?.addEventListener('blur', function() {
             const status = document.getElementById('referral-status');
             const val = this.value.trim();
-            if (!val) { status.textContent = ''; return; }
-            fetch('{{ route("admission.public.check-referral") }}?code=' + encodeURIComponent(val))
+            if (!val) {
+                status.textContent = '';
+                return;
+            }
+            fetch('{{ route('admission.public.check-referral') }}?code=' + encodeURIComponent(val))
                 .then(r => r.json())
                 .then(d => {
-                    status.textContent = d.valid ? 'Valid referral code from ' + d.name : 'Invalid referral code';
+                    status.textContent = d.valid ? 'Valid referral code from ' + d.name :
+                        'Invalid referral code';
                     status.style.color = d.valid ? 'green' : 'red';
                 })
-                .catch(() => { status.textContent = ''; });
+                .catch(() => {
+                    status.textContent = '';
+                });
+        });
+
+        const uploadBox = document.getElementById('photoUploadBox');
+        const photoInput = document.getElementById('photoInput');
+        const uploadIcon = document.getElementById('uploadIcon');
+        const photoName = document.getElementById('photoName');
+        const removeOverlay = document.getElementById('removeOverlay');
+        const removeBtn = document.getElementById('photoRemoveBtn');
+
+        uploadBox?.addEventListener('click', function(e) {
+            if (e.target === removeBtn || removeOverlay?.contains(e.target)) return;
+            photoInput?.click();
+        });
+
+        photoInput?.addEventListener('change', function() {
+            const file = this.files[0];
+            if (!file) return;
+
+            const existingImg = uploadBox.querySelector('img');
+            if (existingImg) existingImg.remove();
+
+            const reader = new FileReader();
+            reader.onload = function(e) {
+                const img = document.createElement('img');
+                img.src = e.target.result;
+                img.alt = 'Preview';
+                uploadBox.insertBefore(img, uploadIcon);
+                uploadIcon.style.display = 'none';
+                uploadBox.classList.add('has-image');
+                photoName.textContent = file.name;
+            };
+            reader.readAsDataURL(file);
+        });
+
+        removeBtn?.addEventListener('click', function(e) {
+            e.stopPropagation();
+            photoInput.value = '';
+            const img = uploadBox.querySelector('img');
+            if (img) img.remove();
+            uploadIcon.style.display = '';
+            uploadBox.classList.remove('has-image');
+            photoName.textContent = '';
         });
     </script>
 </body>
