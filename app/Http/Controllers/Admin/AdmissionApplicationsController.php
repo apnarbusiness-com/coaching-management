@@ -69,6 +69,12 @@ class AdmissionApplicationsController extends Controller
         $student->refresh();
 
         if (!$student->user_id) {
+            if (User::where('email', $student->email)->exists()) {
+                return redirect()
+                    ->route('admin.admission-applications.show', $student->id)
+                    ->with('error', "A user with email \"{$student->email}\" already exists. Cannot create duplicate account.");
+            }
+
             $user = User::create([
                 'name' => trim($student->first_name . ' ' . ($student->last_name ?? '')),
                 'email' => $student->email,
