@@ -47,7 +47,7 @@
                             <td class="px-4 py-3">
                                 @if($req->status === 'pending')
                                 <div class="flex gap-2">
-                                    <button type="button" onclick="showApproveModal({{ $req->id }}, '{{ addslashes($req->user?->name ?? '') }}', {{ $req->amount }}, {{ $req->user_id }}, '{{ addslashes($studentInfoMap[$req->id]['student_id_no'] ?? '') }}', '{{ addslashes($studentInfoMap[$req->id]['student_name'] ?? '') }}')" class="text-green-600 dark:text-green-400 font-semibold hover:underline">Approve</button>
+                                    <button type="button" onclick="showApproveModal({{ $req->id }}, '{{ addslashes($req->user?->name ?? '') }}', {{ $req->amount }}, '{{ $req->user?->admission_id ?? $req->user_id }}', '{{ addslashes($studentInfoMap[$req->id]['student_id_no'] ?? '') }}', '{{ addslashes($studentInfoMap[$req->id]['student_name'] ?? '') }}')" class="text-green-600 dark:text-green-400 font-semibold hover:underline">Approve</button>
                                     <button type="button" onclick="showRejectModal({{ $req->id }})" class="text-red-600 dark:text-red-400 font-semibold hover:underline">Reject</button>
                                 </div>
                                 @else
@@ -187,11 +187,11 @@ function showApproveModal(id, name, amount, referrerId, studentIdNo, studentName
 
     var defaultNote = '';
     if (studentIdNo) {
-        defaultNote = 'For ID ' + studentIdNo + ' Admission commission To ID ' + referrerId;
+        defaultNote = 'For ID ' + studentIdNo + ' (' + studentName + ') Admission commission To ID ' + referrerId + ' (' + name + ')';
     } else if (studentName) {
-        defaultNote = 'Admission commission for ' + studentName + ' To ID ' + referrerId;
+        defaultNote = 'Admission commission for ' + studentName + ' To ' + name + ' (ID: ' + referrerId + ')';
     } else {
-        defaultNote = 'Admission commission — Referrer ID: ' + referrerId;
+        defaultNote = 'Admission commission — ' + name + ' (ID: ' + referrerId + ')';
     }
     document.getElementById('approveModalNote').value = defaultNote;
 
