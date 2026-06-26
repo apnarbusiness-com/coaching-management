@@ -47,10 +47,7 @@
                             <td class="px-4 py-3">
                                 @if($req->status === 'pending')
                                 <div class="flex gap-2">
-                                    <form method="POST" action="{{ route('admin.withdraw-requests.approve', $req->id) }}">
-                                        @csrf
-                                        <button type="submit" class="text-green-600 dark:text-green-400 font-semibold hover:underline">Approve</button>
-                                    </form>
+                                    <button type="button" onclick="showApproveModal({{ $req->id }}, '{{ addslashes($req->user?->name ?? '') }}', {{ $req->amount }}, {{ $req->user_id }}, '{{ addslashes($studentInfoMap[$req->id]['student_id_no'] ?? '') }}', '{{ addslashes($studentInfoMap[$req->id]['student_name'] ?? '') }}')" class="text-green-600 dark:text-green-400 font-semibold hover:underline">Approve</button>
                                     <button type="button" onclick="showRejectModal({{ $req->id }})" class="text-red-600 dark:text-red-400 font-semibold hover:underline">Reject</button>
                                 </div>
                                 @else
@@ -73,6 +70,63 @@
     </div>
 </div>
 
+<div id="approveModal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center">
+    <div class="bg-white dark:bg-slate-800 rounded-xl shadow-xl w-full max-w-md mx-4">
+        <div class="p-6 border-b border-slate-200 dark:border-slate-700">
+            <div class="flex items-center justify-between">
+                <h3 class="text-lg font-bold text-slate-900 dark:text-slate-100">Approve Withdraw Request</h3>
+                <button onclick="closeApproveModal()" class="text-slate-400 hover:text-slate-600">
+                    <span class="material-symbols-outlined">close</span>
+                </button>
+            </div>
+        </div>
+
+        <form id="approveForm" method="POST" class="p-6 space-y-4">
+            @csrf
+            <input type="hidden" name="withdraw_request_id" id="approveModalRequestId">
+
+            <div class="bg-slate-50 dark:bg-slate-900 rounded-lg p-4">
+                <div class="flex justify-between mb-2">
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Recipient</span>
+                    <span id="approveModalRecipient" class="text-sm font-semibold text-slate-900 dark:text-slate-100"></span>
+                </div>
+                <div class="flex justify-between">
+                    <span class="text-sm text-slate-500 dark:text-slate-400">Amount</span>
+                    <span id="approveModalAmount" class="text-sm font-bold text-green-600"></span>
+                </div>
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Payment Method <span class="text-red-500">*</span></label>
+                @if ($cashBooks->isNotEmpty())
+                    <select name="cash_book_id" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary" required>
+                        <option value="">— Select Account —</option>
+                        @foreach ($cashBooks as $cb)
+                            <option value="{{ $cb->id }}" {{ $defaultCashBook && $defaultCashBook->id == $cb->id ? 'selected' : '' }}>{{ $cb->title }}</option>
+                        @endforeach
+                    </select>
+                @else
+                    <p class="text-sm text-red-400">No cash book accounts available.</p>
+                @endif
+            </div>
+
+            <div>
+                <label class="block text-sm font-medium text-slate-500 dark:text-slate-400 mb-1">Note</label>
+                <textarea name="note" id="approveModalNote" rows="3" class="w-full px-4 py-2 bg-slate-50 dark:bg-slate-900 border border-slate-200 dark:border-slate-700 rounded-lg text-slate-900 dark:text-slate-100 focus:ring-2 focus:ring-primary"></textarea>
+            </div>
+
+            <div class="flex justify-end gap-3 pt-4">
+                <button type="button" onclick="closeApproveModal()" class="px-4 py-2 rounded-lg text-slate-600 dark:text-slate-300 font-medium hover:bg-slate-100 dark:hover:bg-slate-700">
+                    Cancel
+                </button>
+                <button type="submit" class="px-6 py-2 bg-primary text-white font-semibold rounded-lg hover:bg-primary/90">
+                    Confirm & Approve
+                </button>
+            </div>
+        </form>
+    </div>
+</div>
+
 <div id="rejectModal" class="fixed inset-0 z-50 hidden bg-black/50 flex items-center justify-center">
     <div class="bg-white dark:bg-[#1a2632] rounded-xl shadow-xl p-6 max-w-md w-full mx-4">
         <h3 class="text-lg font-semibold mb-4">Reject Withdraw Request</h3>
@@ -91,6 +145,42 @@
 </div>
 
 <script>
+function showApproveModal(id, name, amount, referrerId, studentIdNo, studentName) {
+    document.getElementById('approveModal').classList.remove('hidden');
+    document.getElementById('approveModalRequestId').value = id;
+    document.getElementById('approveModalRecipient').textContent = name + ' (ID: ' + referrerId + ')';
+    document.getElementById('approveModalAmount').textContent = '৳' + parseFloat(amount).toFixed(2);
+
+    var defaultNote = '';
+    if (studentIdNo) {
+        defaultNote = 'For ID ' + studentIdNo + ' Admission commission To ID ' + referrerId;
+    } else if (studentName) {
+        defaultNote = 'Admission commission for ' + studentName + ' To ID ' + referrerId;
+    } else {
+        defaultNote = 'Admission commission — Referrer ID: ' + referrerId;
+    }
+    document.getElementById('approveModalNote').value = defaultNote;
+
+    var form = document.getElementById('approveForm');
+    form.action = '/admin/withdraw-requests/' + id + '/approve';
+}
+
+function closeApproveModal() {
+    document.getElementById('approveModal').classList.add('hidden');
+}
+
+document.getElementById('approveModal').addEventListener('click', function(e) {
+    if (e.target === this) {
+        closeApproveModal();
+    }
+});
+
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Escape') {
+        closeApproveModal();
+    }
+});
+
 function showRejectModal(id) {
     document.getElementById('rejectForm').action = '/admin/withdraw-requests/' + id + '/reject';
     document.getElementById('rejectModal').classList.remove('hidden');
