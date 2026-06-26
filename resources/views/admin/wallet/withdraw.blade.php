@@ -31,7 +31,7 @@
                         <option value="bkash" {{ old('payment_method') === 'bkash' ? 'selected' : '' }}>bKash</option>
                         <option value="nagad" {{ old('payment_method') === 'nagad' ? 'selected' : '' }}>Nagad</option>
                         <option value="rocket" {{ old('payment_method') === 'rocket' ? 'selected' : '' }}>Rocket</option>
-                        <option value="cash" {{ old('payment_method') === 'cash' ? 'selected' : '' }}>Cash</option>
+                        <option value="cash" {{ old('payment_method') === 'cash' || !old('payment_method') ? 'selected' : '' }}>Cash</option>
                     </select>
                     @error('payment_method') <small class="text-red-500">{{ $message }}</small> @enderror
                 </div>
