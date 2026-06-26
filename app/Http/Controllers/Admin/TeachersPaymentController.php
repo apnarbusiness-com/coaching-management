@@ -84,15 +84,17 @@ class TeachersPaymentController extends Controller
         abort_if(Gate::denies('teachers_payment_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
         $teachers = Teacher::pluck('name', 'id')->prepend(trans('global.pleaseSelect'), '');
+        $batches = Batch::pluck('batch_name', 'id')->prepend(trans('global.pleaseSelect'), '');
 
-        $teachersPayment->load('teacher');
+        $teachersPayment->load('teacher', 'batch');
 
-        return view('admin.teachersPayments.edit', compact('teachers', 'teachersPayment'));
+        return view('admin.teachersPayments.edit', compact('teachers', 'batches', 'teachersPayment'));
     }
 
     public function update(UpdateTeachersPaymentRequest $request, TeachersPayment $teachersPayment)
     {
         $teachersPayment->update($request->all());
+        $teachersPayment->updatePaymentStatus();
 
         return redirect()->route('admin.teachers-payments.index');
     }

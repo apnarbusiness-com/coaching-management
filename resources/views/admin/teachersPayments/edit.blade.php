@@ -27,6 +27,22 @@
                 </p>
             </div>
 
+            <!-- Summary Cards -->
+            <div class="grid grid-cols-1 md:grid-cols-3 gap-4">
+                <div class="bg-white dark:bg-[#1a2632] rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Total Amount</p>
+                    <p class="text-2xl font-bold text-slate-900 dark:text-white mt-1">৳{{ number_format($teachersPayment->calculated_amount, 2) }}</p>
+                </div>
+                <div class="bg-white dark:bg-[#1a2632] rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Paid Amount</p>
+                    <p class="text-2xl font-bold text-green-600 mt-1">৳{{ number_format($teachersPayment->paid_amount, 2) }}</p>
+                </div>
+                <div class="bg-white dark:bg-[#1a2632] rounded-xl p-5 border border-slate-200 dark:border-slate-700">
+                    <p class="text-xs font-semibold text-slate-500 dark:text-slate-400 uppercase tracking-wide">Remaining</p>
+                    <p class="text-2xl font-bold mt-1 {{ $teachersPayment->remaining_amount > 0 ? 'text-red-600' : 'text-green-600' }}">৳{{ number_format($teachersPayment->remaining_amount, 2) }}</p>
+                </div>
+            </div>
+
             <!-- Main Form Card -->
             <form action="{{ route('admin.teachers-payments.update', [$teachersPayment->id]) }}" method="POST" enctype="multipart/form-data"
                 class="bg-card-light dark:bg-card-dark rounded-xl shadow-sm border border-border-light dark:border-border-dark overflow-hidden transition-colors duration-200">
@@ -37,7 +53,7 @@
                 <div class="p-6 lg:p-8">
                     <h2 class="text-xl font-bold text-text-main dark:text-white mb-6 flex items-center gap-2">
                         <span class="material-symbols-outlined text-primary">payments</span>
-                        Payment Information
+                        Edit Payment Information
                     </h2>
 
                     <div class="grid grid-cols-1 md:grid-cols-2 gap-6">
@@ -55,6 +71,40 @@
                                 <p class="mt-1 text-xs text-red-500">{{ $errors->first('teacher') }}</p>
                             @endif
                             <p class="mt-1.5 text-xs text-text-secondary dark:text-gray-400">{{ trans('cruds.teachersPayment.fields.teacher_helper') }}</p>
+                        </div>
+
+                        <!-- Batch -->
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5" for="batch_id">
+                                Batch
+                            </label>
+                            <select class="form-control select2 w-full {{ $errors->has('batch_id') ? 'ring-2 ring-red-500' : '' }}" name="batch_id" id="batch_id">
+                                @foreach($batches as $id => $entry)
+                                    <option value="{{ $id }}" {{ (old('batch_id') ? old('batch_id') : $teachersPayment->batch_id ?? '') == $id ? 'selected' : '' }}>{{ $entry }}</option>
+                                @endforeach
+                            </select>
+                            @if($errors->has('batch_id'))
+                                <p class="mt-1 text-xs text-red-500">{{ $errors->first('batch_id') }}</p>
+                            @endif
+                        </div>
+
+                        <!-- Amount -->
+                        <div class="col-span-1 md:col-span-2">
+                            <label class="block text-sm font-medium text-text-main dark:text-gray-300 mb-1.5" for="amount">
+                                Amount (BDT) <span class="text-red-500">*</span>
+                            </label>
+                            <div class="relative">
+                                <span class="absolute left-3 top-1/2 -translate-y-1/2 text-text-secondary material-symbols-outlined !text-[20px]">payments</span>
+                                <input
+                                    class="w-full rounded-lg border-none bg-background-light dark:bg-background-dark text-text-main dark:text-white py-2.5 pl-10 pr-4 placeholder-text-secondary/50 focus:ring-2 focus:ring-primary {{ $errors->has('amount') ? 'ring-2 ring-red-500' : '' }}"
+                                    type="number" name="amount" id="amount" value="{{ old('amount', $teachersPayment->amount) }}" step="0.01" min="0.01" required>
+                            </div>
+                            @if($errors->has('amount'))
+                                <p class="mt-1 text-xs text-red-500">{{ $errors->first('amount') }}</p>
+                            @endif
+                            @if($teachersPayment->paid_amount > 0)
+                                <p class="mt-1.5 text-xs text-amber-600 dark:text-amber-400">Paid: ৳{{ number_format($teachersPayment->paid_amount, 2) }} — Amount cannot be set below this.</p>
+                            @endif
                         </div>
 
                         <!-- Month -->
@@ -161,6 +211,11 @@
         // Initialize Select2
         $('#teacher_id').select2({
             placeholder: 'Select a teacher',
+            allowClear: true,
+            width: '100%'
+        });
+        $('#batch_id').select2({
+            placeholder: 'Select a batch',
             allowClear: true,
             width: '100%'
         });
