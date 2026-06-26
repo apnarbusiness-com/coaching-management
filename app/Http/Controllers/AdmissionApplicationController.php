@@ -126,7 +126,7 @@ class AdmissionApplicationController extends Controller
 
     public function thankYou($id)
     {
-        $student = StudentBasicInfo::findOrFail($id);
+        $student = StudentBasicInfo::with('studentDetails')->findOrFail($id);
         return view('admission.thankyou', compact('student'));
     }
 
