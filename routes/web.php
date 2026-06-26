@@ -7,6 +7,7 @@ use App\Http\Controllers\Admin\CashBookController;
 use App\Http\Controllers\Admin\DueCollectionController;
 use App\Http\Controllers\Admin\GeneralSettingController;
 use App\Http\Controllers\Admin\HomeController;
+use App\Http\Controllers\Admin\NotificationController;
 use App\Http\Controllers\Admin\ReferralCampaignController;
 use App\Http\Controllers\Admin\ReferralSettingsController;
 use App\Http\Controllers\Admin\StudentBasicInfoController;
@@ -273,6 +274,13 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('withdraw-requests', [WithdrawRequestController::class, 'index'])->name('withdraw-requests.index');
     Route::post('withdraw-requests/{withdrawRequest}/approve', [WithdrawRequestController::class, 'approve'])->name('withdraw-requests.approve');
     Route::post('withdraw-requests/{withdrawRequest}/reject', [WithdrawRequestController::class, 'reject'])->name('withdraw-requests.reject');
+
+    // Notifications
+    Route::get('notifications', [NotificationController::class, 'index'])->name('notifications.index');
+    Route::get('notifications/unread-count', [NotificationController::class, 'unreadCount'])->name('notifications.unread-count');
+    Route::get('notifications/recent', [NotificationController::class, 'recent'])->name('notifications.recent');
+    Route::post('notifications/{notification}/read', [NotificationController::class, 'markAsRead'])->name('notifications.read');
+    Route::post('notifications/read-all', [NotificationController::class, 'markAllRead'])->name('notifications.read-all');
 
     // Admin Referral Campaigns
     Route::resource('referral-campaigns', ReferralCampaignController::class)->names([

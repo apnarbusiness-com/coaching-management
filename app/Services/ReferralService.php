@@ -2,6 +2,7 @@
 
 namespace App\Services;
 
+use App\Models\Notification;
 use App\Models\ReferralCampaign;
 use App\Models\StudentAdmissionApplication;
 use App\Models\StudentBasicInfo;
@@ -79,12 +80,30 @@ class ReferralService
             return null;
         }
 
-        return $this->walletService->credit(
+        $transaction = $this->walletService->credit(
             $referrer->id,
             $campaign->reward_amount,
             'App\Models\StudentBasicInfo',
             $student->id,
             "Referral reward for {$student->first_name} {$student->last_name} via campaign: {$campaign->name}"
         );
+
+        $this->sendReferralRewardNotification($referrer, $student, $campaign->reward_amount);
+
+        return $transaction;
+    }
+
+    protected function sendReferralRewardNotification(User $referrer, StudentBasicInfo $student, $rewardAmount)
+    {
+        Notification::create([
+            'user_id' => $referrer->id,
+            'type' => 'referral_reward',
+            'data' => [
+                'student_name' => $student->first_name . ' ' . ($student->last_name ?? ''),
+                'student_id' => $student->id,
+                'reward_amount' => $rewardAmount,
+            ],
+            'link' => route('admin.wallet.index'),
+        ]);
     }
 }

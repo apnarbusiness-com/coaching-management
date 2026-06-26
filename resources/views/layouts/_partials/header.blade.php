@@ -44,12 +44,82 @@
     </div>
 
     <div class="flex items-center gap-4">
-        <button
-            class="relative p-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors">
-            <span class="material-symbols-outlined">notifications</span>
-            <span
-                class="absolute top-2 right-2 w-2 h-2 bg-red-500 rounded-full border-2 border-white dark:border-slate-900"></span>
-        </button>
+        @php
+            $notifUser = auth()->user();
+            $unreadNotifCount = $notifUser ? $notifUser->unreadNotifications()->count() : 0;
+            $recentNotifs = $notifUser ? $notifUser->notifications()->latest()->take(5)->get() : collect();
+        @endphp
+        <div class="relative" id="headerNotificationDropdown">
+            <button onclick="toggleNotifMenu()"
+                class="relative p-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors">
+                <span class="material-symbols-outlined">notifications</span>
+                @if ($unreadNotifCount > 0)
+                    <span
+                        class="absolute -top-0.5 -right-0.5 min-w-[18px] h-[18px] rounded-full bg-red-500 text-white text-[10px] font-bold flex items-center justify-center px-1 border-2 border-white dark:border-slate-900">
+                        {{ $unreadNotifCount > 99 ? '99+' : $unreadNotifCount }}
+                    </span>
+                @endif
+            </button>
+
+            <div id="headerNotifMenu"
+                class="hidden absolute right-0 mt-2 w-80 bg-white dark:bg-slate-800 rounded-xl shadow-lg border border-slate-200 dark:border-slate-700 z-50 origin-top-right transition-all duration-200">
+                <div class="px-4 py-3 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between">
+                    <span class="text-sm font-semibold text-slate-900 dark:text-white">Notifications</span>
+                    @if ($unreadNotifCount > 0)
+                        <form method="POST" action="{{ route('admin.notifications.read-all') }}" class="inline">
+                            @csrf
+                            <button type="submit" class="text-xs text-blue-600 hover:underline">Mark all as read</button>
+                        </form>
+                    @endif
+                </div>
+
+                <div class="max-h-[320px] overflow-y-auto">
+                    @forelse ($recentNotifs as $notif)
+                        <a href="{{ $notif->link }}"
+                           class="block px-4 py-3 border-b border-slate-50 dark:border-slate-700/50 hover:bg-slate-50 dark:hover:bg-slate-700/50 transition-colors {{ !$notif->is_read ? 'bg-blue-50/50 dark:bg-blue-900/10' : '' }}">
+                            <div class="flex gap-3">
+                                <div class="mt-0.5 flex-shrink-0">
+                                    @if ($notif->type === 'referral_reward')
+                                        <div class="w-8 h-8 rounded-full bg-green-100 dark:bg-green-900/30 flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-green-600 dark:text-green-400 text-lg">person_add</span>
+                                        </div>
+                                    @else
+                                        <div class="w-8 h-8 rounded-full bg-slate-100 dark:bg-slate-700 flex items-center justify-center">
+                                            <span class="material-symbols-outlined text-slate-500 text-lg">circle_notifications</span>
+                                        </div>
+                                    @endif
+                                </div>
+                                <div class="flex-1 min-w-0">
+                                    @if ($notif->type === 'referral_reward')
+                                        <p class="text-sm text-slate-700 dark:text-slate-300">
+                                            Your referred student <strong>{{ $notif->data['student_name'] ?? '' }}</strong> has been admitted.
+                                        </p>
+                                        <p class="text-sm font-semibold text-green-600 dark:text-green-400 mt-0.5">
+                                            You earned {{ number_format($notif->data['reward_amount'] ?? 0, 2) }} TK
+                                        </p>
+                                        <p class="text-xs text-blue-600 dark:text-blue-400 mt-0.5">Withdraw from wallet →</p>
+                                    @else
+                                        <p class="text-sm text-slate-700 dark:text-slate-300">Notification</p>
+                                    @endif
+                                    <p class="text-xs text-slate-400 mt-1">{{ $notif->created_at->diffForHumans() }}</p>
+                                </div>
+                            </div>
+                        </a>
+                    @empty
+                        <div class="px-4 py-8 text-center text-slate-400">
+                            <span class="material-symbols-outlined text-3xl">notifications_off</span>
+                            <p class="text-sm mt-1">No notifications</p>
+                        </div>
+                    @endforelse
+                </div>
+
+                @if ($recentNotifs->isNotEmpty())
+                    <div class="px-4 py-2 border-t border-slate-100 dark:border-slate-700 text-center">
+                        <span class="text-xs text-slate-400">Showing last {{ $recentNotifs->count() }}</span>
+                    </div>
+                @endif
+            </div>
+        </div>
         <button id="theme-toggle"
             class="p-2 text-slate-500 hover:bg-slate-50 dark:hover:bg-slate-700 rounded-full transition-colors">
             <span class="material-symbols-outlined">dark_mode</span>
@@ -107,11 +177,34 @@
         const menu = document.getElementById('headerUserMenu');
         menu.classList.toggle('hidden');
     }
+
+    function toggleNotifMenu() {
+        const menu = document.getElementById('headerNotifMenu');
+        menu.classList.toggle('hidden');
+    }
+
+    function closeAllDropdowns() {
+        const userMenu = document.getElementById('headerUserMenu');
+        const notifMenu = document.getElementById('headerNotifMenu');
+        if (userMenu && !userMenu.classList.contains('hidden')) {
+            userMenu.classList.add('hidden');
+        }
+        if (notifMenu && !notifMenu.classList.contains('hidden')) {
+            notifMenu.classList.add('hidden');
+        }
+    }
+
     document.addEventListener('click', function(e) {
-        const dropdown = document.getElementById('headerUserDropdown');
-        const menu = document.getElementById('headerUserMenu');
-        if (dropdown && !dropdown.contains(e.target) && !menu.classList.contains('hidden')) {
-            menu.classList.add('hidden');
+        const userDropdown = document.getElementById('headerUserDropdown');
+        const notifDropdown = document.getElementById('headerNotificationDropdown');
+        const userMenu = document.getElementById('headerUserMenu');
+        const notifMenu = document.getElementById('headerNotifMenu');
+
+        if (userDropdown && !userDropdown.contains(e.target) && userMenu && !userMenu.classList.contains('hidden')) {
+            userMenu.classList.add('hidden');
+        }
+        if (notifDropdown && !notifDropdown.contains(e.target) && notifMenu && !notifMenu.classList.contains('hidden')) {
+            notifMenu.classList.add('hidden');
         }
     });
 </script>

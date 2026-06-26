@@ -131,4 +131,14 @@ class User extends Authenticatable implements HasMedia
     {
         return $this->hasMany(StudentAdmissionApplication::class, 'referred_by_user_id');
     }
+
+    public function notifications()
+    {
+        return $this->hasMany(\App\Models\Notification::class, 'user_id');
+    }
+
+    public function unreadNotifications()
+    {
+        return $this->notifications()->where('is_read', false);
+    }
 }
