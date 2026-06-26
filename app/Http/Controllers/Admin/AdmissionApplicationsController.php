@@ -4,6 +4,7 @@ namespace App\Http\Controllers\Admin;
 
 use App\Http\Controllers\Controller;
 use App\Models\StudentBasicInfo;
+use App\Models\User;
 use App\Services\ReferralService;
 use Illuminate\Http\Request;
 use Illuminate\Support\Facades\Gate;
@@ -56,11 +57,31 @@ class AdmissionApplicationsController extends Controller
                 ->with('status', 'Already processed.');
         }
 
+        $idNo = generateAdmissionID();
+        $roll = $student->roll ?? generateAdmissionID();
+
         $student->update([
             'status' => '1',
-            'id_no' => generateAdmissionID(),
-            'roll' => $student->roll ?? generateAdmissionID(),
+            'id_no' => $idNo,
+            'roll' => $roll,
         ]);
+
+        $student->refresh();
+
+        if (!$student->user_id) {
+            $user = User::create([
+                'name' => trim($student->first_name . ' ' . ($student->last_name ?? '')),
+                'email' => $student->email,
+                'user_name' => generateUserName(),
+                'admission_id' => $idNo,
+                'password' => bcrypt($idNo),
+            ]);
+
+            $user->roles()->sync(\App\Models\Role::whereIn('title', ['Student', 'student'])->first()->id ?? []);
+
+            $student->user_id = $user->id;
+            $student->save();
+        }
 
         if ($student->referred_by_user_id) {
             try {
