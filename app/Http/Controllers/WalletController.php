@@ -114,7 +114,7 @@ class WalletController extends Controller
     {
         $validated = $request->validate([
             'amount' => ['required', 'numeric', 'min:1'],
-            'payment_method' => ['required', 'string', 'in:bkash,nagad,bank,rocket'],
+            'payment_method' => ['required', 'string', 'in:bkash,nagad,rocket,cash'],
             'account_number' => ['nullable', 'string', 'max:100'],
             'phone' => ['required', 'string', 'max:20'],
         ]);
