@@ -5,9 +5,9 @@ namespace App\Http\Controllers;
 use App\Models\StudentBasicInfo;
 use App\Models\StudentDetailsInformation;
 use App\Models\User;
-use App\Services\ReferralService;
 use Carbon\Carbon;
 use Illuminate\Http\Request;
+use Illuminate\Support\Facades\Validator;
 
 class AdmissionApplicationController extends Controller
 {
@@ -51,7 +51,7 @@ class AdmissionApplicationController extends Controller
         ]);
 
         $referredByUserId = null;
-        if (!empty($validated['referral_code'])) {
+        if (! empty($validated['referral_code'])) {
             $referrer = User::where('referral_code', $validated['referral_code'])->first();
             if ($referrer) {
                 $referredByUserId = $referrer->id;
@@ -59,12 +59,12 @@ class AdmissionApplicationController extends Controller
         }
 
         $classRoll = $validated['class_roll'] ?? null;
-        if ($classRoll && !is_numeric($classRoll)) {
+        if ($classRoll && ! is_numeric($classRoll)) {
             $classRoll = null;
         }
 
         $joiningDate = null;
-        if (!empty($validated['admission_date'])) {
+        if (! empty($validated['admission_date'])) {
             $joiningDate = Carbon::parse($validated['admission_date'])->format('Y-m-d 00:00:00');
         }
 
@@ -95,10 +95,10 @@ class AdmissionApplicationController extends Controller
         $studentAddress = $validated['address'];
         if (empty($studentAddress)) {
             $parts = array_filter([
-                $validated['village'] ? 'Village: ' . $validated['village'] : null,
-                $validated['post_office'] ? 'P.O: ' . $validated['post_office'] : null,
+                $validated['village'] ? 'Village: '.$validated['village'] : null,
+                $validated['post_office'] ? 'P.O: '.$validated['post_office'] : null,
             ]);
-            $studentAddress = !empty($parts) ? implode(', ', $parts) : null;
+            $studentAddress = ! empty($parts) ? implode(', ', $parts) : null;
         }
 
         StudentDetailsInformation::create([
@@ -127,6 +127,7 @@ class AdmissionApplicationController extends Controller
     public function thankYou($id)
     {
         $student = StudentBasicInfo::with('studentDetails')->findOrFail($id);
+
         return view('admission.thankyou', compact('student'));
     }
 
@@ -140,6 +141,29 @@ class AdmissionApplicationController extends Controller
         if ($user) {
             return response()->json(['valid' => true, 'name' => $user->name]);
         }
+
         return response()->json(['valid' => false]);
+    }
+
+    public function checkEmail(Request $request)
+    {
+        $email = $request->query('email');
+        if (empty($email)) {
+            return response()->json(['exists' => false]);
+        }
+
+        $validator = Validator::make(['email' => $email], ['email' => 'email']);
+        if ($validator->fails()) {
+            return response()->json(['exists' => false, 'invalid' => true]);
+        }
+
+        $inUsers = User::where('email', $email)->exists();
+        $inPending = StudentBasicInfo::where('email', $email)
+            ->where('status', 'pending')
+            ->exists();
+
+        return response()->json([
+            'exists' => $inUsers || $inPending,
+        ]);
     }
 }

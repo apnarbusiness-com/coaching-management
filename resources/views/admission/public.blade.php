@@ -365,7 +365,8 @@
                         </div>
                         <div class="form-group col-md-4">
                             <label>Email (optional)</label>
-                            <input type="email" name="email" class="form-control" value="{{ old('email') }}">
+                            <input type="email" name="email" class="form-control" value="{{ old('email') }}" id="admission-email">
+                            <small id="email-status" style="color: #6c757d;"></small>
                         </div>
                         <div class="form-group col-md-4">
                             <label>Birth Registration No (optional)</label>
@@ -523,6 +524,29 @@
                     status.textContent = d.valid ? 'Valid referral code from ' + d.name :
                         'Invalid referral code';
                     status.style.color = d.valid ? 'green' : 'red';
+                })
+                .catch(() => {
+                    status.textContent = '';
+                });
+        });
+
+        document.querySelector('input[name="email"]')?.addEventListener('blur', function() {
+            const status = document.getElementById('email-status');
+            const val = this.value.trim();
+            if (!val) {
+                status.textContent = '';
+                return;
+            }
+            fetch('{{ route('admission.public.check-email') }}?email=' + encodeURIComponent(val))
+                .then(r => r.json())
+                .then(d => {
+                    if (d.exists) {
+                        status.textContent = 'This email is already registered in the system.';
+                        status.style.color = 'red';
+                    } else {
+                        status.textContent = 'Email is available.';
+                        status.style.color = 'green';
+                    }
                 })
                 .catch(() => {
                     status.textContent = '';
