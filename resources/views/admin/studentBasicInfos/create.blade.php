@@ -650,6 +650,29 @@
                         </div>
                     </div>
                 </div>
+
+                <!-- Referral Code (Optional) -->
+                <div class="p-6 md:p-8 border-b border-slate-200 dark:border-slate-700">
+                    <div class="flex items-center gap-2 mb-6 text-primary">
+                        <span class="material-symbols-outlined">referral</span>
+                        <h3 class="text-lg font-bold text-slate-900 dark:text-white">Referral Code (Optional)</h3>
+                    </div>
+                    <p class="text-sm text-slate-500 dark:text-slate-400 mb-3">
+                        If this student was referred by a current student/teacher, search their referral code below.
+                    </p>
+                    <div class="relative">
+                        <input type="hidden" name="referral_code" id="referral_code" value="{{ old('referral_code') }}">
+                        <input type="text" id="referral-search"
+                            class="mt-1 block w-full rounded-lg border-slate-300 dark:border-slate-600 bg-white dark:bg-slate-800 text-slate-900 dark:text-white shadow-sm focus:border-primary focus:ring-primary sm:text-sm py-2.5 px-3"
+                            placeholder="Search by referral code, name, or ID... (min 2 chars)"
+                            autocomplete="off"
+                            value="{{ old('referral_code') }}">
+                        <small id="referral-status" class="mt-1"></small>
+                        <div id="referral-results"
+                            class="hidden absolute z-50 mt-1 w-full rounded-lg border border-slate-200 dark:border-slate-600 bg-white dark:bg-slate-800 shadow-lg max-h-60 overflow-y-auto">
+                        </div>
+                    </div>
+                </div>
                 <!-- Form Actions Footer -->
                 <div
                     class="px-6 py-4 bg-slate-50 dark:bg-slate-800/50 border-t border-slate-200 dark:border-slate-700 flex items-center justify-end gap-3">
@@ -834,6 +857,58 @@
                     if (hiddenInput) hiddenInput.remove();
                 });
             }
+
+            // Referral Code Autocomplete Search
+            let searchTimer;
+
+            $('#referral-search').on('input', function() {
+                clearTimeout(searchTimer);
+                const val = $(this).val().trim();
+                if (val.length < 2) {
+                    $('#referral-results').addClass('hidden').empty();
+                    return;
+                }
+                searchTimer = setTimeout(() => {
+                    fetch('{{ route('admin.referral-codes.search') }}?q=' + encodeURIComponent(val))
+                        .then(r => r.json())
+                        .then(data => {
+                            const container = $('#referral-results');
+                            container.empty().removeClass('hidden');
+                            if (data.length === 0) {
+                                container.html('<div class="px-4 py-3 text-sm text-slate-500">No matching referrers found.</div>');
+                                return;
+                            }
+                            data.forEach(u => {
+                                container.append(
+                                    '<div class="referral-result-item px-4 py-3 cursor-pointer hover:bg-slate-100 dark:hover:bg-slate-700 border-b border-slate-100 dark:border-slate-700 flex items-center justify-between" data-code="' + u.referral_code + '" data-name="' + u.name + '">' +
+                                        '<div>' +
+                                            '<div class="text-sm font-medium text-slate-900 dark:text-white">' + u.name + '</div>' +
+                                            '<div class="text-xs text-slate-500">Code: ' + u.referral_code + '</div>' +
+                                        '</div>' +
+                                        '<span class="text-xs text-slate-400">ID: ' + (u.admission_id || 'N/A') + '</span>' +
+                                    '</div>'
+                                );
+                            });
+                        });
+                }, 300);
+            });
+
+            $(document).on('click', '.referral-result-item', function() {
+                const code = $(this).data('code');
+                const name = $(this).data('name');
+                $('#referral_code').val(code);
+                $('#referral-search').val(code);
+                $('#referral-results').addClass('hidden').empty();
+                $('#referral-status')
+                    .html('Valid referral code from <strong class="text-blue-800 dark:text-blue-400">' + name + '</strong>')
+                    .css('color', 'green');
+            });
+
+            $(document).on('click', function(e) {
+                if (!$(e.target).closest('#referral-search, #referral-results').length) {
+                    $('#referral-results').addClass('hidden');
+                }
+            });
         });
     </script>
 

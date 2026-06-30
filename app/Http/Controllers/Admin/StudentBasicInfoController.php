@@ -7,8 +7,8 @@ use App\Http\Controllers\Traits\MediaUploadingTrait;
 use App\Http\Requests\MassDestroyStudentBasicInfoRequest;
 use App\Http\Requests\StoreStudentBasicInfoRequest;
 use App\Http\Requests\UpdateStudentBasicInfoRequest;
-use App\Models\AcademicClass;
 use App\Models\AcademicBackground;
+use App\Models\AcademicClass;
 use App\Models\Batch;
 use App\Models\ClassRoom;
 use App\Models\Section;
@@ -30,7 +30,6 @@ use PhpOffice\PhpSpreadsheet\IOFactory;
 use Spatie\MediaLibrary\MediaCollections\Models\Media;
 use SpreadsheetReader;
 use Symfony\Component\HttpFoundation\Response;
-use Symfony\Polyfill\Uuid\Uuid;
 use Yajra\DataTables\Facades\DataTables;
 
 class StudentBasicInfoController extends Controller
@@ -131,13 +130,13 @@ class StudentBasicInfoController extends Controller
         $query = StudentImportRaw::query()
             ->orderBy('id');
         // ->orderByDesc('id');
-        if (!empty($sourceFile)) {
+        if (! empty($sourceFile)) {
             $query->where('source_file', $sourceFile);
         }
 
         $rawRows = $query->paginate(50)->withQueryString();
         $summaryQuery = StudentImportRaw::query();
-        if (!empty($sourceFile)) {
+        if (! empty($sourceFile)) {
             $summaryQuery->where('source_file', $sourceFile);
         }
         $totalRows = (clone $summaryQuery)->count();
@@ -216,7 +215,7 @@ class StudentBasicInfoController extends Controller
     public function store(StoreStudentBasicInfoRequest $request)
     {
         try {
-            $studentBasicInfo = new StudentBasicInfo();
+            $studentBasicInfo = new StudentBasicInfo;
             $studentBasicInfo->roll = $request->roll ? $request->roll : (generateAdmissionID() ?? 000);
             $studentBasicInfo->id_no = generateAdmissionID() ?? 000;
             $studentBasicInfo->first_name = $request->first_name;
@@ -236,13 +235,24 @@ class StudentBasicInfoController extends Controller
 
             $studentBasicInfo->save();
 
+            if ($request->filled('referral_code')) {
+                $referrer = User::where('referral_code', $request->referral_code)
+                    ->where('wallet_access', true)
+                    ->first();
+                if ($referrer) {
+                    $studentBasicInfo->referral_code = $request->referral_code;
+                    $studentBasicInfo->referred_by_user_id = $referrer->id;
+                    $studentBasicInfo->save();
+                }
+            }
+
             if ($request->need_login) {
                 $user = User::create([
-                    'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
+                    'name' => trim($request->first_name.' '.($request->last_name ?? '')),
                     'email' => $request->email,
                     'user_name' => $request->user_name ?? null,
                     'admission_id' => $studentBasicInfo->id_no ?? null,
-                    'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($studentBasicInfo->id_no),
+                    'password' => isset($request->password) && ! empty($request->password) ? bcrypt($request->password) : bcrypt($studentBasicInfo->id_no),
                 ]);
 
                 $user->roles()->sync(\App\Models\Role::whereIn('title', ['Student', 'student'])->first()->id ?? []);
@@ -251,7 +261,7 @@ class StudentBasicInfoController extends Controller
                 $studentBasicInfo->save();
             }
 
-            $studentDetails = new StudentDetailsInformation();
+            $studentDetails = new StudentDetailsInformation;
             $studentDetails->student_id = $studentBasicInfo->id;
 
             $studentDetails->fathers_name = $request->fathers_name;
@@ -268,7 +278,7 @@ class StudentBasicInfoController extends Controller
             $studentBasicInfo->subjects()->sync($request->input('subjects', []));
             $studentBasicInfo->batches()->sync($request->input('batches', []));
             if ($request->input('file-upload', false)) {
-                $tempPath = storage_path('tmp/uploads/' . basename($request->input('file-upload')));
+                $tempPath = storage_path('tmp/uploads/'.basename($request->input('file-upload')));
                 if ($studentBasicInfo->user) {
                     $studentBasicInfo->user->clearMediaCollection('profile_img');
                     $studentBasicInfo->user->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
@@ -282,12 +292,40 @@ class StudentBasicInfoController extends Controller
                 Media::whereIn('id', $media)->update(['model_id' => $studentBasicInfo->id]);
             }
 
+            if ($studentBasicInfo->referred_by_user_id) {
+                try {
+                    app(\App\Services\ReferralService::class)->processReferralRewardByStudent($studentBasicInfo);
+                } catch (\Exception $e) {
+                    report($e);
+                }
+            }
+
             return redirect()->route('admin.student-basic-infos.index');
         } catch (\Exception $e) {
             return redirect()->back()
-                ->with('error', 'An error occurred: ' . $e->getMessage())
+                ->with('error', 'An error occurred: '.$e->getMessage())
                 ->withInput();
         }
+    }
+
+    public function searchReferralCodes(Request $request)
+    {
+        $term = $request->query('q');
+        if (strlen($term) < 2) {
+            return response()->json([]);
+        }
+
+        $users = User::where('wallet_access', true)
+            ->where(function ($q) use ($term) {
+                $q->where('referral_code', 'like', "%{$term}%")
+                    ->orWhere('name', 'like', "%{$term}%")
+                    ->orWhere('admission_id', 'like', "%{$term}%")
+                    ->orWhere('user_name', 'like', "%{$term}%");
+            })
+            ->limit(15)
+            ->get(['id', 'referral_code', 'name', 'admission_id']);
+
+        return response()->json($users);
     }
 
     public function edit(StudentBasicInfo $studentBasicInfo)
@@ -335,13 +373,13 @@ class StudentBasicInfoController extends Controller
 
         // Handle User Login
         if ($request->need_login) {
-            if (!$studentBasicInfo->user_id) {
+            if (! $studentBasicInfo->user_id) {
                 $user = User::where('email', $request->email)->first();
-                if (!$user) {
+                if (! $user) {
                     $user = User::create([
-                        'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
+                        'name' => trim($request->first_name.' '.($request->last_name ?? '')),
                         'email' => $request->email,
-                        'password' => isset($request->password) && !empty($request->password) ? bcrypt($request->password) : bcrypt($request->email),
+                        'password' => isset($request->password) && ! empty($request->password) ? bcrypt($request->password) : bcrypt($request->email),
                     ]);
                 }
                 $studentBasicInfo->user_id = $user->id;
@@ -349,7 +387,7 @@ class StudentBasicInfoController extends Controller
             } else {
                 $user = $studentBasicInfo->user;
                 $userData = [
-                    'name' => trim($request->first_name . ' ' . ($request->last_name ?? '')),
+                    'name' => trim($request->first_name.' '.($request->last_name ?? '')),
                     'email' => $request->email,
                 ];
                 if ($request->filled('password')) {
@@ -384,13 +422,13 @@ class StudentBasicInfoController extends Controller
 
         // Image Handling
         if ($request->input('image', false)) {
-            if (!$studentBasicInfo->image || $request->input('image') !== $studentBasicInfo->image->file_name) {
+            if (! $studentBasicInfo->image || $request->input('image') !== $studentBasicInfo->image->file_name) {
                 // If it's a new file (from tmp)
-                if (file_exists(storage_path('tmp/uploads/' . basename($request->input('image'))))) {
+                if (file_exists(storage_path('tmp/uploads/'.basename($request->input('image'))))) {
                     if ($studentBasicInfo->image) {
                         $studentBasicInfo->image->delete();
                     }
-                    $tempPath = storage_path('tmp/uploads/' . basename($request->input('image')));
+                    $tempPath = storage_path('tmp/uploads/'.basename($request->input('image')));
                     if ($studentBasicInfo->user) {
                         $studentBasicInfo->user->clearMediaCollection('profile_img');
                         $studentBasicInfo->user->addMedia($tempPath)->preservingOriginal()->toMediaCollection('profile_img');
@@ -478,7 +516,7 @@ class StudentBasicInfoController extends Controller
     {
         abort_if(Gate::denies('student_basic_info_create') && Gate::denies('student_basic_info_edit'), Response::HTTP_FORBIDDEN, '403 Forbidden');
 
-        $model = new StudentBasicInfo();
+        $model = new StudentBasicInfo;
         $model->id = $request->input('crud_id', 0);
         $model->exists = true;
         $media = $model->addMediaFromRequest('upload')->toMediaCollection('ck-media');
@@ -559,7 +597,7 @@ class StudentBasicInfoController extends Controller
         ]);
 
         $file = $request->file('excel_file');
-        $sourceFile = $file->getClientOriginalName() ?: ('import_' . now()->format('Ymd_His'));
+        $sourceFile = $file->getClientOriginalName() ?: ('import_'.now()->format('Ymd_His'));
         $spreadsheet = IOFactory::load($file->getRealPath());
 
         $rowsToInsert = [];
@@ -583,11 +621,11 @@ class StudentBasicInfoController extends Controller
                     }
                 }
 
-                if (!$hasData) {
+                if (! $hasData) {
                     continue;
                 }
 
-                if (!$this->isMeaningfulRawRow($values)) {
+                if (! $this->isMeaningfulRawRow($values)) {
                     continue;
                 }
 
@@ -606,14 +644,14 @@ class StudentBasicInfoController extends Controller
             }
         }
 
-        if (!empty($rowsToInsert)) {
+        if (! empty($rowsToInsert)) {
             foreach (array_chunk($rowsToInsert, 500) as $chunk) {
                 DB::table('student_import_raws')->insert($chunk);
             }
         }
 
         return redirect()->route('admin.student-basic-infos.rawImports', ['source_file' => $sourceFile])
-            ->with('message', 'Raw import complete. Rows inserted: ' . count($rowsToInsert));
+            ->with('message', 'Raw import complete. Rows inserted: '.count($rowsToInsert));
     }
 
     public function processRawToStudents(Request $request, StudentImportService $studentImportService)
@@ -634,11 +672,11 @@ class StudentBasicInfoController extends Controller
             return redirect()->route('admin.student-basic-infos.index')->with('error', 'No raw rows found for selected source file.');
         }
 
-        $rows = $allRows->map(fn(StudentImportRaw $raw) => (array) ($raw->row_data ?? []))->values()->all();
+        $rows = $allRows->map(fn (StudentImportRaw $raw) => (array) ($raw->row_data ?? []))->values()->all();
         $headerIndex = $this->detectHeaderIndex($rows);
         $headers = $rows[$headerIndex] ?? [];
         $headerMap = $this->buildHeaderMap($headers);
-        if (!$this->hasRequiredImportHeaders($headerMap)) {
+        if (! $this->hasRequiredImportHeaders($headerMap)) {
             return redirect()->route('admin.student-basic-infos.index')
                 ->with('error', 'Could not detect required headers (ID, Student Name, Contact Number) in raw table data.');
         }
@@ -671,7 +709,7 @@ class StudentBasicInfoController extends Controller
 
         foreach ($rawRows as $rawRow) {
             $row = (array) ($rawRow->row_data ?? []);
-            if (!$this->hasAnyData($row)) {
+            if (! $this->hasAnyData($row)) {
                 continue;
             }
 
@@ -707,7 +745,7 @@ class StudentBasicInfoController extends Controller
 
         $message = "Step-2 completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Failed: {$summary['failed']}.";
         session()->flash('message', $message);
-        if (!empty($summary['errors'])) {
+        if (! empty($summary['errors'])) {
             session()->flash('import_errors', array_slice($summary['errors'], 0, 25));
         }
 
@@ -724,7 +762,7 @@ class StudentBasicInfoController extends Controller
 
         $file = $request->file('csv_file');
         $ext = strtolower($file->getClientOriginalExtension() ?: '');
-        if (in_array($ext, ['xlsx', 'xls'], true) && !class_exists(\ZipArchive::class)) {
+        if (in_array($ext, ['xlsx', 'xls'], true) && ! class_exists(\ZipArchive::class)) {
             return redirect()->back()->with('error', 'Excel import requires PHP zip extension (ZipArchive). Please upload CSV file or enable php_zip.');
         }
 
@@ -734,7 +772,7 @@ class StudentBasicInfoController extends Controller
         $headerIndex = $this->detectHeaderIndex($rows);
         $headers = $rows[$headerIndex] ?? [];
         $headerMap = $this->buildHeaderMap($headers);
-        if (!$this->hasRequiredImportHeaders($headerMap)) {
+        if (! $this->hasRequiredImportHeaders($headerMap)) {
             return redirect()->back()->with('error', 'Could not detect required headers (ID, Student Name, Contact Number). Please check your file format.');
         }
 
@@ -744,7 +782,7 @@ class StudentBasicInfoController extends Controller
         }
 
         $extension = $file->getClientOriginalExtension() ?: 'csv';
-        $filename = Str::random(18) . '.' . strtolower($extension);
+        $filename = Str::random(18).'.'.strtolower($extension);
         $file->storeAs('csv_import', $filename);
 
         $redirect = url()->previous();
@@ -768,10 +806,10 @@ class StudentBasicInfoController extends Controller
             'headerIndex' => 'required|integer|min:0',
         ]);
 
-        $path = storage_path('app/csv_import/' . $request->input('filename'));
+        $path = storage_path('app/csv_import/'.$request->input('filename'));
         abort_unless(File::exists($path), Response::HTTP_NOT_FOUND, 'Import file not found.');
         $ext = strtolower((string) pathinfo($path, PATHINFO_EXTENSION));
-        if (in_array($ext, ['xlsx', 'xls'], true) && !class_exists(\ZipArchive::class)) {
+        if (in_array($ext, ['xlsx', 'xls'], true) && ! class_exists(\ZipArchive::class)) {
             return redirect($request->input('redirect'))->with('error', 'Excel processing requires PHP zip extension (ZipArchive). Please use CSV.');
         }
 
@@ -780,8 +818,9 @@ class StudentBasicInfoController extends Controller
         $headerIndex = (int) $request->input('headerIndex', 0);
         $headers = $rows[$headerIndex] ?? [];
         $headerMap = $this->buildHeaderMap($headers);
-        if (!$this->hasRequiredImportHeaders($headerMap)) {
+        if (! $this->hasRequiredImportHeaders($headerMap)) {
             File::delete($path);
+
             return redirect($request->input('redirect'))->with('error', 'Could not detect required headers (ID, Student Name, Contact Number). Import aborted.');
         }
 
@@ -797,7 +836,7 @@ class StudentBasicInfoController extends Controller
                 continue;
             }
 
-            if (!$this->hasAnyData($row)) {
+            if (! $this->hasAnyData($row)) {
                 continue;
             }
 
@@ -826,7 +865,7 @@ class StudentBasicInfoController extends Controller
         $message = "Import completed. Created: {$summary['created']}, Updated: {$summary['updated']}, Failed: {$summary['failed']}.";
         session()->flash('message', $message);
 
-        if (!empty($summary['errors'])) {
+        if (! empty($summary['errors'])) {
             session()->flash('import_errors', array_slice($summary['errors'], 0, 25));
         }
 
@@ -834,12 +873,12 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<int, mixed> $rows
+     * @param  array<int, mixed>  $rows
      */
     protected function detectHeaderIndex(array $rows): int
     {
         foreach ($rows as $index => $row) {
-            if (!is_array($row)) {
+            if (! is_array($row)) {
                 continue;
             }
 
@@ -857,7 +896,7 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<int, mixed> $headers
+     * @param  array<int, mixed>  $headers
      * @return array<string, int>
      */
     protected function buildHeaderMap(array $headers): array
@@ -882,8 +921,8 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<int, mixed> $row
-     * @param array<string, int> $headerMap
+     * @param  array<int, mixed>  $row
+     * @param  array<string, int>  $headerMap
      * @return array<string, mixed>
      */
     protected function normalizeImportRow(array $row, array $headerMap): array
@@ -893,8 +932,8 @@ class StudentBasicInfoController extends Controller
         $name = $this->valueByHeader($row, $headerMap, ['student name', 'name']);
         $mobile = $this->valueByHeader($row, $headerMap, ['contact number', 'mobile']);
         $guardianContactRaw = $this->valueByHeader($row, $headerMap, ['guardian contact', 'guardian']);
-        $fathersName = $this->valueByHeader($row, $headerMap, ["father s name", "father name"]);
-        $mothersName = $this->valueByHeader($row, $headerMap, ["mother s name", "mother name"]);
+        $fathersName = $this->valueByHeader($row, $headerMap, ['father s name', 'father name']);
+        $mothersName = $this->valueByHeader($row, $headerMap, ['mother s name', 'mother name']);
         $dobRaw = $this->valueByHeader($row, $headerMap, ['dob', 'date of birth']);
         $genderRaw = $this->valueByHeader($row, $headerMap, ['gender']);
         $address = $this->valueByHeader($row, $headerMap, [
@@ -939,7 +978,7 @@ class StudentBasicInfoController extends Controller
             'last_name' => null,
             'gender' => $gender,
             'dob' => $dob,
-            'contact_number' => $mobile !== '' ? $mobile : ('MISSING-' . Str::random(8)),
+            'contact_number' => $mobile !== '' ? $mobile : ('MISSING-'.Str::random(8)),
             'email' => $email !== '' ? $email : null,
             'class_id' => $this->resolveClassId($className),
             'section_id' => null,
@@ -962,15 +1001,15 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<int, mixed> $row
-     * @param array<string, int> $headerMap
-     * @param array<int, string> $candidates
+     * @param  array<int, mixed>  $row
+     * @param  array<string, int>  $headerMap
+     * @param  array<int, string>  $candidates
      */
     protected function valueByHeader(array $row, array $headerMap, array $candidates): string
     {
         foreach ($candidates as $candidate) {
             $key = $this->normalizeHeader($candidate);
-            if (!array_key_exists($key, $headerMap)) {
+            if (! array_key_exists($key, $headerMap)) {
                 continue;
             }
 
@@ -984,7 +1023,7 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<int, mixed> $row
+     * @param  array<int, mixed>  $row
      */
     protected function hasAnyData(array $row): bool
     {
@@ -998,7 +1037,7 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<int, string> $values
+     * @param  array<int, string>  $values
      */
     protected function isMeaningfulRawRow(array $values): bool
     {
@@ -1061,7 +1100,7 @@ class StudentBasicInfoController extends Controller
     }
 
     /**
-     * @param array<string, int> $headerMap
+     * @param  array<string, int>  $headerMap
      */
     protected function hasRequiredImportHeaders(array $headerMap): bool
     {
@@ -1092,7 +1131,7 @@ class StudentBasicInfoController extends Controller
 
         $digits = preg_replace('/\D+/', '', $value) ?? '';
         if (strlen($digits) === 10) {
-            return '0' . $digits;
+            return '0'.$digits;
         }
         if (strlen($digits) === 11 && str_starts_with($digits, '0')) {
             return $digits;
@@ -1113,6 +1152,7 @@ class StudentBasicInfoController extends Controller
             try {
                 $base = Carbon::create(1899, 12, 30, 0, 0, 0);
                 $date = $base->copy()->addDays((int) floor((float) $raw));
+
                 return $date->format($format);
             } catch (\Throwable $e) {
                 // Fallback to normal parser below.
@@ -1196,7 +1236,7 @@ class StudentBasicInfoController extends Controller
 
         $rows = [];
         foreach ($reader as $row) {
-            $rows[] = array_map(fn($value) => trim((string) $value), is_array($row) ? $row : []);
+            $rows[] = array_map(fn ($value) => trim((string) $value), is_array($row) ? $row : []);
             if ($limit !== null && count($rows) >= $limit) {
                 break;
             }
@@ -1212,7 +1252,7 @@ class StudentBasicInfoController extends Controller
      */
     protected function readXlsxRows(string $path, ?int $limit = null): array
     {
-        $zip = new \ZipArchive();
+        $zip = new \ZipArchive;
         if ($zip->open($path) !== true) {
             return [];
         }
@@ -1239,7 +1279,7 @@ class StudentBasicInfoController extends Controller
         }
 
         $sheet = @simplexml_load_string($sheetXml);
-        if (!$sheet) {
+        if (! $sheet) {
             return [];
         }
 
@@ -1258,7 +1298,7 @@ class StudentBasicInfoController extends Controller
                     $value = $sharedStrings[$index] ?? '';
                 } elseif ($cellType === 'inlineStr') {
                     $inlineTextNodes = $cell->xpath('./*[local-name()="is"]//*[local-name()="t"]');
-                    if (!empty($inlineTextNodes)) {
+                    if (! empty($inlineTextNodes)) {
                         foreach ($inlineTextNodes as $inlineNode) {
                             $value .= (string) $inlineNode;
                         }
@@ -1272,7 +1312,7 @@ class StudentBasicInfoController extends Controller
                 $row[$colIndex] = trim($value);
             }
 
-            if (!empty($row)) {
+            if (! empty($row)) {
                 ksort($row);
                 $max = max(array_keys($row));
                 $normalized = [];

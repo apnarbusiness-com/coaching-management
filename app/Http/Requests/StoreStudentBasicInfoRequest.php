@@ -2,10 +2,8 @@
 
 namespace App\Http\Requests;
 
-use App\Models\StudentBasicInfo;
 // use Illuminate\Support\Facades\Gate;
 use Illuminate\Foundation\Http\FormRequest;
-use Illuminate\Http\Response;
 use Illuminate\Support\Facades\Gate;
 
 class StoreStudentBasicInfoRequest extends FormRequest
@@ -50,10 +48,10 @@ class StoreStudentBasicInfoRequest extends FormRequest
             ],
             'dob' => [
                 'required',
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
             ],
             'joining_date' => [
-                'date_format:' . config('panel.date_format'),
+                'date_format:'.config('panel.date_format'),
                 'nullable',
             ],
             'academic_background_id' => [
@@ -115,6 +113,11 @@ class StoreStudentBasicInfoRequest extends FormRequest
                 'nullable',
                 'numeric',
                 'min:0',
+            ],
+            'referral_code' => [
+                'nullable',
+                'string',
+                'max:20',
             ],
         ];
     }

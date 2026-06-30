@@ -141,6 +141,7 @@ Route::group(['prefix' => 'admin', 'as' => 'admin.', 'namespace' => 'Admin', 'mi
     Route::get('student-basic-infos/print-id-card/{id}', [StudentBasicInfoController::class, 'printIdCard'])->name('student-basic-infos.printIdCard');
     Route::post('student-basic-infos/{studentBasicInfo}/toggle-status', [StudentBasicInfoController::class, 'toggleStatus'])->name('student-basic-infos.toggleStatus');
     Route::post('student-basic-infos/{studentBasicInfo}/sync-subjects', 'StudentBasicInfoController@syncSubjects')->name('student-basic-infos.syncSubjects');
+    Route::get('referral-codes/search', [StudentBasicInfoController::class, 'searchReferralCodes'])->name('referral-codes.search');
     Route::resource('student-basic-infos', 'StudentBasicInfoController');
 
     // Admission Applications
